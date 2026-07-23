@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/supabase/profile";
 import { LogoutButton } from "@/components/LogoutButton";
+import { ChauffeurNav } from "@/components/ChauffeurNav";
 
 export default async function ChauffeurLayout({
   children,
@@ -23,7 +24,8 @@ export default async function ChauffeurLayout({
         </div>
         <LogoutButton />
       </header>
-      <main className="px-4 py-6">{children}</main>
+      <main className="px-4 py-6 pb-24">{children}</main>
+      <ChauffeurNav />
     </div>
   );
 }
