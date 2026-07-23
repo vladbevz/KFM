@@ -24,7 +24,7 @@ export default async function ChauffeurLayout({
         </div>
         <LogoutButton />
       </header>
-      <main className="px-4 py-6 pb-24">{children}</main>
+      <main className="px-4 py-6 pb-32">{children}</main>
       <ChauffeurNav />
     </div>
   );

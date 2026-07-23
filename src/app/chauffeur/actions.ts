@@ -6,9 +6,11 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
 type DailyEntryInsert = Database["public"]["Tables"]["daily_entries"]["Insert"];
+type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 
 export interface DailyEntryFormState {
   error: string | null;
+  entry?: DailyEntry;
 }
 
 function textOrNull(value: FormDataEntryValue | null): string | null {
@@ -75,14 +77,18 @@ export async function saveDailyEntry(
     anomalie_vehicule: textOrNull(formData.get("anomalie_vehicule")),
   };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("daily_entries")
-    .upsert(payload, { onConflict: "driver_id,entry_date" });
+    .upsert(payload, { onConflict: "driver_id,entry_date" })
+    .select()
+    .single<DailyEntry>();
 
   if (error) {
     return { error: error.message };
   }
 
   revalidatePath("/chauffeur");
-  return { error: null };
+  revalidatePath("/chauffeur/historique");
+  revalidatePath("/chauffeur/statistiques");
+  return { error: null, entry: data };
 }

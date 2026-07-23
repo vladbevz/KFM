@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { DailyEntryForm } from "@/components/DailyEntryForm";
+import { DailyEntryScreen } from "@/components/DailyEntryScreen";
 import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
@@ -25,7 +25,7 @@ export default async function ChauffeurPage() {
       <h1 className="text-lg font-semibold text-foreground">
         Saisie du jour
       </h1>
-      <DailyEntryForm existingEntry={existingEntry} />
+      <DailyEntryScreen existingEntry={existingEntry} />
     </div>
   );
 }

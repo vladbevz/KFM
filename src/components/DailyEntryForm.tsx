@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { saveDailyEntry, type DailyEntryFormState } from "@/app/chauffeur/actions";
 import type { Database } from "@/types/database";
@@ -58,19 +59,22 @@ function SubmitButton({ isUpdate }: { isUpdate: boolean }) {
 
 export function DailyEntryForm({
   existingEntry,
+  onSaved,
+  onCancel,
 }: {
   existingEntry: DailyEntry | null;
+  onSaved?: (entry: DailyEntry) => void;
+  onCancel?: () => void;
 }) {
   const [state, formAction] = useFormState(saveDailyEntry, initialState);
 
+  useEffect(() => {
+    if (state.entry) onSaved?.(state.entry);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
   return (
     <form action={formAction} className="flex flex-col gap-6">
-      {existingEntry && (
-        <p className="rounded-md border border-km/40 bg-km/10 px-3 py-2 text-sm text-km">
-          Rapport déjà rempli aujourd&apos;hui — vous pouvez le modifier
-          ci-dessous.
-        </p>
-      )}
 
       <div className="flex flex-col gap-1">
         <label
@@ -205,7 +209,18 @@ export function DailyEntryForm({
         <p className="text-sm text-red-400">{state.error}</p>
       )}
 
-      <SubmitButton isUpdate={Boolean(existingEntry)} />
+      <div className="flex gap-3">
+        <SubmitButton isUpdate={Boolean(existingEntry)} />
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="mt-2 rounded-md border border-border px-4 py-2 font-medium text-foreground/70"
+          >
+            Annuler
+          </button>
+        )}
+      </div>
     </form>
   );
 }
