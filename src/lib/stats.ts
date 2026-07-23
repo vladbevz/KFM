@@ -2,9 +2,10 @@ import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 
-export type PeriodKey = "7" | "30" | "90" | "custom";
+export type PeriodKey = "today" | "7" | "30" | "90" | "custom";
 
 export const PERIOD_OPTIONS: { key: PeriodKey; label: string }[] = [
+  { key: "today", label: "Aujourd'hui" },
   { key: "7", label: "7 jours" },
   { key: "30", label: "30 jours" },
   { key: "90", label: "3 mois" },
@@ -33,6 +34,10 @@ export function getPeriodRange(
 
   if (period === "custom" && customFrom && customTo) {
     return { from: customFrom, to: customTo };
+  }
+
+  if (period === "today") {
+    return { from: to, to };
   }
 
   const days = period === "7" ? 7 : period === "30" ? 30 : 90;
@@ -87,9 +92,6 @@ export interface DriverMetrics {
   totalKm: number;
   totalPoses: number;
   totalEnlevements: number;
-  avgKm: number;
-  avgPoses: number;
-  avgEnlevements: number;
 }
 
 export function aggregateByDriver(
@@ -106,9 +108,6 @@ export function aggregateByDriver(
       totalKm: 0,
       totalPoses: 0,
       totalEnlevements: 0,
-      avgKm: 0,
-      avgPoses: 0,
-      avgEnlevements: 0,
     });
   }
 
@@ -119,15 +118,6 @@ export function aggregateByDriver(
     current.totalKm += entryKm(entry);
     current.totalPoses += entryPoses(entry);
     current.totalEnlevements += entryEnlevements(entry);
-  }
-
-  for (const driver of byDriver.values()) {
-    if (driver.jours > 0) {
-      driver.avgKm = Math.round(driver.totalKm / driver.jours);
-      driver.avgPoses = Math.round((driver.totalPoses / driver.jours) * 10) / 10;
-      driver.avgEnlevements =
-        Math.round((driver.totalEnlevements / driver.jours) * 10) / 10;
-    }
   }
 
   return Array.from(byDriver.values());

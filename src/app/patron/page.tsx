@@ -20,9 +20,11 @@ export default async function PatronPage({
 }) {
   const params = await searchParams;
   const view = params.view === "tableau" ? "tableau" : "graphique";
-  const period = (["7", "30", "90", "custom"].includes(params.period ?? "")
-    ? params.period
-    : "30") as PeriodKey;
+  const period = (
+    ["today", "7", "30", "90", "custom"].includes(params.period ?? "")
+      ? params.period
+      : "30"
+  ) as PeriodKey;
   const metric = (["km", "poses", "enlevements"].includes(params.metric ?? "")
     ? params.metric
     : "km") as Metric;

@@ -5,23 +5,14 @@ import type { DriverMetrics } from "@/lib/stats";
 
 type SortKey = keyof Pick<
   DriverMetrics,
-  | "fullName"
-  | "totalKm"
-  | "totalPoses"
-  | "totalEnlevements"
-  | "avgKm"
-  | "avgPoses"
-  | "avgEnlevements"
+  "fullName" | "totalKm" | "totalPoses" | "totalEnlevements"
 >;
 
 const COLUMNS: { key: SortKey; label: string; numeric: boolean }[] = [
   { key: "fullName", label: "Chauffeur", numeric: false },
-  { key: "totalKm", label: "Total km", numeric: true },
-  { key: "totalPoses", label: "Total poses", numeric: true },
-  { key: "totalEnlevements", label: "Total enlèvements", numeric: true },
-  { key: "avgKm", label: "Moy. km/j", numeric: true },
-  { key: "avgPoses", label: "Moy. poses/j", numeric: true },
-  { key: "avgEnlevements", label: "Moy. enlèv./j", numeric: true },
+  { key: "totalKm", label: "Km", numeric: true },
+  { key: "totalPoses", label: "Poses", numeric: true },
+  { key: "totalEnlevements", label: "Enlèvements", numeric: true },
 ];
 
 export function ComparisonTable({ data }: { data: DriverMetrics[] }) {
@@ -61,7 +52,7 @@ export function ComparisonTable({ data }: { data: DriverMetrics[] }) {
 
   return (
     <div className="overflow-x-auto rounded-lg border border-border">
-      <table className="w-full min-w-[640px] border-collapse text-sm">
+      <table className="w-full min-w-[420px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-border bg-surface">
             {COLUMNS.map((col) => (
@@ -94,15 +85,6 @@ export function ComparisonTable({ data }: { data: DriverMetrics[] }) {
               </td>
               <td className="px-3 py-2 text-right tabular-nums text-foreground">
                 {row.totalEnlevements}
-              </td>
-              <td className="px-3 py-2 text-right tabular-nums text-foreground/70">
-                {row.avgKm}
-              </td>
-              <td className="px-3 py-2 text-right tabular-nums text-foreground/70">
-                {row.avgPoses}
-              </td>
-              <td className="px-3 py-2 text-right tabular-nums text-foreground/70">
-                {row.avgEnlevements}
               </td>
             </tr>
           ))}

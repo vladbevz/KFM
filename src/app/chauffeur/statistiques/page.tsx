@@ -45,9 +45,11 @@ export default async function StatistiquesPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const params = await searchParams;
-  const period = (["7", "30", "90", "custom"].includes(params.period ?? "")
-    ? params.period
-    : "30") as PeriodKey;
+  const period = (
+    ["today", "7", "30", "90", "custom"].includes(params.period ?? "")
+      ? params.period
+      : "30"
+  ) as PeriodKey;
   const metric = (["km", "poses", "enlevements"].includes(params.metric ?? "")
     ? params.metric
     : "km") as Metric;
