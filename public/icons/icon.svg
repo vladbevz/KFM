@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0b0e15"/>
+  <rect x="16" y="16" width="480" height="480" rx="80" fill="none" stroke="#232a3a" stroke-width="8"/>
+  <text x="256" y="300" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="180" fill="#f59e0b" text-anchor="middle">KFM</text>
+  <rect x="128" y="336" width="256" height="16" rx="8" fill="#3b82f6"/>
+</svg>
