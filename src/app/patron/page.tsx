@@ -36,13 +36,6 @@ export default async function PatronPage({
 
   const supabase = await createClient();
 
-  const { data: drivers } = await supabase
-    .from("profiles")
-    .select("id, full_name")
-    .eq("role", "driver")
-    .order("full_name")
-    .returns<{ id: string; full_name: string }[]>();
-
   let entriesQuery = supabase
     .from("daily_entries")
     .select("*")
@@ -53,7 +46,17 @@ export default async function PatronPage({
     entriesQuery = entriesQuery.eq("driver_id", selectedDriverId);
   }
 
-  const { data: entries } = await entriesQuery.returns<DailyEntry[]>();
+  // Requêtes indépendantes : exécutées en parallèle plutôt qu'en séquence
+  // pour éviter d'additionner deux allers-retours réseau vers Supabase.
+  const [{ data: drivers }, { data: entries }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, full_name")
+      .eq("role", "driver")
+      .order("full_name")
+      .returns<{ id: string; full_name: string }[]>(),
+    entriesQuery.returns<DailyEntry[]>(),
+  ]);
 
   return (
     <div className="flex flex-col gap-4">

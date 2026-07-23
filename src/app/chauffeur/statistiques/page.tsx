@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/profile";
 import { StatsControls } from "@/components/StatsControls";
 import { StatsChart } from "@/components/StatsChart";
 import {
@@ -59,10 +60,7 @@ export default async function StatistiquesPage({
   const { from, to } = getPeriodRange(period, customFrom, customTo);
 
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   const { data: entries } = await supabase
     .from("daily_entries")

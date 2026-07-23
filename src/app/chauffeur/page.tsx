@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/profile";
 import { DailyEntryScreen } from "@/components/DailyEntryScreen";
 import type { Database } from "@/types/database";
 
@@ -6,10 +7,7 @@ type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 
 export default async function ChauffeurPage() {
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   const today = new Date().toISOString().slice(0, 10);
 
