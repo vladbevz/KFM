@@ -29,11 +29,13 @@ $$;
 -- (nécessaire pour afficher le nom des chauffeurs dans le tableau comparatif).
 create policy "profiles_select_own_or_boss"
   on public.profiles for select
-  using (id = auth.uid() or public.is_boss());
+  using (id = (select auth.uid()) or public.is_boss());
 
 create policy "profiles_update_own"
   on public.profiles for update
-  using (id = auth.uid());
+  using (id = (select auth.uid()));
+
+create index if not exists profiles_role_idx on public.profiles (role);
 
 -- La policy ci-dessus autorise la mise à jour de la ligne, mais pas de
 -- colonne en particulier : sans cette restriction, un chauffeur pourrait
@@ -82,11 +84,11 @@ create index if not exists daily_entries_driver_date_idx
 -- Un chauffeur ne voit/écrit que ses propres lignes ; le patron voit tout.
 create policy "daily_entries_select_own_or_boss"
   on public.daily_entries for select
-  using (driver_id = auth.uid() or public.is_boss());
+  using (driver_id = (select auth.uid()) or public.is_boss());
 
 create policy "daily_entries_insert_own"
   on public.daily_entries for insert
-  with check (driver_id = auth.uid());
+  with check (driver_id = (select auth.uid()));
 
 -- Modification autorisée uniquement par le chauffeur propriétaire, dans les
 -- 24h suivant la création (cf. prompt : "à discuter, sinon laisser
@@ -96,10 +98,10 @@ create policy "daily_entries_insert_own"
 create policy "daily_entries_update_own_within_24h"
   on public.daily_entries for update
   using (
-    driver_id = auth.uid()
+    driver_id = (select auth.uid())
     and created_at > now() - interval '24 hours'
   )
-  with check (driver_id = auth.uid());
+  with check (driver_id = (select auth.uid()));
 
 -- 3. Création automatique du profil à l'inscription --------------------------
 -- Le rôle par défaut est 'driver' ; à changer manuellement en 'boss' dans la

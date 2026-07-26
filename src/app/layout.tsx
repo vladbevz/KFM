@@ -30,6 +30,12 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "KFM Suivi",
   },
+  other: {
+    // Chrome/Android utilisent désormais ce tag standard ; Safari ne
+    // reconnaît que le "apple-mobile-web-app-capable" ci-dessus (via
+    // appleWebApp) — on garde les deux pour couvrir les deux navigateurs.
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export const viewport = {

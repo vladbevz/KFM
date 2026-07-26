@@ -1,4 +1,4 @@
-const CACHE_NAME = "kfm-suivi-v1";
+const CACHE_NAME = "kfm-suivi-v2";
 const OFFLINE_URL = "/offline.html";
 const PRECACHE_URLS = [
   OFFLINE_URL,
@@ -41,9 +41,19 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Assets statiques same-origin (icônes, manifest) : cache d'abord.
+  // Uniquement les vrais assets statiques (icônes, manifest) : cache
+  // d'abord. Tout le reste (fetch RSC de Next.js, server actions, appels
+  // Supabase) doit passer au réseau sans interception — ce sont des
+  // requêtes dynamiques par utilisateur/paramètre, jamais des candidats au
+  // cache, et les intercepter ici provoquait des rejets de promesse quand
+  // Next.js annule une requête en cours (clic sur un autre filtre avant la
+  // fin du précédent).
   const url = new URL(request.url);
-  if (url.origin === self.location.origin) {
+  const isStaticAsset =
+    url.origin === self.location.origin &&
+    (url.pathname === "/manifest.json" || url.pathname.startsWith("/icons/"));
+
+  if (isStaticAsset) {
     event.respondWith(
       caches.match(request).then(
         (cached) =>
