@@ -1,0 +1,65 @@
+/* Surcharge minimale du thème clair par défaut de react-big-calendar pour
+   correspondre au fond sombre de l'app. Effort volontairement limité : le
+   thème global doit repasser en clair prochainement. */
+.kfm-calendar .rbc-calendar {
+  color: #e5e7eb;
+}
+
+.kfm-calendar .rbc-off-range-bg {
+  background: #0b0e15;
+}
+
+.kfm-calendar .rbc-today {
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.kfm-calendar .rbc-header,
+.kfm-calendar .rbc-month-view,
+.kfm-calendar .rbc-day-bg,
+.kfm-calendar .rbc-month-row,
+.kfm-calendar .rbc-header + .rbc-header,
+.kfm-calendar .rbc-day-bg + .rbc-day-bg {
+  border-color: #232a3a;
+}
+
+.kfm-calendar .rbc-header {
+  color: #e5e7eb;
+  padding: 6px 4px;
+}
+
+.kfm-calendar .rbc-off-range {
+  color: #565f73;
+}
+
+.kfm-calendar .rbc-date-cell {
+  color: #e5e7eb;
+  padding: 2px 6px;
+}
+
+.kfm-calendar .rbc-event {
+  font-size: 0.75rem;
+  padding: 1px 4px;
+}
+
+.kfm-calendar .rbc-toolbar button {
+  color: #e5e7eb;
+  border-color: #232a3a;
+}
+
+.kfm-calendar .rbc-toolbar button:hover,
+.kfm-calendar .rbc-toolbar button:active,
+.kfm-calendar .rbc-toolbar button.rbc-active {
+  background: #161b26;
+  color: #f59e0b;
+  border-color: #f59e0b;
+}
+
+.kfm-calendar .rbc-toolbar-label {
+  color: #e5e7eb;
+  font-weight: 600;
+}
+
+.kfm-calendar .rbc-show-more {
+  color: #f59e0b;
+  background: transparent;
+}

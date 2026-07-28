@@ -29,12 +29,20 @@ export default async function ChauffeurPage() {
         <h1 className="text-lg font-semibold text-foreground">
           Saisie du jour
         </h1>
-        <Link
-          href="/chauffeur/panne"
-          className="whitespace-nowrap rounded-md border border-red-900/50 px-3 py-1.5 text-sm text-red-400"
-        >
-          Signaler une panne
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/chauffeur/planning"
+            className="whitespace-nowrap rounded-md border border-border px-3 py-1.5 text-sm text-foreground/70"
+          >
+            Mon planning
+          </Link>
+          <Link
+            href="/chauffeur/panne"
+            className="whitespace-nowrap rounded-md border border-red-900/50 px-3 py-1.5 text-sm text-red-400"
+          >
+            Signaler une panne
+          </Link>
+        </div>
       </div>
       <DailyEntryScreen existingEntry={existingEntry} sectors={sectors ?? []} />
     </div>
