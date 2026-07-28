@@ -25,16 +25,22 @@ export default async function ChauffeurPage() {
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-col gap-2">
         <h1 className="text-lg font-semibold text-foreground">
           Saisie du jour
         </h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link
             href="/chauffeur/planning"
             className="whitespace-nowrap rounded-md border border-border px-3 py-1.5 text-sm text-foreground/70"
           >
             Mon planning
+          </Link>
+          <Link
+            href="/chauffeur/carburant"
+            className="whitespace-nowrap rounded-md border border-border px-3 py-1.5 text-sm text-foreground/70"
+          >
+            Carburant
           </Link>
           <Link
             href="/chauffeur/panne"

@@ -267,6 +267,51 @@ export interface Database {
           },
         ];
       };
+      fuel_logs: {
+        Row: {
+          id: string;
+          driver_id: string;
+          vehicle_id: string;
+          liters: number;
+          odometer: number;
+          filled_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          driver_id: string;
+          vehicle_id: string;
+          liters: number;
+          odometer: number;
+          filled_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          driver_id?: string;
+          vehicle_id?: string;
+          liters?: number;
+          odometer?: number;
+          filled_at?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fuel_logs_driver_id_fkey";
+            columns: ["driver_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fuel_logs_vehicle_id_fkey";
+            columns: ["vehicle_id"];
+            isOneToOne: false;
+            referencedRelation: "vehicles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {

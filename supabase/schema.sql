@@ -291,7 +291,32 @@ create policy "schedule_boss_update"
 create policy "schedule_boss_delete"
   on public.schedule for delete using (public.is_boss());
 
--- 6. Création automatique du profil à l'inscription --------------------------
+-- 6. Carburant -----------------------------------------------------------------
+
+create table if not exists public.fuel_logs (
+  id uuid primary key default gen_random_uuid(),
+  driver_id uuid not null references public.profiles (id) on delete cascade,
+  vehicle_id uuid not null references public.vehicles (id),
+  liters numeric not null check (liters > 0),
+  odometer integer not null check (odometer >= 0),
+  filled_at date not null default current_date,
+  created_at timestamptz not null default now()
+);
+
+alter table public.fuel_logs enable row level security;
+
+create index if not exists fuel_logs_driver_filled_idx
+  on public.fuel_logs (driver_id, filled_at desc);
+
+create policy "fuel_logs_select_own_or_boss"
+  on public.fuel_logs for select
+  using (driver_id = (select auth.uid()) or public.is_boss());
+
+create policy "fuel_logs_insert_own"
+  on public.fuel_logs for insert
+  with check (driver_id = (select auth.uid()));
+
+-- 7. Création automatique du profil à l'inscription --------------------------
 -- Le rôle par défaut est 'driver' ; à changer manuellement en 'boss' dans la
 -- table profiles pour les comptes patron.
 
