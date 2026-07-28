@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/supabase/profile";
 import { LogoutButton } from "@/components/LogoutButton";
+import { PatronNav } from "@/components/PatronNav";
 
 export default async function PatronLayout({
   children,
@@ -23,6 +24,7 @@ export default async function PatronLayout({
         </div>
         <LogoutButton />
       </header>
+      <PatronNav />
       <main className="px-4 py-6">{children}</main>
     </div>
   );

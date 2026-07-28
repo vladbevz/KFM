@@ -59,13 +59,11 @@ export async function saveDailyEntry(
     vehicle_registration: vehicleRegistration,
     km_depart: kmDepart,
     km_arrivee: kmArrivee,
-    matin_tournee_numero: textOrNull(formData.get("matin_tournee_numero")),
+    matin_sector_id: textOrNull(formData.get("matin_sector_id")),
     matin_poses_livraison: intOrNull(formData.get("matin_poses_livraison")),
     matin_poses_enlevement: intOrNull(formData.get("matin_poses_enlevement")),
     matin_courses: textOrNull(formData.get("matin_courses")),
-    apres_midi_tournee_numero: textOrNull(
-      formData.get("apres_midi_tournee_numero"),
-    ),
+    apres_midi_sector_id: textOrNull(formData.get("apres_midi_sector_id")),
     apres_midi_poses_livraison: intOrNull(
       formData.get("apres_midi_poses_livraison"),
     ),

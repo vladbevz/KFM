@@ -4,17 +4,21 @@ import { EntryCard } from "@/components/EntryCard";
 import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
+type Sector = Database["public"]["Tables"]["sectors"]["Row"];
 
 export default async function HistoriquePage() {
   const supabase = await createClient();
   const user = await getAuthUser();
 
-  const { data: entries } = await supabase
-    .from("daily_entries")
-    .select("*")
-    .eq("driver_id", user!.id)
-    .order("entry_date", { ascending: false })
-    .returns<DailyEntry[]>();
+  const [{ data: entries }, { data: sectors }] = await Promise.all([
+    supabase
+      .from("daily_entries")
+      .select("*")
+      .eq("driver_id", user!.id)
+      .order("entry_date", { ascending: false })
+      .returns<DailyEntry[]>(),
+    supabase.from("sectors").select("*").returns<Sector[]>(),
+  ]);
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4">
@@ -27,7 +31,7 @@ export default async function HistoriquePage() {
       ) : (
         <div className="flex flex-col gap-3">
           {entries.map((entry) => (
-            <EntryCard key={entry.id} entry={entry} />
+            <EntryCard key={entry.id} entry={entry} sectors={sectors ?? []} />
           ))}
         </div>
       )}

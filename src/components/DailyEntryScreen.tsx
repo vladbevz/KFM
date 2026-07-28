@@ -6,11 +6,14 @@ import { EntryCard } from "@/components/EntryCard";
 import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
+type Sector = Database["public"]["Tables"]["sectors"]["Row"];
 
 export function DailyEntryScreen({
   existingEntry,
+  sectors,
 }: {
   existingEntry: DailyEntry | null;
+  sectors: Sector[];
 }) {
   const [entry, setEntry] = useState(existingEntry);
   const [mode, setMode] = useState<"summary" | "form">(
@@ -19,7 +22,7 @@ export function DailyEntryScreen({
 
   if (mode === "summary" && entry) {
     return (
-      <EntryCard entry={entry}>
+      <EntryCard entry={entry} sectors={sectors}>
         <button
           onClick={() => setMode("form")}
           className="mt-1 rounded-md bg-km px-4 py-2 text-sm font-medium text-black"
@@ -33,6 +36,7 @@ export function DailyEntryScreen({
   return (
     <DailyEntryForm
       existingEntry={entry}
+      sectors={sectors}
       onCancel={entry ? () => setMode("summary") : undefined}
       onSaved={(saved) => {
         setEntry(saved);

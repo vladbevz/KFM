@@ -6,8 +6,42 @@ import { saveDailyEntry, type DailyEntryFormState } from "@/app/chauffeur/action
 import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
+type Sector = Database["public"]["Tables"]["sectors"]["Row"];
 
 const initialState: DailyEntryFormState = { error: null };
+
+function SectorSelect({
+  label,
+  name,
+  sectors,
+  defaultValue,
+}: {
+  label: string;
+  name: string;
+  sectors: Sector[];
+  defaultValue?: string | null;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label htmlFor={name} className="text-sm text-foreground/70">
+        {label}
+      </label>
+      <select
+        id={name}
+        name={name}
+        defaultValue={defaultValue ?? ""}
+        className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-km"
+      >
+        <option value="">Aucun secteur</option>
+        {sectors.map((sector) => (
+          <option key={sector.id} value={sector.id}>
+            {sector.code}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
 function Field({
   label,
@@ -59,10 +93,12 @@ function SubmitButton({ isUpdate }: { isUpdate: boolean }) {
 
 export function DailyEntryForm({
   existingEntry,
+  sectors,
   onSaved,
   onCancel,
 }: {
   existingEntry: DailyEntry | null;
+  sectors: Sector[];
   onSaved?: (entry: DailyEntry) => void;
   onCancel?: () => void;
 }) {
@@ -120,10 +156,11 @@ export function DailyEntryForm({
           Tournée — Matin
         </h2>
         <div className="flex flex-col gap-3">
-          <Field
-            label="N° tournée"
-            name="matin_tournee_numero"
-            defaultValue={existingEntry?.matin_tournee_numero}
+          <SectorSelect
+            label="Secteur"
+            name="matin_sector_id"
+            sectors={sectors}
+            defaultValue={existingEntry?.matin_sector_id}
           />
           <div className="grid grid-cols-2 gap-3">
             <Field
@@ -152,10 +189,11 @@ export function DailyEntryForm({
           Tournée — Après-midi
         </h2>
         <div className="flex flex-col gap-3">
-          <Field
-            label="N° tournée"
-            name="apres_midi_tournee_numero"
-            defaultValue={existingEntry?.apres_midi_tournee_numero}
+          <SectorSelect
+            label="Secteur"
+            name="apres_midi_sector_id"
+            sectors={sectors}
+            defaultValue={existingEntry?.apres_midi_sector_id}
           />
           <div className="grid grid-cols-2 gap-3">
             <Field
