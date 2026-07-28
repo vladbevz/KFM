@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/supabase/profile";
 import { DailyEntryScreen } from "@/components/DailyEntryScreen";
@@ -24,9 +25,17 @@ export default async function ChauffeurPage() {
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4">
-      <h1 className="text-lg font-semibold text-foreground">
-        Saisie du jour
-      </h1>
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-lg font-semibold text-foreground">
+          Saisie du jour
+        </h1>
+        <Link
+          href="/chauffeur/panne"
+          className="whitespace-nowrap rounded-md border border-red-900/50 px-3 py-1.5 text-sm text-red-400"
+        >
+          Signaler une panne
+        </Link>
+      </div>
       <DailyEntryScreen existingEntry={existingEntry} sectors={sectors ?? []} />
     </div>
   );
