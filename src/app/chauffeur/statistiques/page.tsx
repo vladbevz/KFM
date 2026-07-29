@@ -3,7 +3,6 @@ import { getAuthUser } from "@/lib/supabase/profile";
 import { StatsControls } from "@/components/StatsControls";
 import { StatsChart } from "@/components/StatsChart";
 import {
-  aggregateByDate,
   entryEnlevements,
   entryKm,
   entryPoses,
@@ -13,6 +12,7 @@ import {
   type PeriodKey,
 } from "@/lib/stats";
 import type { Database } from "@/types/database";
+import type { Sector } from "@/lib/rentabilite";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 
@@ -62,15 +62,19 @@ export default async function StatistiquesPage({
   const supabase = await createClient();
   const user = await getAuthUser();
 
-  const { data: entries } = await supabase
-    .from("daily_entries")
-    .select("*")
-    .eq("driver_id", user!.id)
-    .gte("entry_date", from)
-    .lte("entry_date", to)
-    .returns<DailyEntry[]>();
+  const [{ data: entries }, { data: sectors }] = await Promise.all([
+    supabase
+      .from("daily_entries")
+      .select("*")
+      .eq("driver_id", user!.id)
+      .gte("entry_date", from)
+      .lte("entry_date", to)
+      .returns<DailyEntry[]>(),
+    supabase.from("sectors").select("*").returns<Sector[]>(),
+  ]);
 
   const rows = entries ?? [];
+  const sectorsById = new Map((sectors ?? []).map((s) => [s.id, s]));
   const jours = rows.length;
   const totalKm = rows.reduce((sum, e) => sum + entryKm(e), 0);
   const totalPoses = rows.reduce((sum, e) => sum + entryPoses(e), 0);
@@ -88,7 +92,7 @@ export default async function StatistiquesPage({
         metric={metric}
       />
 
-      <StatsChart data={aggregateByDate(rows)} metric={metric} />
+      <StatsChart entries={rows} metric={metric} sectorsById={sectorsById} />
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <SummaryCard

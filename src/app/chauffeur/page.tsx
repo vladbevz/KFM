@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getAuthUser } from "@/lib/supabase/profile";
-import { DailyEntryScreen } from "@/components/DailyEntryScreen";
+import { getAuthUser, getCurrentProfile } from "@/lib/supabase/profile";
+import { TourneeScreen } from "@/components/TourneeScreen";
 import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
@@ -9,48 +8,31 @@ type Sector = Database["public"]["Tables"]["sectors"]["Row"];
 
 export default async function ChauffeurPage() {
   const supabase = await createClient();
-  const user = await getAuthUser();
+  const [user, profile] = await Promise.all([getAuthUser(), getCurrentProfile()]);
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const [{ data: existingEntry }, { data: sectors }] = await Promise.all([
+  const [{ data: todaysEntries }, { data: sectors }] = await Promise.all([
     supabase
       .from("daily_entries")
       .select("*")
       .eq("driver_id", user!.id)
       .eq("entry_date", today)
-      .maybeSingle<DailyEntry>(),
+      .order("started_at", { ascending: false })
+      .returns<DailyEntry[]>(),
     supabase.from("sectors").select("*").order("code").returns<Sector[]>(),
   ]);
 
+  const inProgressEntry = (todaysEntries ?? []).find((e) => e.status === "in_progress") ?? null;
+  const completedToday = (todaysEntries ?? []).filter((e) => e.status === "completed");
+  const firstName = (profile?.full_name ?? "").split(" ")[0] || "!";
+
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-lg font-semibold text-foreground">
-          Saisie du jour
-        </h1>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/chauffeur/planning"
-            className="whitespace-nowrap rounded-md border border-border px-3 py-1.5 text-sm text-foreground/70"
-          >
-            Mon planning
-          </Link>
-          <Link
-            href="/chauffeur/carburant"
-            className="whitespace-nowrap rounded-md border border-border px-3 py-1.5 text-sm text-foreground/70"
-          >
-            Carburant
-          </Link>
-          <Link
-            href="/chauffeur/panne"
-            className="whitespace-nowrap rounded-md border border-red-900/50 px-3 py-1.5 text-sm text-red-400"
-          >
-            Signaler une panne
-          </Link>
-        </div>
-      </div>
-      <DailyEntryScreen existingEntry={existingEntry} sectors={sectors ?? []} />
-    </div>
+    <TourneeScreen
+      firstName={firstName}
+      inProgressEntry={inProgressEntry}
+      completedToday={completedToday}
+      sectors={sectors ?? []}
+    />
   );
 }

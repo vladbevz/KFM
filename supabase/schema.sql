@@ -39,11 +39,11 @@ create index if not exists profiles_role_idx on public.profiles (role);
 
 -- La policy ci-dessus autorise la mise à jour de la ligne, mais pas de
 -- colonne en particulier : sans cette restriction, un chauffeur pourrait
--- s'auto-promouvoir "boss" via un appel API direct. Seule full_name reste
--- modifiable par le client ; le rôle se change uniquement via Table Editor
--- ou service role.
+-- s'auto-promouvoir "boss" via un appel API direct. Seules full_name et
+-- default_sector_id restent modifiables par le client (grant complet plus
+-- bas une fois default_sector_id créée) ; le rôle se change uniquement via
+-- Table Editor ou service role.
 revoke update on public.profiles from authenticated;
-grant update (full_name) on public.profiles to authenticated;
 
 -- 2. Table sectors (secteurs / rentabilité) -----------------------------------
 -- Chaque secteur a un modèle de rémunération propre, avec des seuils de
@@ -80,26 +80,50 @@ create policy "sectors_boss_update"
 create policy "sectors_boss_delete"
   on public.sectors for delete using (public.is_boss());
 
+-- Pré-remplissage du secteur à "Démarrer la tournée" + mémorisation du
+-- dernier choix (mis à jour par le chauffeur lui-même à la fin de tournée
+-- si son secteur diffère du défaut).
+alter table public.profiles add column if not exists default_sector_id uuid references public.sectors (id);
+grant update (full_name, default_sector_id) on public.profiles to authenticated;
+
 -- 3. Table daily_entries -----------------------------------------------------
--- Reprend le rapport papier "KFM TRANSPORT" : un seul kilométrage pour la
--- journée, mais les tournées (poses) et courses sont saisies séparément pour
--- le matin et l'après-midi car certains chauffeurs font 2 sorties par jour.
+-- Une ligne = une tournée (pas une journée) : un chauffeur qui fait matin +
+-- après-midi a deux lignes le même jour, chacune avec son propre cycle
+-- démarrer (status='in_progress')/terminer (status='completed'). Les
+-- colonnes matin_*/apres_midi_* datent du modèle précédent ("une ligne =
+-- un jour") et ne sont plus écrites, gardées pour l'historique déjà saisi.
+
+create type public.entry_status as enum ('in_progress', 'completed');
+create type public.tournee_type as enum ('journee', 'matin', 'apres_midi');
 
 create table if not exists public.daily_entries (
   id uuid primary key default gen_random_uuid(),
   driver_id uuid not null references public.profiles (id) on delete cascade,
   entry_date date not null,
 
-  vehicle_registration text not null,
-  km_depart integer not null check (km_depart >= 0),
-  km_arrivee integer not null check (km_arrivee >= km_depart),
+  status public.entry_status not null default 'completed',
+  started_at timestamptz,
+  ended_at timestamptz,
+  tournee_type public.tournee_type,
+  sector_id uuid references public.sectors (id),
 
+  vehicle_registration text,
+  km_depart integer check (km_depart >= 0),
+  km_arrivee integer check (km_arrivee is null or km_depart is null or km_arrivee >= km_depart),
+
+  poses_delivered integer check (poses_delivered >= 0),
+  poses_damaged integer check (poses_damaged >= 0),
+  poses_not_delivered integer check (poses_not_delivered >= 0),
+  poses_enlevement integer check (poses_enlevement >= 0),
+  courses text,
+
+  -- Colonnes historiques (modèle "une ligne = un jour", plus utilisées par
+  -- le formulaire actuel — conservées pour l'historique déjà affiché).
   matin_tournee_numero text,
   matin_poses_livraison integer check (matin_poses_livraison >= 0),
   matin_poses_enlevement integer check (matin_poses_enlevement >= 0),
   matin_courses text,
   matin_sector_id uuid references public.sectors (id),
-
   apres_midi_tournee_numero text,
   apres_midi_poses_livraison integer check (apres_midi_poses_livraison >= 0),
   apres_midi_poses_enlevement integer check (apres_midi_poses_enlevement >= 0),
@@ -109,14 +133,17 @@ create table if not exists public.daily_entries (
   anomalie_tournee text,
   anomalie_vehicule text,
 
-  created_at timestamptz not null default now(),
-  unique (driver_id, entry_date)
+  created_at timestamptz not null default now()
 );
 
 alter table public.daily_entries enable row level security;
 
 create index if not exists daily_entries_driver_date_idx
   on public.daily_entries (driver_id, entry_date desc);
+create index if not exists daily_entries_driver_date_status_idx
+  on public.daily_entries (driver_id, entry_date, status);
+create index if not exists daily_entries_sector_idx
+  on public.daily_entries (sector_id);
 
 create index if not exists daily_entries_matin_sector_idx
   on public.daily_entries (matin_sector_id);
@@ -281,12 +308,28 @@ create policy "schedule_select_own_or_boss"
   on public.schedule for select
   using (driver_id = (select auth.uid()) or public.is_boss());
 
--- Lecture seule pour le chauffeur : seul le patron écrit le planning.
+-- Lecture seule pour le chauffeur en général : seul le patron écrit le
+-- planning — sauf pour refléter sa propre tournée du jour (démarrer/
+-- terminer), accès étroit ci-dessous (sa ligne, aujourd'hui, type='tournee'
+-- uniquement).
 create policy "schedule_boss_insert"
   on public.schedule for insert with check (public.is_boss());
 
+create policy "schedule_driver_insert_own_tournee_today"
+  on public.schedule for insert
+  with check (
+    driver_id = (select auth.uid())
+    and type = 'tournee'
+    and date = current_date
+  );
+
 create policy "schedule_boss_update"
   on public.schedule for update using (public.is_boss()) with check (public.is_boss());
+
+create policy "schedule_driver_update_own_tournee_today"
+  on public.schedule for update
+  using (driver_id = (select auth.uid()) and date = current_date)
+  with check (driver_id = (select auth.uid()) and type = 'tournee' and date = current_date);
 
 create policy "schedule_boss_delete"
   on public.schedule for delete using (public.is_boss());

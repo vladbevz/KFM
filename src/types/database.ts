@@ -10,6 +10,8 @@ export type VehicleStatus =
   | "unavailable"
   | "in_repair";
 export type AssignmentType = "tournee" | "conge" | "absence";
+export type EntryStatus = "in_progress" | "completed";
+export type TourneeType = "journee" | "matin" | "apres_midi";
 
 export interface Database {
   public: {
@@ -19,18 +21,29 @@ export interface Database {
           id: string;
           full_name: string;
           role: UserRole;
+          default_sector_id: string | null;
         };
         Insert: {
           id: string;
           full_name: string;
           role: UserRole;
+          default_sector_id?: string | null;
         };
         Update: {
           id?: string;
           full_name?: string;
           role?: UserRole;
+          default_sector_id?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "profiles_default_sector_id_fkey";
+            columns: ["default_sector_id"];
+            isOneToOne: false;
+            referencedRelation: "sectors";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       sectors: {
         Row: {
@@ -67,9 +80,19 @@ export interface Database {
           id: string;
           driver_id: string;
           entry_date: string;
-          vehicle_registration: string;
-          km_depart: number;
-          km_arrivee: number;
+          status: EntryStatus;
+          started_at: string | null;
+          ended_at: string | null;
+          tournee_type: TourneeType | null;
+          sector_id: string | null;
+          vehicle_registration: string | null;
+          km_depart: number | null;
+          km_arrivee: number | null;
+          poses_delivered: number | null;
+          poses_damaged: number | null;
+          poses_not_delivered: number | null;
+          poses_enlevement: number | null;
+          courses: string | null;
           matin_tournee_numero: string | null;
           matin_poses_livraison: number | null;
           matin_poses_enlevement: number | null;
@@ -88,9 +111,19 @@ export interface Database {
           id?: string;
           driver_id: string;
           entry_date: string;
-          vehicle_registration: string;
-          km_depart: number;
-          km_arrivee: number;
+          status?: EntryStatus;
+          started_at?: string | null;
+          ended_at?: string | null;
+          tournee_type?: TourneeType | null;
+          sector_id?: string | null;
+          vehicle_registration?: string | null;
+          km_depart?: number | null;
+          km_arrivee?: number | null;
+          poses_delivered?: number | null;
+          poses_damaged?: number | null;
+          poses_not_delivered?: number | null;
+          poses_enlevement?: number | null;
+          courses?: string | null;
           matin_tournee_numero?: string | null;
           matin_poses_livraison?: number | null;
           matin_poses_enlevement?: number | null;
@@ -109,9 +142,19 @@ export interface Database {
           id?: string;
           driver_id?: string;
           entry_date?: string;
-          vehicle_registration?: string;
-          km_depart?: number;
-          km_arrivee?: number;
+          status?: EntryStatus;
+          started_at?: string | null;
+          ended_at?: string | null;
+          tournee_type?: TourneeType | null;
+          sector_id?: string | null;
+          vehicle_registration?: string | null;
+          km_depart?: number | null;
+          km_arrivee?: number | null;
+          poses_delivered?: number | null;
+          poses_damaged?: number | null;
+          poses_not_delivered?: number | null;
+          poses_enlevement?: number | null;
+          courses?: string | null;
           matin_tournee_numero?: string | null;
           matin_poses_livraison?: number | null;
           matin_poses_enlevement?: number | null;
@@ -132,6 +175,13 @@ export interface Database {
             columns: ["driver_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "daily_entries_sector_id_fkey";
+            columns: ["sector_id"];
+            isOneToOne: false;
+            referencedRelation: "sectors";
             referencedColumns: ["id"];
           },
           {

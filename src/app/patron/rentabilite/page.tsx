@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { RentabiliteDateControl } from "@/components/RentabiliteDateControl";
 import { ProfitabilityBadges } from "@/components/ProfitabilityBadge";
-import { dayProfitability, resolveDaySector } from "@/lib/rentabilite";
+import { Badge } from "@/components/ui/badge";
+import { entryProfitability, resolveEntrySector } from "@/lib/rentabilite";
 import {
   Table,
   TableBody,
@@ -45,7 +46,14 @@ export default async function RentabilitePage({
   ]);
 
   const sectorsById = new Map((sectors ?? []).map((s) => [s.id, s]));
-  const entryByDriver = new Map((entries ?? []).map((e) => [e.driver_id, e]));
+
+  // Plusieurs tournées possibles pour un même chauffeur ce jour-là.
+  const entriesByDriver = new Map<string, DailyEntry[]>();
+  for (const entry of entries ?? []) {
+    const list = entriesByDriver.get(entry.driver_id) ?? [];
+    list.push(entry);
+    entriesByDriver.set(entry.driver_id, list);
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -63,17 +71,28 @@ export default async function RentabilitePage({
         </TableHeader>
         <TableBody>
           {(drivers ?? []).map((driver) => {
-            const entry = entryByDriver.get(driver.id);
+            const driverEntries = entriesByDriver.get(driver.id) ?? [];
             return (
               <TableRow key={driver.id}>
                 <TableCell className="font-medium">{driver.full_name}</TableCell>
                 <TableCell>
-                  {entry ? (
-                    <ProfitabilityBadges
-                      status={dayProfitability(entry, resolveDaySector(entry, sectorsById))}
-                    />
-                  ) : (
+                  {driverEntries.length === 0 ? (
                     <span className="text-xs text-foreground/40">Aucune saisie</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {driverEntries.map((entry) =>
+                        entry.status === "in_progress" ? (
+                          <Badge key={entry.id} variant="info">
+                            En tournée
+                          </Badge>
+                        ) : (
+                          <ProfitabilityBadges
+                            key={entry.id}
+                            status={entryProfitability(entry, resolveEntrySector(entry, sectorsById))}
+                          />
+                        ),
+                      )}
+                    </div>
                   )}
                 </TableCell>
               </TableRow>

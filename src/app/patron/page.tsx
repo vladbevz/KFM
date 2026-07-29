@@ -3,12 +3,12 @@ import { StatsControls } from "@/components/StatsControls";
 import { StatsChart } from "@/components/StatsChart";
 import { ComparisonTable } from "@/components/ComparisonTable";
 import {
-  aggregateByDate,
   aggregateByDriver,
   getPeriodRange,
   type Metric,
   type PeriodKey,
 } from "@/lib/stats";
+import type { Sector } from "@/lib/rentabilite";
 import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
@@ -48,7 +48,7 @@ export default async function PatronPage({
 
   // Requêtes indépendantes : exécutées en parallèle plutôt qu'en séquence
   // pour éviter d'additionner deux allers-retours réseau vers Supabase.
-  const [{ data: drivers }, { data: entries }] = await Promise.all([
+  const [{ data: drivers }, { data: entries }, { data: sectors }] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, full_name")
@@ -56,7 +56,9 @@ export default async function PatronPage({
       .order("full_name")
       .returns<{ id: string; full_name: string }[]>(),
     entriesQuery.returns<DailyEntry[]>(),
+    supabase.from("sectors").select("*").returns<Sector[]>(),
   ]);
+  const sectorsById = new Map((sectors ?? []).map((s) => [s.id, s]));
 
   return (
     <div className="flex flex-col gap-4">
@@ -75,7 +77,7 @@ export default async function PatronPage({
       />
 
       {view === "graphique" ? (
-        <StatsChart data={aggregateByDate(entries ?? [])} metric={metric} />
+        <StatsChart entries={entries ?? []} metric={metric} sectorsById={sectorsById} />
       ) : (
         <ComparisonTable
           data={aggregateByDriver(entries ?? [], drivers ?? [])}

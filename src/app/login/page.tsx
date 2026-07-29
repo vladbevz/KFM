@@ -2,12 +2,13 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, downgradeAuthCookiesToSession } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -27,6 +28,8 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
+
+    if (!rememberMe) downgradeAuthCookiesToSession();
 
     router.push("/");
     router.refresh();
@@ -69,6 +72,16 @@ export default function LoginPage() {
               className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-km"
             />
           </div>
+
+          <label className="flex items-center gap-2 text-sm text-foreground/70">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border-border accent-km"
+            />
+            Se souvenir de moi sur cet appareil
+          </label>
 
           {error && <p className="text-sm text-red-400">{error}</p>}
 

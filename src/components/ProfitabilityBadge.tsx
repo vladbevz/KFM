@@ -35,5 +35,8 @@ export function ProfitabilityBadges({ status }: { status: ProfitabilityStatus })
 
     case "qty_day":
       return <ThresholdBadge label="Jour" check={status.day} />;
+
+    case "tournee":
+      return <ThresholdBadge label="Tournée" check={status.check} />;
   }
 }

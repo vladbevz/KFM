@@ -1,4 +1,5 @@
 import type { Database } from "@/types/database";
+import { entryThreshold, resolveEntrySector, type Sector } from "@/lib/rentabilite";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 
@@ -47,15 +48,44 @@ export function getPeriodRange(
   return { from: toISODate(from), to };
 }
 
+// Une ligne "nouveau flux" (une tournée) a tournee_type renseigné ; une
+// ligne historique (ancien modèle "une ligne = un jour") ne l'a pas et
+// garde ses champs matin_*/apres_midi_*.
 export function entryKm(entry: DailyEntry): number {
-  return Math.max(0, entry.km_arrivee - entry.km_depart);
+  return Math.max(0, (entry.km_arrivee ?? 0) - (entry.km_depart ?? 0));
+}
+
+export interface PosesBreakdown {
+  delivered: number;
+  damaged: number;
+  notDelivered: number;
+}
+
+export function entryPosesBreakdown(entry: DailyEntry): PosesBreakdown {
+  if (entry.tournee_type) {
+    return {
+      delivered: entry.poses_delivered ?? 0,
+      damaged: entry.poses_damaged ?? 0,
+      notDelivered: entry.poses_not_delivered ?? 0,
+    };
+  }
+  // Les lignes historiques ne suivaient qu'un total "livrées".
+  return {
+    delivered: (entry.matin_poses_livraison ?? 0) + (entry.apres_midi_poses_livraison ?? 0),
+    damaged: 0,
+    notDelivered: 0,
+  };
 }
 
 export function entryPoses(entry: DailyEntry): number {
-  return (entry.matin_poses_livraison ?? 0) + (entry.apres_midi_poses_livraison ?? 0);
+  const { delivered, damaged, notDelivered } = entryPosesBreakdown(entry);
+  return delivered + damaged + notDelivered;
 }
 
 export function entryEnlevements(entry: DailyEntry): number {
+  if (entry.tournee_type) {
+    return entry.poses_enlevement ?? 0;
+  }
   return (entry.matin_poses_enlevement ?? 0) + (entry.apres_midi_poses_enlevement ?? 0);
 }
 
@@ -79,6 +109,48 @@ export function aggregateByDate(entries: DailyEntry[]): DateMetrics[] {
     current.km += entryKm(entry);
     current.poses += entryPoses(entry);
     current.enlevements += entryEnlevements(entry);
+    byDate.set(entry.entry_date, current);
+  }
+
+  return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export interface PosesDateMetrics {
+  date: string;
+  delivered: number;
+  damaged: number;
+  notDelivered: number;
+  threshold: number | null;
+}
+
+// Pour le graphique empilé (module 9) : poses par catégorie + seuil de
+// rentabilité du jour, sommés sur toutes les tournées de ce jour-là (un
+// chauffeur qui fait matin + après-midi a deux lignes le même jour).
+export function aggregatePosesByDate(
+  entries: DailyEntry[],
+  sectorsById: Map<string, Sector>,
+): PosesDateMetrics[] {
+  const byDate = new Map<string, PosesDateMetrics>();
+
+  for (const entry of entries) {
+    const current = byDate.get(entry.entry_date) ?? {
+      date: entry.entry_date,
+      delivered: 0,
+      damaged: 0,
+      notDelivered: 0,
+      threshold: null,
+    };
+    const breakdown = entryPosesBreakdown(entry);
+    current.delivered += breakdown.delivered;
+    current.damaged += breakdown.damaged;
+    current.notDelivered += breakdown.notDelivered;
+
+    const sector = resolveEntrySector(entry, sectorsById);
+    const threshold = entryThreshold(entry, sector);
+    if (threshold !== null) {
+      current.threshold = (current.threshold ?? 0) + threshold;
+    }
+
     byDate.set(entry.entry_date, current);
   }
 
