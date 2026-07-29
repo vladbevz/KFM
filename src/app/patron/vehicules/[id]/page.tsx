@@ -1,12 +1,16 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
 import { VehicleStatusBadge } from "@/components/VehicleStatusBadge";
 import { VehicleStatusControl } from "@/components/VehicleStatusControl";
+import { VehicleDocumentDialog } from "@/components/VehicleDocumentDialog";
+import { DocumentsList, type DocumentItem } from "@/components/DocumentsList";
 import { resolveVehicleIssue } from "@/app/patron/vehicules/actions";
 import type { Database } from "@/types/database";
 
 type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
 type VehicleIssue = Database["public"]["Tables"]["vehicle_issues"]["Row"];
+type VehicleDocument = Database["public"]["Tables"]["vehicle_documents"]["Row"];
 
 function formatDateTime(iso: string): string {
   return new Intl.DateTimeFormat("fr-FR", {
@@ -23,7 +27,7 @@ export default async function VehicleDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: vehicle }, { data: issues }] = await Promise.all([
+  const [{ data: vehicle }, { data: issues }, { data: documents }] = await Promise.all([
     supabase.from("vehicles").select("*").eq("id", id).maybeSingle<Vehicle>(),
     supabase
       .from("vehicle_issues")
@@ -31,6 +35,12 @@ export default async function VehicleDetailPage({
       .eq("vehicle_id", id)
       .order("reported_at", { ascending: false })
       .returns<VehicleIssue[]>(),
+    supabase
+      .from("vehicle_documents")
+      .select("*")
+      .eq("vehicle_id", id)
+      .order("expiry_date", { ascending: true, nullsFirst: false })
+      .returns<VehicleDocument[]>(),
   ]);
 
   if (!vehicle) notFound();
@@ -54,6 +64,19 @@ export default async function VehicleDetailPage({
     if (signed) photoUrlByIssueId.set(issue.id, signed.signedUrl);
   }
 
+  const documentItems: DocumentItem[] = [];
+  for (const doc of documents ?? []) {
+    const { data: signed } = await supabase.storage
+      .from("vehicle-documents")
+      .createSignedUrl(doc.file_url, 3600);
+    documentItems.push({
+      id: doc.id,
+      doc_name: doc.doc_name,
+      expiry_date: doc.expiry_date,
+      signedUrl: signed?.signedUrl,
+    });
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -67,6 +90,34 @@ export default async function VehicleDetailPage({
       <div className="flex flex-col gap-2">
         <p className="text-sm text-foreground/70">Changer le statut</p>
         <VehicleStatusControl vehicleId={vehicle.id} status={vehicle.status} />
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground/80">Documents</h2>
+          <VehicleDocumentDialog
+            vehicleId={vehicle.id}
+            trigger={
+              <Button variant="outline" size="sm">
+                Ajouter un document
+              </Button>
+            }
+          />
+        </div>
+        <DocumentsList
+          documents={documentItems}
+          renderActions={(doc) => (
+            <VehicleDocumentDialog
+              vehicleId={vehicle.id}
+              document={doc}
+              trigger={
+                <Button variant="outline" size="sm">
+                  Modifier
+                </Button>
+              }
+            />
+          )}
+        />
       </div>
 
       <div className="flex flex-col gap-3">

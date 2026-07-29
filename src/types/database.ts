@@ -312,6 +312,76 @@ export interface Database {
           },
         ];
       };
+      vehicle_documents: {
+        Row: {
+          id: string;
+          vehicle_id: string;
+          doc_name: string;
+          file_url: string;
+          expiry_date: string | null;
+          uploaded_at: string;
+        };
+        Insert: {
+          id?: string;
+          vehicle_id: string;
+          doc_name: string;
+          file_url: string;
+          expiry_date?: string | null;
+          uploaded_at?: string;
+        };
+        Update: {
+          id?: string;
+          vehicle_id?: string;
+          doc_name?: string;
+          file_url?: string;
+          expiry_date?: string | null;
+          uploaded_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_documents_vehicle_id_fkey";
+            columns: ["vehicle_id"];
+            isOneToOne: false;
+            referencedRelation: "vehicles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      driver_documents: {
+        Row: {
+          id: string;
+          driver_id: string;
+          doc_name: string;
+          file_url: string | null;
+          expiry_date: string | null;
+          uploaded_at: string;
+        };
+        Insert: {
+          id?: string;
+          driver_id: string;
+          doc_name: string;
+          file_url?: string | null;
+          expiry_date?: string | null;
+          uploaded_at?: string;
+        };
+        Update: {
+          id?: string;
+          driver_id?: string;
+          doc_name?: string;
+          file_url?: string | null;
+          expiry_date?: string | null;
+          uploaded_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "driver_documents_driver_id_fkey";
+            columns: ["driver_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {

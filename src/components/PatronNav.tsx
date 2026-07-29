@@ -7,8 +7,10 @@ const TABS = [
   { href: "/patron", label: "Statistiques" },
   { href: "/patron/rentabilite", label: "Rentabilité" },
   { href: "/patron/vehicules", label: "Véhicules" },
+  { href: "/patron/chauffeurs", label: "Chauffeurs" },
   { href: "/patron/calendrier", label: "Calendrier" },
   { href: "/patron/carburant", label: "Carburant" },
+  { href: "/patron/echeances", label: "Échéances" },
   { href: "/patron/secteurs", label: "Secteurs" },
 ];
 

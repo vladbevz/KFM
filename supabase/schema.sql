@@ -316,7 +316,96 @@ create policy "fuel_logs_insert_own"
   on public.fuel_logs for insert
   with check (driver_id = (select auth.uid()));
 
--- 7. Création automatique du profil à l'inscription --------------------------
+-- 7. Documents véhicules --------------------------------------------------------
+
+create table if not exists public.vehicle_documents (
+  id uuid primary key default gen_random_uuid(),
+  vehicle_id uuid not null references public.vehicles (id) on delete cascade,
+  doc_name text not null,
+  file_url text not null,
+  expiry_date date,
+  uploaded_at timestamptz not null default now()
+);
+
+alter table public.vehicle_documents enable row level security;
+
+create index if not exists vehicle_documents_vehicle_expiry_idx
+  on public.vehicle_documents (vehicle_id, expiry_date);
+
+create policy "vehicle_documents_boss_select"
+  on public.vehicle_documents for select using (public.is_boss());
+
+create policy "vehicle_documents_boss_insert"
+  on public.vehicle_documents for insert with check (public.is_boss());
+
+create policy "vehicle_documents_boss_update"
+  on public.vehicle_documents for update using (public.is_boss()) with check (public.is_boss());
+
+create policy "vehicle_documents_boss_delete"
+  on public.vehicle_documents for delete using (public.is_boss());
+
+insert into storage.buckets (id, name, public)
+values ('vehicle-documents', 'vehicle-documents', false)
+on conflict (id) do nothing;
+
+create policy "vehicle_documents_files_boss_all"
+  on storage.objects for all to authenticated
+  using (bucket_id = 'vehicle-documents' and public.is_boss())
+  with check (bucket_id = 'vehicle-documents' and public.is_boss());
+
+-- 8. Documents chauffeurs --------------------------------------------------------
+
+create table if not exists public.driver_documents (
+  id uuid primary key default gen_random_uuid(),
+  driver_id uuid not null references public.profiles (id) on delete cascade,
+  doc_name text not null,
+  file_url text,
+  expiry_date date,
+  uploaded_at timestamptz not null default now()
+);
+
+alter table public.driver_documents enable row level security;
+
+create index if not exists driver_documents_driver_expiry_idx
+  on public.driver_documents (driver_id, expiry_date);
+
+create policy "driver_documents_select_own_or_boss"
+  on public.driver_documents for select
+  using (driver_id = (select auth.uid()) or public.is_boss());
+
+create policy "driver_documents_boss_insert"
+  on public.driver_documents for insert with check (public.is_boss());
+
+create policy "driver_documents_boss_update"
+  on public.driver_documents for update using (public.is_boss()) with check (public.is_boss());
+
+create policy "driver_documents_boss_delete"
+  on public.driver_documents for delete using (public.is_boss());
+
+insert into storage.buckets (id, name, public)
+values ('driver-documents', 'driver-documents', false)
+on conflict (id) do nothing;
+
+create policy "driver_documents_files_select_own_or_boss"
+  on storage.objects for select to authenticated
+  using (
+    bucket_id = 'driver-documents'
+    and (
+      (storage.foldername(name))[1] = (select auth.uid())::text
+      or public.is_boss()
+    )
+  );
+
+create policy "driver_documents_files_boss_write"
+  on storage.objects for insert to authenticated
+  with check (bucket_id = 'driver-documents' and public.is_boss());
+
+create policy "driver_documents_files_boss_update"
+  on storage.objects for update to authenticated
+  using (bucket_id = 'driver-documents' and public.is_boss())
+  with check (bucket_id = 'driver-documents' and public.is_boss());
+
+-- 9. Création automatique du profil à l'inscription --------------------------
 -- Le rôle par défaut est 'driver' ; à changer manuellement en 'boss' dans la
 -- table profiles pour les comptes patron.
 
