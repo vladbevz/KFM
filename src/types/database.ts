@@ -1,9 +1,5 @@
 export type UserRole = "driver" | "boss";
-export type PaymentModel =
-  | "qty_am_qty_pm"
-  | "qty_am_forfait_pm"
-  | "forfait_day"
-  | "qty_day";
+export type PaymentType = "a_la_pose" | "forfait";
 export type VehicleStatus =
   | "operational"
   | "issue_running"
@@ -11,7 +7,7 @@ export type VehicleStatus =
   | "in_repair";
 export type AssignmentType = "tournee" | "conge" | "absence";
 export type EntryStatus = "in_progress" | "completed";
-export type TourneeType = "journee" | "matin" | "apres_midi";
+export type TourneeType = "journee" | "demi_journee";
 
 export interface Database {
   public: {
@@ -49,28 +45,22 @@ export interface Database {
         Row: {
           id: string;
           code: string;
-          payment_type: PaymentModel;
-          morning_threshold: number | null;
-          afternoon_threshold: number | null;
-          day_threshold: number | null;
+          payment_type: PaymentType;
+          rentability_target: number | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           code: string;
-          payment_type: PaymentModel;
-          morning_threshold?: number | null;
-          afternoon_threshold?: number | null;
-          day_threshold?: number | null;
+          payment_type?: PaymentType;
+          rentability_target?: number | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           code?: string;
-          payment_type?: PaymentModel;
-          morning_threshold?: number | null;
-          afternoon_threshold?: number | null;
-          day_threshold?: number | null;
+          payment_type?: PaymentType;
+          rentability_target?: number | null;
           created_at?: string;
         };
         Relationships: [];

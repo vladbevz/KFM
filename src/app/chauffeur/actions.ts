@@ -112,7 +112,7 @@ export async function completeTournee(
   const kmArrivee = intOrNull(formData.get("km_arrivee"));
 
   if (!entryId) return { error: "Tournée introuvable." };
-  if (!["journee", "matin", "apres_midi"].includes(tourneeType)) {
+  if (!["journee", "demi_journee"].includes(tourneeType)) {
     return { error: "Sélectionne le type de tournée." };
   }
   if (kmArrivee === null) {

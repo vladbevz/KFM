@@ -14,29 +14,10 @@ export function ProfitabilityBadges({ status }: { status: ProfitabilityStatus })
     case "none":
       return <span className="text-xs text-foreground/40">—</span>;
 
-    case "forfait_day":
+    case "forfait":
       return <Badge variant="secondary">Forfait</Badge>;
 
-    case "qty_am_forfait_pm":
-      return (
-        <div className="flex flex-wrap gap-1.5">
-          <ThresholdBadge label="Matin" check={status.matin} />
-          <Badge variant="secondary">Forfait AM</Badge>
-        </div>
-      );
-
-    case "qty_am_qty_pm":
-      return (
-        <div className="flex flex-wrap gap-1.5">
-          <ThresholdBadge label="Matin" check={status.matin} />
-          <ThresholdBadge label="AM" check={status.apresMidi} />
-        </div>
-      );
-
-    case "qty_day":
-      return <ThresholdBadge label="Jour" check={status.day} />;
-
-    case "tournee":
-      return <ThresholdBadge label="Tournée" check={status.check} />;
+    case "a_la_pose":
+      return <ThresholdBadge label="Total" check={status.check} />;
   }
 }

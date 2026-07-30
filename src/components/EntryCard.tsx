@@ -8,8 +8,7 @@ type Sector = Database["public"]["Tables"]["sectors"]["Row"];
 
 const TOURNEE_TYPE_LABELS: Record<NonNullable<DailyEntry["tournee_type"]>, string> = {
   journee: "Journée",
-  matin: "Matin",
-  apres_midi: "Après-midi",
+  demi_journee: "Demi-journée",
 };
 
 function formatDate(iso: string): string {

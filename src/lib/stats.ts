@@ -1,5 +1,16 @@
 import type { Database } from "@/types/database";
-import { entryThreshold, resolveEntrySector, type Sector } from "@/lib/rentabilite";
+import { sectorThreshold, resolveEntrySector, type Sector } from "@/lib/rentabilite";
+import {
+  entryKm,
+  entryPosesBreakdown,
+  entryPoses,
+  entryEnlevements,
+  entryTotal,
+  type PosesBreakdown,
+} from "@/lib/entries";
+
+export { entryKm, entryPosesBreakdown, entryPoses, entryEnlevements, entryTotal };
+export type { PosesBreakdown };
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 
@@ -48,47 +59,6 @@ export function getPeriodRange(
   return { from: toISODate(from), to };
 }
 
-// Une ligne "nouveau flux" (une tournée) a tournee_type renseigné ; une
-// ligne historique (ancien modèle "une ligne = un jour") ne l'a pas et
-// garde ses champs matin_*/apres_midi_*.
-export function entryKm(entry: DailyEntry): number {
-  return Math.max(0, (entry.km_arrivee ?? 0) - (entry.km_depart ?? 0));
-}
-
-export interface PosesBreakdown {
-  delivered: number;
-  damaged: number;
-  notDelivered: number;
-}
-
-export function entryPosesBreakdown(entry: DailyEntry): PosesBreakdown {
-  if (entry.tournee_type) {
-    return {
-      delivered: entry.poses_delivered ?? 0,
-      damaged: entry.poses_damaged ?? 0,
-      notDelivered: entry.poses_not_delivered ?? 0,
-    };
-  }
-  // Les lignes historiques ne suivaient qu'un total "livrées".
-  return {
-    delivered: (entry.matin_poses_livraison ?? 0) + (entry.apres_midi_poses_livraison ?? 0),
-    damaged: 0,
-    notDelivered: 0,
-  };
-}
-
-export function entryPoses(entry: DailyEntry): number {
-  const { delivered, damaged, notDelivered } = entryPosesBreakdown(entry);
-  return delivered + damaged + notDelivered;
-}
-
-export function entryEnlevements(entry: DailyEntry): number {
-  if (entry.tournee_type) {
-    return entry.poses_enlevement ?? 0;
-  }
-  return (entry.matin_poses_enlevement ?? 0) + (entry.apres_midi_poses_enlevement ?? 0);
-}
-
 export interface DateMetrics {
   date: string;
   km: number;
@@ -120,12 +90,14 @@ export interface PosesDateMetrics {
   delivered: number;
   damaged: number;
   notDelivered: number;
+  enlevements: number;
   threshold: number | null;
 }
 
-// Pour le graphique empilé (module 9) : poses par catégorie + seuil de
-// rentabilité du jour, sommés sur toutes les tournées de ce jour-là (un
-// chauffeur qui fait matin + après-midi a deux lignes le même jour).
+// Pour le graphique empilé (module 9) : poses par catégorie + enlèvements +
+// seuil de rentabilité du jour, sommés sur toutes les tournées de ce
+// jour-là (un chauffeur qui fait deux demi-journées a deux lignes le même
+// jour). Le volume total comparé au seuil = poses + enlèvements.
 export function aggregatePosesByDate(
   entries: DailyEntry[],
   sectorsById: Map<string, Sector>,
@@ -138,15 +110,17 @@ export function aggregatePosesByDate(
       delivered: 0,
       damaged: 0,
       notDelivered: 0,
+      enlevements: 0,
       threshold: null,
     };
     const breakdown = entryPosesBreakdown(entry);
     current.delivered += breakdown.delivered;
     current.damaged += breakdown.damaged;
     current.notDelivered += breakdown.notDelivered;
+    current.enlevements += entryEnlevements(entry);
 
     const sector = resolveEntrySector(entry, sectorsById);
-    const threshold = entryThreshold(entry, sector);
+    const threshold = sectorThreshold(sector);
     if (threshold !== null) {
       current.threshold = (current.threshold ?? 0) + threshold;
     }

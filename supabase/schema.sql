@@ -49,20 +49,13 @@ revoke update on public.profiles from authenticated;
 -- Chaque secteur a un modèle de rémunération propre, avec des seuils de
 -- poses selon le modèle. Créée avant daily_entries car référencée par FK.
 
-create type public.payment_model as enum (
-  'qty_am_qty_pm',
-  'qty_am_forfait_pm',
-  'forfait_day',
-  'qty_day'
-);
+create type public.payment_type as enum ('a_la_pose', 'forfait');
 
 create table if not exists public.sectors (
   id uuid primary key default gen_random_uuid(),
   code text not null unique,
-  payment_type public.payment_model not null,
-  morning_threshold integer,
-  afternoon_threshold integer,
-  day_threshold integer,
+  payment_type public.payment_type not null default 'a_la_pose',
+  rentability_target integer,
   created_at timestamptz not null default now()
 );
 
@@ -94,7 +87,7 @@ grant update (full_name, default_sector_id) on public.profiles to authenticated;
 -- un jour") et ne sont plus écrites, gardées pour l'historique déjà saisi.
 
 create type public.entry_status as enum ('in_progress', 'completed');
-create type public.tournee_type as enum ('journee', 'matin', 'apres_midi');
+create type public.tournee_type as enum ('journee', 'demi_journee');
 
 create table if not exists public.daily_entries (
   id uuid primary key default gen_random_uuid(),

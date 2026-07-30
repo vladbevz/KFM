@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { Database, PaymentModel } from "@/types/database";
+import type { Database, PaymentType } from "@/types/database";
 
 type SectorInsert = Database["public"]["Tables"]["sectors"]["Insert"];
 
@@ -22,12 +22,7 @@ function intOrNull(value: FormDataEntryValue | null): number | null {
   return Number.isFinite(n) ? Math.trunc(n) : null;
 }
 
-const PAYMENT_MODELS: PaymentModel[] = [
-  "qty_am_qty_pm",
-  "qty_am_forfait_pm",
-  "forfait_day",
-  "qty_day",
-];
+const PAYMENT_TYPES: PaymentType[] = ["a_la_pose", "forfait"];
 
 export async function saveSector(
   _prevState: SectorFormState,
@@ -37,41 +32,25 @@ export async function saveSector(
 
   const id = textOrNull(formData.get("id"));
   const code = textOrNull(formData.get("code"));
-  const paymentType = formData.get("payment_type") as PaymentModel;
+  const paymentType = formData.get("payment_type") as PaymentType;
 
   if (!code) {
     return { error: "Le code du secteur est obligatoire." };
   }
-  if (!PAYMENT_MODELS.includes(paymentType)) {
+  if (!PAYMENT_TYPES.includes(paymentType)) {
     return { error: "Modèle de paiement invalide." };
   }
 
-  const morningThreshold = intOrNull(formData.get("morning_threshold"));
-  const afternoonThreshold = intOrNull(formData.get("afternoon_threshold"));
-  const dayThreshold = intOrNull(formData.get("day_threshold"));
+  const rentabilityTarget = intOrNull(formData.get("rentability_target"));
 
-  if (
-    (paymentType === "qty_am_qty_pm" || paymentType === "qty_am_forfait_pm") &&
-    morningThreshold === null
-  ) {
-    return { error: "Le seuil du matin est obligatoire pour ce modèle." };
-  }
-  if (paymentType === "qty_am_qty_pm" && afternoonThreshold === null) {
-    return { error: "Le seuil de l'après-midi est obligatoire pour ce modèle." };
-  }
-  if (paymentType === "qty_day" && dayThreshold === null) {
-    return { error: "Le seuil journée est obligatoire pour ce modèle." };
+  if (paymentType === "a_la_pose" && rentabilityTarget === null) {
+    return { error: "L'objectif de rentabilité est obligatoire pour ce modèle." };
   }
 
   const payload: SectorInsert = {
     code,
     payment_type: paymentType,
-    morning_threshold:
-      paymentType === "qty_am_qty_pm" || paymentType === "qty_am_forfait_pm"
-        ? morningThreshold
-        : null,
-    afternoon_threshold: paymentType === "qty_am_qty_pm" ? afternoonThreshold : null,
-    day_threshold: paymentType === "qty_day" ? dayThreshold : null,
+    rentability_target: paymentType === "a_la_pose" ? rentabilityTarget : null,
   };
 
   const { error } = id

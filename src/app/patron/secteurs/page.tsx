@@ -9,28 +9,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SectorFormDialog } from "@/components/SectorFormDialog";
-import type { Database, PaymentModel } from "@/types/database";
+import type { Database, PaymentType } from "@/types/database";
 
 type Sector = Database["public"]["Tables"]["sectors"]["Row"];
 
-const PAYMENT_LABELS: Record<PaymentModel, string> = {
-  qty_am_qty_pm: "Quantité matin + quantité après-midi",
-  qty_am_forfait_pm: "Quantité matin + forfait après-midi",
-  forfait_day: "Forfait journée",
-  qty_day: "Quantité journée",
+const PAYMENT_LABELS: Record<PaymentType, string> = {
+  a_la_pose: "À la pose",
+  forfait: "Forfait",
 };
 
 function thresholdsSummary(sector: Sector): string {
-  switch (sector.payment_type) {
-    case "qty_am_qty_pm":
-      return `Matin ≥ ${sector.morning_threshold} · AM ≥ ${sector.afternoon_threshold}`;
-    case "qty_am_forfait_pm":
-      return `Matin ≥ ${sector.morning_threshold} · AM forfait`;
-    case "forfait_day":
-      return "Forfait";
-    case "qty_day":
-      return `Journée ≥ ${sector.day_threshold}`;
-  }
+  return sector.payment_type === "a_la_pose"
+    ? `Objectif ≥ ${sector.rentability_target}`
+    : "Forfait";
 }
 
 export default async function SecteursPage() {

@@ -58,7 +58,7 @@ export default async function PatronHomePage() {
   let notMet = 0;
   for (const entry of completedToday ?? []) {
     const status = entryProfitability(entry, resolveEntrySector(entry, sectorsById));
-    if (status.kind === "tournee") {
+    if (status.kind === "a_la_pose") {
       if (status.check.met) met += 1;
       else notMet += 1;
     }

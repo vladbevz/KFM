@@ -11,8 +11,7 @@ const initialState: DailyEntryFormState = { error: null };
 
 const TOURNEE_TYPES: { value: TourneeType; label: string }[] = [
   { value: "journee", label: "Journée" },
-  { value: "matin", label: "Matin" },
-  { value: "apres_midi", label: "Après-midi" },
+  { value: "demi_journee", label: "Demi-journée" },
 ];
 
 function Field({

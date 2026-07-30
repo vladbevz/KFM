@@ -68,6 +68,7 @@ export function StatsChart({
             <Tooltip {...tooltipStyle} />
             <Legend wrapperStyle={{ fontSize: 12, color: "#9ca3af" }} />
             <Bar dataKey="delivered" name="Livrées" stackId="poses" fill="#22c55e" />
+            <Bar dataKey="enlevements" name="Enlèvements" stackId="poses" fill="#22c55e" />
             <Bar dataKey="damaged" name="Avec avarie" stackId="poses" fill="#f59e0b" />
             <Bar
               dataKey="notDelivered"

@@ -20,15 +20,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { saveSector, type SectorFormState } from "@/app/patron/secteurs/actions";
-import type { Database, PaymentModel } from "@/types/database";
+import type { Database, PaymentType } from "@/types/database";
 
 type Sector = Database["public"]["Tables"]["sectors"]["Row"];
 
-const PAYMENT_LABELS: Record<PaymentModel, string> = {
-  qty_am_qty_pm: "Quantité matin + quantité après-midi",
-  qty_am_forfait_pm: "Quantité matin + forfait après-midi",
-  forfait_day: "Forfait journée",
-  qty_day: "Quantité journée",
+const PAYMENT_LABELS: Record<PaymentType, string> = {
+  a_la_pose: "À la pose",
+  forfait: "Forfait",
 };
 
 const initialState: SectorFormState = { error: null };
@@ -50,8 +48,8 @@ export function SectorFormDialog({
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const [paymentType, setPaymentType] = useState<PaymentModel>(
-    sector?.payment_type ?? "qty_am_qty_pm",
+  const [paymentType, setPaymentType] = useState<PaymentType>(
+    sector?.payment_type ?? "a_la_pose",
   );
   const [state, formAction] = useFormState(saveSector, initialState);
   const submittedOnce = useRef(false);
@@ -68,7 +66,7 @@ export function SectorFormDialog({
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (next) setPaymentType(sector?.payment_type ?? "qty_am_qty_pm");
+        if (next) setPaymentType(sector?.payment_type ?? "a_la_pose");
       }}
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
@@ -103,13 +101,13 @@ export function SectorFormDialog({
             <Select
               name="payment_type"
               value={paymentType}
-              onValueChange={(v) => setPaymentType(v as PaymentModel)}
+              onValueChange={(v) => setPaymentType(v as PaymentType)}
             >
               <SelectTrigger id="payment_type">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(PAYMENT_LABELS) as PaymentModel[]).map((key) => (
+                {(Object.keys(PAYMENT_LABELS) as PaymentType[]).map((key) => (
                   <SelectItem key={key} value={key}>
                     {PAYMENT_LABELS[key]}
                   </SelectItem>
@@ -118,44 +116,16 @@ export function SectorFormDialog({
             </Select>
           </div>
 
-          {(paymentType === "qty_am_qty_pm" || paymentType === "qty_am_forfait_pm") && (
+          {paymentType === "a_la_pose" && (
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="morning_threshold">Seuil de poses — matin</Label>
+              <Label htmlFor="rentability_target">Objectif de rentabilité</Label>
               <Input
-                id="morning_threshold"
-                name="morning_threshold"
+                id="rentability_target"
+                name="rentability_target"
                 type="number"
                 min={0}
                 required
-                defaultValue={sector?.morning_threshold ?? ""}
-              />
-            </div>
-          )}
-
-          {paymentType === "qty_am_qty_pm" && (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="afternoon_threshold">Seuil de poses — après-midi</Label>
-              <Input
-                id="afternoon_threshold"
-                name="afternoon_threshold"
-                type="number"
-                min={0}
-                required
-                defaultValue={sector?.afternoon_threshold ?? ""}
-              />
-            </div>
-          )}
-
-          {paymentType === "qty_day" && (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="day_threshold">Seuil de poses — journée</Label>
-              <Input
-                id="day_threshold"
-                name="day_threshold"
-                type="number"
-                min={0}
-                required
-                defaultValue={sector?.day_threshold ?? ""}
+                defaultValue={sector?.rentability_target ?? ""}
               />
             </div>
           )}
