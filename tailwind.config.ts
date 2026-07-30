@@ -12,10 +12,13 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        "foreground-muted": "#7B8496",
         surface: "#161b26",
-        km: "#f59e0b",
-        deliveries: "#3b82f6",
-        enlevements: "#22c55e",
+        "nav-surface": "#0D0F14",
+        km: "#F0A93B",
+        "accent-ink": "#1A1204",
+        deliveries: "#4C8DF2",
+        enlevements: "#2FBD79",
         // Palette shadcn/ui — mêmes valeurs que ci-dessus, reconverties en
         // HSL dans globals.css pour supporter les modificateurs d'opacité
         // (bg-primary/10 etc). `border` migre du hex littéral vers cette
@@ -57,6 +60,11 @@ const config: Config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        card: "0 1px 3px rgba(0,0,0,.3)",
+        float: "0 8px 24px rgba(0,0,0,.4)",
+        accent: "0 8px 20px rgba(240,169,59,.25)",
       },
       fontFamily: {
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],

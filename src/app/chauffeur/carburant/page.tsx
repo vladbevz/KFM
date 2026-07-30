@@ -47,7 +47,7 @@ export default async function CarburantPage() {
           logs.map((log) => (
             <div
               key={log.id}
-              className="flex items-center justify-between rounded-lg border border-border bg-surface p-4"
+              className="flex items-center justify-between rounded-2xl border border-border bg-surface shadow-card p-4"
             >
               <div>
                 <p className="text-sm font-medium capitalize text-foreground">

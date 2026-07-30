@@ -28,7 +28,7 @@ function SummaryCard({
   color: string;
 }) {
   return (
-    <div className="flex-1 rounded-lg border border-border bg-surface p-4">
+    <div className="flex-1 rounded-2xl border border-border bg-surface shadow-card p-4">
       <p className="text-sm text-foreground/60">{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums" style={{ color }}>
         {total}

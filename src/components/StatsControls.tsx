@@ -63,10 +63,10 @@ export function StatsControls({
           <button
             key={opt.key}
             onClick={() => updateParams({ period: opt.key })}
-            className={`rounded-md px-3 py-1.5 text-sm ${
+            className={`rounded-full px-3 py-1.5 text-sm ${
               period === opt.key
-                ? "bg-surface border border-km text-foreground"
-                : "border border-border text-foreground/70"
+                ? "bg-km text-accent-ink"
+                : "border border-border bg-surface text-foreground-muted"
             }`}
           >
             {opt.label}

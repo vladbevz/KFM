@@ -75,7 +75,7 @@ export function EntryCard({
   const poses = entryPosesBreakdown(entry);
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface shadow-card p-4">
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium capitalize text-foreground">
           {formatDate(entry.entry_date)}

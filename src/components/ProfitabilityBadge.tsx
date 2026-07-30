@@ -1,10 +1,13 @@
+import { CheckCircle2, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { ProfitabilityStatus, ThresholdCheck } from "@/lib/rentabilite";
 
 function ThresholdBadge({ label, check }: { label: string; check: ThresholdCheck }) {
+  const Icon = check.met ? CheckCircle2 : XCircle;
   return (
-    <Badge variant={check.met ? "success" : "destructive"} className="tabular-nums">
-      {label} {check.actual}/{check.threshold} {check.met ? "✓" : "✗"}
+    <Badge variant={check.met ? "success" : "destructive"} className="gap-1 tabular-nums">
+      {label} {check.actual}/{check.threshold}
+      <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
     </Badge>
   );
 }
@@ -12,7 +15,7 @@ function ThresholdBadge({ label, check }: { label: string; check: ThresholdCheck
 export function ProfitabilityBadges({ status }: { status: ProfitabilityStatus }) {
   switch (status.kind) {
     case "none":
-      return <span className="text-xs text-foreground/40">—</span>;
+      return <span className="text-xs text-foreground-muted">—</span>;
 
     case "forfait":
       return <Badge variant="secondary">Forfait</Badge>;

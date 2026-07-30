@@ -97,7 +97,7 @@ export default async function PatronHomePage() {
               <Link
                 key={row.id}
                 href={row.href}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface p-4 hover:border-km"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface shadow-card p-4 hover:border-km"
               >
                 <p className="text-sm font-medium text-foreground">
                   {row.kind} {row.subject} — {row.docName}
@@ -119,7 +119,7 @@ export default async function PatronHomePage() {
               <Link
                 key={vehicle.id}
                 href={`/patron/vehicules/${vehicle.id}`}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface p-4 hover:border-km"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface shadow-card p-4 hover:border-km"
               >
                 <div>
                   <p className="text-sm font-medium text-foreground">{vehicle.plate}</p>
@@ -144,7 +144,7 @@ export default async function PatronHomePage() {
               <Link
                 key={driver.id}
                 href={`/patron/chauffeurs/${driver.id}`}
-                className="rounded-lg border border-border bg-surface p-4 text-sm font-medium text-foreground hover:border-km"
+                className="rounded-2xl border border-border bg-surface shadow-card p-4 text-sm font-medium text-foreground hover:border-km"
               >
                 {driver.full_name}
               </Link>
@@ -157,11 +157,11 @@ export default async function PatronHomePage() {
         <div className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold text-foreground/80">Rentabilité du jour</h2>
           <div className="flex gap-3">
-            <div className="flex-1 rounded-lg border border-border bg-surface p-4">
+            <div className="flex-1 rounded-2xl border border-border bg-surface shadow-card p-4">
               <p className="text-2xl font-semibold tabular-nums text-enlevements">{met}</p>
               <p className="text-xs text-foreground/50">Seuil atteint</p>
             </div>
-            <div className="flex-1 rounded-lg border border-border bg-surface p-4">
+            <div className="flex-1 rounded-2xl border border-border bg-surface shadow-card p-4">
               <p className="text-2xl font-semibold tabular-nums text-red-400">{notMet}</p>
               <p className="text-xs text-foreground/50">Seuil non atteint</p>
             </div>

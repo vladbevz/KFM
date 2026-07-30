@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Calendar, Fuel, AlertTriangle } from "lucide-react";
 import { TourneeStartScreen } from "@/components/TourneeStartScreen";
 import { TourneeInProgressScreen } from "@/components/TourneeInProgressScreen";
 import { TourneeEndForm } from "@/components/TourneeEndForm";
@@ -56,24 +57,24 @@ export function TourneeScreen({
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6">
-      <div className="flex flex-wrap justify-center gap-2">
-        <Link
-          href="/chauffeur/planning"
-          className="whitespace-nowrap rounded-md border border-border px-3 py-1.5 text-sm text-foreground/70"
-        >
-          Mon planning
+      <div className="flex justify-center gap-6">
+        <Link href="/chauffeur/planning" className="flex flex-col items-center gap-1.5">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full border border-border bg-surface shadow-card">
+            <Calendar className="h-5 w-5 text-foreground" strokeWidth={1.8} />
+          </span>
+          <span className="text-xs text-foreground-muted">Mon planning</span>
         </Link>
-        <Link
-          href="/chauffeur/carburant"
-          className="whitespace-nowrap rounded-md border border-border px-3 py-1.5 text-sm text-foreground/70"
-        >
-          Carburant
+        <Link href="/chauffeur/carburant" className="flex flex-col items-center gap-1.5">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full border border-border bg-surface shadow-card">
+            <Fuel className="h-5 w-5 text-foreground" strokeWidth={1.8} />
+          </span>
+          <span className="text-xs text-foreground-muted">Carburant</span>
         </Link>
-        <Link
-          href="/chauffeur/panne"
-          className="whitespace-nowrap rounded-md border border-red-900/50 px-3 py-1.5 text-sm text-red-400"
-        >
-          Signaler une panne
+        <Link href="/chauffeur/panne" className="flex flex-col items-center gap-1.5">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full border border-border bg-surface shadow-card">
+            <AlertTriangle className="h-5 w-5 text-destructive" strokeWidth={1.8} />
+          </span>
+          <span className="text-xs text-destructive">Signaler une panne</span>
         </Link>
       </div>
 

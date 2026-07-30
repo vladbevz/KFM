@@ -41,7 +41,7 @@ export function TourneeInProgressScreen({
 
       <button
         onClick={onTerminer}
-        className="w-full max-w-xs rounded-xl bg-km px-6 py-8 text-xl font-semibold text-black"
+        className="w-full max-w-xs rounded-full bg-km px-6 py-8 text-xl font-semibold text-accent-ink shadow-accent"
       >
         Terminer la tournée
       </button>

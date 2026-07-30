@@ -4,7 +4,7 @@
 
 :root {
   --background: #0b0e15;
-  --foreground: #e5e7eb;
+  --foreground: #f1f3f7;
 
   /* Variables shadcn/ui (composants admin patron uniquement) — converties
      depuis la même palette hex ci-dessus et dans tailwind.config.ts, donc
@@ -14,7 +14,7 @@
   --card-foreground: 220 13% 91%;
   --popover: 221 27% 12%;
   --popover-foreground: 220 13% 91%;
-  --primary: 38 92% 50%;
+  --primary: 36 86% 59%;
   --primary-foreground: 0 0% 9%;
   --secondary: 221 27% 12%;
   --secondary-foreground: 220 13% 91%;
@@ -22,11 +22,11 @@
   --muted-foreground: 217 10% 65%;
   --accent: 221 27% 12%;
   --accent-foreground: 220 13% 91%;
-  --destructive: 0 84% 60%;
+  --destructive: 0 82% 65%;
   --destructive-foreground: 0 0% 98%;
   --border: 222 25% 18%;
   --input: 222 25% 18%;
-  --ring: 38 92% 50%;
+  --ring: 36 86% 59%;
   --radius: 0.5rem;
 }
 

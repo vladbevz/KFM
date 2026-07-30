@@ -96,7 +96,7 @@ export function TourneeStartScreen({
       <button
         type="submit"
         disabled={pending}
-        className="w-full max-w-xs rounded-xl bg-km px-6 py-8 text-xl font-semibold text-black disabled:opacity-60"
+        className="w-full max-w-xs rounded-full bg-km px-6 py-8 text-xl font-semibold text-accent-ink shadow-accent disabled:opacity-60"
       >
         {pending ? "Démarrage..." : "Démarrer la tournée"}
       </button>
