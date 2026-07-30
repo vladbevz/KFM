@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { DetailHeader } from "@/components/DetailHeader";
 import { VehicleStatusBadge } from "@/components/VehicleStatusBadge";
 import { VehicleStatusControl } from "@/components/VehicleStatusControl";
 import { VehicleDocumentDialog } from "@/components/VehicleDocumentDialog";
@@ -79,12 +80,12 @@ export default async function VehicleDetailPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold text-foreground">{vehicle.plate}</h1>
-          {vehicle.label && <p className="text-sm text-foreground/60">{vehicle.label}</p>}
+      <div className="flex flex-col gap-1">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <DetailHeader title={vehicle.plate} />
+          <VehicleStatusBadge status={vehicle.status} />
         </div>
-        <VehicleStatusBadge status={vehicle.status} />
+        {vehicle.label && <p className="pl-9 text-sm text-foreground/60">{vehicle.label}</p>}
       </div>
 
       <div className="flex flex-col gap-2">

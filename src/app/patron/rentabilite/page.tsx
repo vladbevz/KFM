@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { RentabiliteDateControl } from "@/components/RentabiliteDateControl";
 import { ProfitabilityBadges } from "@/components/ProfitabilityBadge";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { entryProfitability, resolveEntrySector } from "@/lib/rentabilite";
 import {
   Table,
@@ -59,7 +61,14 @@ export default async function RentabilitePage({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold text-foreground">Rentabilité</h1>
-        <RentabiliteDateControl date={date} />
+        <div className="flex items-center gap-2">
+          <RentabiliteDateControl date={date} />
+          <Link href="/patron/secteurs">
+            <Button variant="outline" size="sm">
+              Gérer les secteurs
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Table>

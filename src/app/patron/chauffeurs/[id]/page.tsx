@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { DetailHeader } from "@/components/DetailHeader";
 import { DriverDocumentDialog } from "@/components/DriverDocumentDialog";
 import { DocumentsList, type DocumentItem } from "@/components/DocumentsList";
 import type { Database } from "@/types/database";
@@ -50,7 +51,7 @@ export default async function DriverDetailPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-lg font-semibold text-foreground">{driver.full_name}</h1>
+      <DetailHeader title={driver.full_name} />
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">

@@ -12,7 +12,7 @@ export default async function ChauffeurPage() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const [{ data: todaysEntries }, { data: sectors }] = await Promise.all([
+  const [{ data: todaysEntries }, { data: sectors }, { data: driverProfile }] = await Promise.all([
     supabase
       .from("daily_entries")
       .select("*")
@@ -21,6 +21,11 @@ export default async function ChauffeurPage() {
       .order("started_at", { ascending: false })
       .returns<DailyEntry[]>(),
     supabase.from("sectors").select("*").order("code").returns<Sector[]>(),
+    supabase
+      .from("profiles")
+      .select("default_sector_id")
+      .eq("id", user!.id)
+      .single<{ default_sector_id: string | null }>(),
   ]);
 
   const inProgressEntry = (todaysEntries ?? []).find((e) => e.status === "in_progress") ?? null;
@@ -33,6 +38,7 @@ export default async function ChauffeurPage() {
       inProgressEntry={inProgressEntry}
       completedToday={completedToday}
       sectors={sectors ?? []}
+      defaultSectorId={driverProfile?.default_sector_id ?? null}
     />
   );
 }

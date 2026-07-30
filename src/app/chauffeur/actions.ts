@@ -25,10 +25,15 @@ function intOrNull(value: FormDataEntryValue | null): number | null {
   return Number.isFinite(n) ? Math.trunc(n) : null;
 }
 
-// Démarre une tournée : ligne minimale (statut + secteur par défaut), le
-// reste est renseigné à la fin (completeTournee). Peut être appelée
+// Démarre une tournée : le secteur, le km au compteur et le véhicule sont
+// connus du chauffeur à ce moment-là (pas à la fin) — c'est le correctif du
+// flux précédent qui les redemandait à tort à la fin. Peut être appelée
 // plusieurs fois par jour (une par tournée).
-export async function startTournee(): Promise<DailyEntryFormState> {
+export async function startTournee(
+  sectorId: string,
+  kmDepart: number,
+  vehicleRegistration: string,
+): Promise<DailyEntryFormState> {
   const supabase = await createClient();
 
   const {
@@ -37,21 +42,23 @@ export async function startTournee(): Promise<DailyEntryFormState> {
 
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("default_sector_id")
-    .eq("id", user.id)
-    .single<{ default_sector_id: string | null }>();
+  if (!sectorId) return { error: "Sélectionne un secteur." };
+  if (!Number.isFinite(kmDepart) || kmDepart < 0) {
+    return { error: "Le kilométrage au compteur est obligatoire." };
+  }
+  const immat = vehicleRegistration.trim();
+  if (!immat) return { error: "L'immatriculation du véhicule est obligatoire." };
 
   const today = new Date().toISOString().slice(0, 10);
-  const defaultSectorId = profile?.default_sector_id ?? null;
 
   const payload: DailyEntryInsert = {
     driver_id: user.id,
     entry_date: today,
     status: "in_progress",
     started_at: new Date().toISOString(),
-    sector_id: defaultSectorId,
+    sector_id: sectorId,
+    km_depart: Math.trunc(kmDepart),
+    vehicle_registration: immat,
   };
 
   const { data, error } = await supabase
@@ -64,12 +71,23 @@ export async function startTournee(): Promise<DailyEntryFormState> {
     return { error: error.message };
   }
 
+  // Mémorise le choix pour préremplir la prochaine tournée, s'il a changé.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("default_sector_id")
+    .eq("id", user.id)
+    .single<{ default_sector_id: string | null }>();
+
+  if (profile && profile.default_sector_id !== sectorId) {
+    await supabase.from("profiles").update({ default_sector_id: sectorId }).eq("id", user.id);
+  }
+
   // Reflète automatiquement la tournée dans le calendrier (accès étroit :
   // le chauffeur ne peut upserter que sa propre ligne du jour, en tournee).
   await supabase
     .from("schedule")
     .upsert(
-      { driver_id: user.id, date: today, type: "tournee", sector_id: defaultSectorId },
+      { driver_id: user.id, date: today, type: "tournee", sector_id: sectorId },
       { onConflict: "driver_id,date" },
     );
 
@@ -90,24 +108,29 @@ export async function completeTournee(
   if (!user) redirect("/login");
 
   const entryId = textOrNull(formData.get("entry_id"));
-  const sectorId = textOrNull(formData.get("sector_id"));
   const tourneeType = formData.get("tournee_type") as TourneeType;
-  const vehicleRegistration = textOrNull(formData.get("vehicle_registration"));
-  const kmDepart = intOrNull(formData.get("km_depart"));
   const kmArrivee = intOrNull(formData.get("km_arrivee"));
 
   if (!entryId) return { error: "Tournée introuvable." };
-  if (!sectorId) return { error: "Sélectionne un secteur." };
   if (!["journee", "matin", "apres_midi"].includes(tourneeType)) {
     return { error: "Sélectionne le type de tournée." };
   }
-  if (!vehicleRegistration) {
-    return { error: "L'immatriculation du véhicule est obligatoire." };
+  if (kmArrivee === null) {
+    return { error: "Le kilométrage retour est obligatoire." };
   }
-  if (kmDepart === null || kmArrivee === null) {
-    return { error: "Le kilométrage départ et retour sont obligatoires." };
-  }
-  if (kmArrivee < kmDepart) {
+
+  // Le secteur, l'immatriculation et le km de départ sont déjà en base
+  // depuis le démarrage de la tournée (startTournee) — on ne redemande que
+  // ce qui n'est connu qu'à la fin.
+  const { data: existing, error: fetchError } = await supabase
+    .from("daily_entries")
+    .select("km_depart")
+    .eq("id", entryId)
+    .eq("driver_id", user.id)
+    .single<{ km_depart: number | null }>();
+
+  if (fetchError || !existing) return { error: "Tournée introuvable." };
+  if (existing.km_depart !== null && kmArrivee < existing.km_depart) {
     return { error: "Le kilométrage retour doit être supérieur ou égal au départ." };
   }
 
@@ -117,9 +140,6 @@ export async function completeTournee(
       status: "completed",
       ended_at: new Date().toISOString(),
       tournee_type: tourneeType,
-      sector_id: sectorId,
-      vehicle_registration: vehicleRegistration,
-      km_depart: kmDepart,
       km_arrivee: kmArrivee,
       poses_delivered: intOrNull(formData.get("poses_delivered")),
       poses_damaged: intOrNull(formData.get("poses_damaged")),
@@ -137,24 +157,6 @@ export async function completeTournee(
   if (error) {
     return { error: error.message };
   }
-
-  // Mémorise le choix pour préremplir la prochaine tournée, s'il a changé.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("default_sector_id")
-    .eq("id", user.id)
-    .single<{ default_sector_id: string | null }>();
-
-  if (profile && profile.default_sector_id !== sectorId) {
-    await supabase.from("profiles").update({ default_sector_id: sectorId }).eq("id", user.id);
-  }
-
-  await supabase
-    .from("schedule")
-    .upsert(
-      { driver_id: user.id, date: data.entry_date, type: "tournee", sector_id: sectorId },
-      { onConflict: "driver_id,date" },
-    );
 
   revalidatePath("/chauffeur");
   revalidatePath("/chauffeur/historique");

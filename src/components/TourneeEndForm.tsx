@@ -6,7 +6,6 @@ import { completeTournee, type DailyEntryFormState } from "@/app/chauffeur/actio
 import type { Database, TourneeType } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
-type Sector = Database["public"]["Tables"]["sectors"]["Row"];
 
 const initialState: DailyEntryFormState = { error: null };
 
@@ -62,11 +61,9 @@ function SubmitButton() {
 
 export function TourneeEndForm({
   entry,
-  sectors,
   onCompleted,
 }: {
   entry: DailyEntry;
-  sectors: Sector[];
   onCompleted: (entry: DailyEntry) => void;
 }) {
   const [state, formAction] = useFormState(completeTournee, initialState);
@@ -79,26 +76,6 @@ export function TourneeEndForm({
   return (
     <form action={formAction} className="flex flex-col gap-6">
       <input type="hidden" name="entry_id" value={entry.id} />
-
-      <div className="flex flex-col gap-1">
-        <label htmlFor="sector_id" className="text-sm text-foreground/70">
-          Tournée
-        </label>
-        <select
-          id="sector_id"
-          name="sector_id"
-          required
-          defaultValue={entry.sector_id ?? ""}
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-km"
-        >
-          <option value="">Sélectionner...</option>
-          {sectors.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.code}
-            </option>
-          ))}
-        </select>
-      </div>
 
       <div className="flex flex-col gap-1">
         <label htmlFor="tournee_type" className="text-sm text-foreground/70">
@@ -119,25 +96,9 @@ export function TourneeEndForm({
         </select>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="vehicle_registration" className="text-sm text-foreground/70">
-          Immatriculation du véhicule
-        </label>
-        <input
-          id="vehicle_registration"
-          name="vehicle_registration"
-          type="text"
-          required
-          className="rounded-md border border-border bg-background px-3 py-2 uppercase text-foreground outline-none focus:border-km"
-        />
-      </div>
-
       <div className="rounded-lg border border-border bg-surface p-4">
         <h2 className="mb-3 text-sm font-semibold text-foreground/80">Kilométrage</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Km départ" name="km_depart" type="number" required />
-          <Field label="Km retour" name="km_arrivee" type="number" required />
-        </div>
+        <Field label="Km retour" name="km_arrivee" type="number" required />
       </div>
 
       <div className="rounded-lg border border-border bg-surface p-4">

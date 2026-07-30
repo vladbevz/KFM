@@ -16,11 +16,13 @@ export function TourneeScreen({
   inProgressEntry,
   completedToday,
   sectors,
+  defaultSectorId,
 }: {
   firstName: string;
   inProgressEntry: DailyEntry | null;
   completedToday: DailyEntry[];
   sectors: Sector[];
+  defaultSectorId: string | null;
 }) {
   const [activeEntry, setActiveEntry] = useState(inProgressEntry);
   const [showEndForm, setShowEndForm] = useState(false);
@@ -33,7 +35,6 @@ export function TourneeScreen({
       <div className="mx-auto max-w-lg">
         <TourneeEndForm
           entry={activeEntry}
-          sectors={sectors}
           onCompleted={(entry) => {
             setTodaysEntries((prev) => [entry, ...prev]);
             setActiveEntry(null);
@@ -45,7 +46,12 @@ export function TourneeScreen({
   }
 
   if (activeEntry) {
-    return <TourneeInProgressScreen onTerminer={() => setShowEndForm(true)} />;
+    return (
+      <TourneeInProgressScreen
+        startedAt={activeEntry.started_at ?? new Date().toISOString()}
+        onTerminer={() => setShowEndForm(true)}
+      />
+    );
   }
 
   return (
@@ -71,7 +77,12 @@ export function TourneeScreen({
         </Link>
       </div>
 
-      <TourneeStartScreen firstName={firstName} onStarted={setActiveEntry} />
+      <TourneeStartScreen
+        firstName={firstName}
+        sectors={sectors}
+        defaultSectorId={defaultSectorId}
+        onStarted={setActiveEntry}
+      />
 
       {todaysEntries.length > 0 && (
         <div className="flex flex-col gap-3">
