@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Calendar, Fuel, AlertTriangle } from "lucide-react";
+import { Fuel, AlertTriangle } from "lucide-react";
 import { TourneeStartScreen } from "@/components/TourneeStartScreen";
 import { TourneeInProgressScreen } from "@/components/TourneeInProgressScreen";
 import { TourneeEndForm } from "@/components/TourneeEndForm";
@@ -58,12 +58,6 @@ export function TourneeScreen({
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6">
       <div className="flex justify-center gap-6">
-        <Link href="/chauffeur/planning" className="flex flex-col items-center gap-1.5">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full border border-border bg-surface shadow-card">
-            <Calendar className="h-5 w-5 text-foreground" strokeWidth={1.8} />
-          </span>
-          <span className="text-xs text-foreground-muted">Mon planning</span>
-        </Link>
         <Link href="/chauffeur/carburant" className="flex flex-col items-center gap-1.5">
           <span className="flex h-14 w-14 items-center justify-center rounded-full border border-border bg-surface shadow-card">
             <Fuel className="h-5 w-5 text-foreground" strokeWidth={1.8} />

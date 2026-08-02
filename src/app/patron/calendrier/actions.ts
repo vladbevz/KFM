@@ -51,7 +51,6 @@ export async function saveScheduleEntry(
   }
 
   revalidatePath("/patron/calendrier");
-  revalidatePath("/chauffeur/planning");
   return { error: null };
 }
 
@@ -65,6 +64,5 @@ export async function deleteScheduleEntry(id: string) {
   }
 
   revalidatePath("/patron/calendrier");
-  revalidatePath("/chauffeur/planning");
   return { error: null };
 }
