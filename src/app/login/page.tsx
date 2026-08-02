@@ -54,7 +54,7 @@ export default function LoginPage() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-km"
+              className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
             />
           </div>
 
@@ -69,7 +69,7 @@ export default function LoginPage() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-km"
+              className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
             />
           </div>
 
@@ -78,17 +78,17 @@ export default function LoginPage() {
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded border-border accent-km"
+              className="h-4 w-4 rounded border-border accent-foreground"
             />
             Se souvenir de moi sur cet appareil
           </label>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 rounded-md bg-km px-4 py-2 font-medium text-black disabled:opacity-60"
+            className="mt-2 rounded-md bg-km px-4 py-2 font-medium text-accent-ink disabled:opacity-60"
           >
             {loading ? "Connexion..." : "Se connecter"}
           </button>

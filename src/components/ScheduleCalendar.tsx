@@ -36,9 +36,9 @@ interface ScheduleEvent {
 }
 
 const TYPE_COLORS: Record<ScheduleRow["type"], string> = {
-  tournee: "#3b82f6",
-  conge: "#22c55e",
-  absence: "#ef4444",
+  tournee: "#2A5FBF",
+  conge: "#1B8A54",
+  absence: "#C4342C",
 };
 
 const MESSAGES = {

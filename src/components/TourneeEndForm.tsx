@@ -39,7 +39,7 @@ function Field({
         inputMode={type === "number" ? "numeric" : undefined}
         defaultValue={defaultValue ?? ""}
         required={required}
-        className="rounded-md border border-border bg-background px-3 py-2 text-foreground tabular-nums outline-none focus:border-km"
+        className="rounded-md border border-border bg-background px-3 py-2 text-foreground tabular-nums outline-none focus:border-foreground"
       />
     </div>
   );
@@ -51,7 +51,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-md bg-km px-4 py-3 font-medium text-black disabled:opacity-60"
+      className="rounded-md bg-km px-4 py-3 font-medium text-accent-ink disabled:opacity-60"
     >
       {pending ? "Enregistrement..." : "Terminer la tournée"}
     </button>
@@ -85,7 +85,7 @@ export function TourneeEndForm({
           name="tournee_type"
           required
           defaultValue="journee"
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-km"
+          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
         >
           {TOURNEE_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
@@ -122,7 +122,7 @@ export function TourneeEndForm({
           id="anomalie_tournee"
           name="anomalie_tournee"
           rows={3}
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-km"
+          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
         />
       </div>
 
@@ -134,11 +134,11 @@ export function TourneeEndForm({
           id="anomalie_vehicule"
           name="anomalie_vehicule"
           rows={3}
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-km"
+          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
         />
       </div>
 
-      {state.error && <p className="text-sm text-red-400">{state.error}</p>}
+      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
       <SubmitButton />
     </form>

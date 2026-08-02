@@ -32,7 +32,7 @@ export function AppHeader({
         aria-expanded={open}
         className="flex items-center gap-2 rounded-full px-2 py-1 hover:bg-accent"
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-km text-sm font-semibold text-accent-ink">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground text-sm font-semibold text-background">
           {initial}
         </span>
         <span className="text-sm font-medium text-foreground">{firstName}</span>

@@ -12,17 +12,25 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
-        "foreground-muted": "#6B7280",
+        "foreground-muted": "#5B616E",
+        // Texte désactivé/non-interactif uniquement — jamais pour une donnée
+        // à lire (contraste volontairement sous le seuil AA texte courant).
+        "foreground-disabled": "#9AA0AC",
         surface: "#FFFFFF",
         // Fond des navs flottantes (bottom nav chauffeur, navbar patron) :
         // reste sombre en permanence, y compris en thème clair, pour l'effet
         // "flottant" à fort contraste — ne bascule jamais avec le thème.
         "nav-surface": "#14171A",
         "nav-foreground-muted": "#7B8496",
-        km: "#E8A23B",
+        km: "#C97A1D",
         "accent-ink": "#1A1204",
-        deliveries: "#2F6FED",
-        enlevements: "#1FA463",
+        deliveries: "#2A5FBF",
+        enlevements: "#1B8A54",
+        // Jaune/attention : statut intermédiaire (ni bouton d'action, ni
+        // erreur) — échéances à venir, documents bientôt expirés, pannes
+        // "roule quand même". Distinct de `km` (réservé au bouton principal
+        // et à la nav active).
+        warning: "#B7791F",
         // Palette shadcn/ui — mêmes valeurs que ci-dessus, reconverties en
         // HSL dans globals.css pour supporter les modificateurs d'opacité
         // (bg-primary/10 etc). `border` migre du hex littéral vers cette
@@ -68,7 +76,7 @@ const config: Config = {
       boxShadow: {
         card: "0 1px 3px rgba(0,0,0,.3)",
         float: "0 8px 24px rgba(0,0,0,.4)",
-        accent: "0 8px 20px rgba(232,162,59,.25)",
+        accent: "0 8px 20px rgba(201,122,29,.25)",
       },
       fontFamily: {
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],

@@ -89,7 +89,7 @@ export default async function PatronHomePage() {
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-foreground/80">Échéances</h2>
             {echeances.length > ECHEANCES_SHOWN && (
-              <Link href="/patron/echeances" className="text-sm text-km">
+              <Link href="/patron/echeances" className="text-sm text-foreground underline">
                 Voir tout
               </Link>
             )}
@@ -105,12 +105,12 @@ export default async function PatronHomePage() {
                   className={`flex flex-wrap items-center justify-between gap-2 rounded-2xl border-l-4 p-4 shadow-card ${
                     expired
                       ? "border-l-destructive bg-destructive/10"
-                      : "border-l-km bg-km/10"
+                      : "border-l-warning bg-warning/10"
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <Icon
-                      className={`h-4 w-4 shrink-0 ${expired ? "text-destructive" : "text-km"}`}
+                      className={`h-4 w-4 shrink-0 ${expired ? "text-destructive" : "text-warning"}`}
                       strokeWidth={1.8}
                     />
                     <p className="text-sm font-medium text-foreground">
@@ -135,7 +135,7 @@ export default async function PatronHomePage() {
               <Link
                 key={vehicle.id}
                 href={`/patron/vehicules/${vehicle.id}`}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface shadow-card p-4 hover:border-km"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface shadow-card p-4 hover:border-foreground/30"
               >
                 <div>
                   <p className="text-sm font-medium text-foreground">{vehicle.plate}</p>
@@ -160,7 +160,7 @@ export default async function PatronHomePage() {
               <Link
                 key={driver.id}
                 href={`/patron/chauffeurs/${driver.id}`}
-                className="rounded-2xl border border-border bg-surface shadow-card p-4 text-sm font-medium text-foreground hover:border-km"
+                className="rounded-2xl border border-border bg-surface shadow-card p-4 text-sm font-medium text-foreground hover:border-foreground/30"
               >
                 {driver.full_name}
               </Link>
@@ -178,7 +178,7 @@ export default async function PatronHomePage() {
               <p className="text-xs text-foreground/50">Seuil atteint</p>
             </div>
             <div className="flex-1 rounded-2xl border border-border bg-surface shadow-card p-4">
-              <p className="text-2xl font-semibold tabular-nums text-red-400">{notMet}</p>
+              <p className="text-2xl font-semibold tabular-nums text-destructive">{notMet}</p>
               <p className="text-xs text-foreground/50">Seuil non atteint</p>
             </div>
           </div>

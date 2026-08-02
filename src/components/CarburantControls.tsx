@@ -41,7 +41,7 @@ export function CarburantControls({
             onClick={() => updateParams({ groupBy: opt.key })}
             className={`rounded-md px-3 py-1.5 text-sm ${
               groupBy === opt.key
-                ? "bg-km text-black"
+                ? "bg-foreground text-background"
                 : "border border-border text-foreground/70"
             }`}
           >
@@ -57,7 +57,7 @@ export function CarburantControls({
             onClick={() => updateParams({ period: opt.key })}
             className={`rounded-md px-3 py-1.5 text-sm ${
               period === opt.key
-                ? "bg-surface border border-km text-foreground"
+                ? "bg-foreground text-background"
                 : "border border-border text-foreground/70"
             }`}
           >

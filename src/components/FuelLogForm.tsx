@@ -37,7 +37,7 @@ export function FuelLogForm({ vehicles }: { vehicles: Vehicle[] }) {
           id="vehicle_id"
           name="vehicle_id"
           required
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-km"
+          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
         >
           <option value="">Sélectionner...</option>
           {vehicles.map((v) => (
@@ -62,7 +62,7 @@ export function FuelLogForm({ vehicles }: { vehicles: Vehicle[] }) {
             min="0"
             inputMode="decimal"
             required
-            className="rounded-md border border-border bg-background px-3 py-2 text-foreground tabular-nums outline-none focus:border-km"
+            className="rounded-md border border-border bg-background px-3 py-2 text-foreground tabular-nums outline-none focus:border-foreground"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -76,7 +76,7 @@ export function FuelLogForm({ vehicles }: { vehicles: Vehicle[] }) {
             min="0"
             inputMode="numeric"
             required
-            className="rounded-md border border-border bg-background px-3 py-2 text-foreground tabular-nums outline-none focus:border-km"
+            className="rounded-md border border-border bg-background px-3 py-2 text-foreground tabular-nums outline-none focus:border-foreground"
           />
         </div>
       </div>
@@ -91,11 +91,11 @@ export function FuelLogForm({ vehicles }: { vehicles: Vehicle[] }) {
           type="date"
           defaultValue={today}
           required
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-km"
+          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
         />
       </div>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <button
         type="submit"

@@ -36,7 +36,7 @@ export function DocumentsList({
                 href={doc.signedUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs text-km underline"
+                className="text-xs text-foreground underline"
               >
                 Voir le fichier
               </a>

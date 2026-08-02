@@ -68,7 +68,7 @@ export function ReportIssueForm({ vehicles }: { vehicles: Vehicle[] }) {
           id="vehicle_id"
           name="vehicle_id"
           required
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-km"
+          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
         >
           <option value="">Sélectionner...</option>
           {vehicles.map((v) => (
@@ -88,7 +88,7 @@ export function ReportIssueForm({ vehicles }: { vehicles: Vehicle[] }) {
             onClick={() => setStatus("issue_running")}
             className={`flex-1 rounded-md border px-4 py-3 text-sm font-medium ${
               status === "issue_running"
-                ? "border-km bg-km/10 text-km"
+                ? "border-[#B7791F] bg-[#FBF0DD] text-[#8A5C18]"
                 : "border-border text-foreground/60"
             }`}
           >
@@ -99,7 +99,7 @@ export function ReportIssueForm({ vehicles }: { vehicles: Vehicle[] }) {
             onClick={() => setStatus("unavailable")}
             className={`flex-1 rounded-md border px-4 py-3 text-sm font-medium ${
               status === "unavailable"
-                ? "border-red-500 bg-red-950/30 text-red-400"
+                ? "border-destructive bg-[#FBE7E5] text-destructive"
                 : "border-border text-foreground/60"
             }`}
           >
@@ -117,7 +117,7 @@ export function ReportIssueForm({ vehicles }: { vehicles: Vehicle[] }) {
           name="description"
           rows={4}
           required
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-km"
+          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
         />
       </div>
 
@@ -144,12 +144,12 @@ export function ReportIssueForm({ vehicles }: { vehicles: Vehicle[] }) {
         )}
       </div>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <button
         type="submit"
         disabled={busy}
-        className="rounded-md bg-km px-4 py-2 font-medium text-black disabled:opacity-60"
+        className="rounded-md bg-km px-4 py-2 font-medium text-accent-ink disabled:opacity-60"
       >
         {compressing ? "Traitement de la photo..." : pending ? "Envoi..." : "Signaler"}
       </button>

@@ -58,7 +58,7 @@ export default async function CarburantPage() {
                 </p>
               </div>
               <div className="text-right tabular-nums">
-                <p className="text-sm font-medium text-km">{log.liters} L</p>
+                <p className="text-sm font-medium text-foreground">{log.liters} L</p>
                 <p className="text-xs text-foreground/50">{log.odometer} km</p>
               </div>
             </div>

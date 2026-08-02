@@ -24,7 +24,7 @@ export default async function EcheancesPage() {
             <Link
               key={row.id}
               href={row.href}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface shadow-card p-4 hover:border-km"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface shadow-card p-4 hover:border-foreground/30"
             >
               <div>
                 <p className="text-sm font-medium text-foreground">

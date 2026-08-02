@@ -85,12 +85,12 @@ export function EntryCard({
             </span>
           )}
         </p>
-        <span className="whitespace-nowrap rounded-full bg-km/10 px-2 py-0.5 text-xs font-medium tabular-nums text-km">
+        <span className="whitespace-nowrap rounded-full bg-foreground/10 px-2 py-0.5 text-xs font-medium tabular-nums text-foreground">
           {entryKm(entry)} km
         </span>
       </div>
 
-      <p className="text-sm text-foreground/60">
+      <p className="text-sm tabular-nums text-foreground/60">
         {entry.vehicle_registration ?? "—"} · {poses.delivered + poses.damaged + poses.notDelivered} poses ·{" "}
         {entryEnlevements(entry)} enlèvements
       </p>
@@ -128,7 +128,7 @@ export function EntryCard({
       )}
 
       {(entry.anomalie_tournee || entry.anomalie_vehicule) && (
-        <div className="flex flex-col gap-1 rounded-md border border-red-900/40 bg-red-950/20 px-3 py-2 text-sm text-red-300">
+        <div className="flex flex-col gap-1 rounded-md border border-destructive/30 bg-[#FBE7E5] px-3 py-2 text-sm text-destructive">
           {entry.anomalie_tournee && <p>Tournée : {entry.anomalie_tournee}</p>}
           {entry.anomalie_vehicule && <p>Véhicule : {entry.anomalie_vehicule}</p>}
         </div>

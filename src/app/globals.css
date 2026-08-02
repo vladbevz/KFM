@@ -3,30 +3,30 @@
 @tailwind utilities;
 
 :root {
-  --background: #f5f6f8;
-  --foreground: #14171f;
+  --background: #f7f8fa;
+  --foreground: #1a1d23;
 
   /* Variables shadcn/ui (composants admin patron uniquement) — converties
      depuis la même palette hex ci-dessus et dans tailwind.config.ts, donc
      aucun changement visuel sur l'existant, juste un format HSL requis pour
      les modificateurs d'opacité (bg-primary/10 etc). */
   --card: 0 0% 100%;
-  --card-foreground: 224 22% 10%;
+  --card-foreground: 220 15% 12%;
   --popover: 0 0% 100%;
-  --popover-foreground: 224 22% 10%;
-  --primary: 36 79% 57%;
+  --popover-foreground: 220 15% 12%;
+  --primary: 32 75% 45%;
   --primary-foreground: 0 0% 9%;
-  --secondary: 218 17% 91%;
-  --secondary-foreground: 224 22% 10%;
-  --muted: 218 17% 91%;
-  --muted-foreground: 220 9% 46%;
-  --accent: 218 17% 91%;
-  --accent-foreground: 224 22% 10%;
-  --destructive: 358 75% 59%;
+  --secondary: 217 16% 90%;
+  --secondary-foreground: 220 15% 12%;
+  --muted: 217 16% 90%;
+  --muted-foreground: 221 9% 39%;
+  --accent: 217 16% 90%;
+  --accent-foreground: 220 15% 12%;
+  --destructive: 3 63% 47%;
   --destructive-foreground: 0 0% 98%;
-  --border: 218 17% 91%;
-  --input: 218 17% 91%;
-  --ring: 36 79% 57%;
+  --border: 217 16% 90%;
+  --input: 217 16% 90%;
+  --ring: 32 75% 45%;
   --radius: 0.5rem;
 }
 

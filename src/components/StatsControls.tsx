@@ -48,7 +48,7 @@ export function StatsControls({
               onClick={() => updateParams({ view: v })}
               className={`rounded-md px-3 py-1.5 text-sm capitalize ${
                 view === v
-                  ? "bg-km text-black"
+                  ? "bg-foreground text-background"
                   : "border border-border text-foreground/70"
               }`}
             >
@@ -65,7 +65,7 @@ export function StatsControls({
             onClick={() => updateParams({ period: opt.key })}
             className={`rounded-full px-3 py-1.5 text-sm ${
               period === opt.key
-                ? "bg-km text-accent-ink"
+                ? "bg-foreground text-background"
                 : "border border-border bg-surface text-foreground-muted"
             }`}
           >

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { DetailHeader } from "@/components/DetailHeader";
 import { VehicleStatusBadge } from "@/components/VehicleStatusBadge";
 import { VehicleStatusControl } from "@/components/VehicleStatusControl";
@@ -144,15 +145,9 @@ export default async function VehicleDetailPage({
                     </span>
                   )}
                 </p>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    issue.status === "resolved"
-                      ? "bg-enlevements/15 text-enlevements"
-                      : "bg-km/15 text-km"
-                  }`}
-                >
+                <Badge variant={issue.status === "resolved" ? "success" : "warning"}>
                   {issue.status === "resolved" ? "Résolu" : "En cours"}
-                </span>
+                </Badge>
               </div>
 
               {issue.description && (

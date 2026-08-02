@@ -71,6 +71,11 @@ export default async function RentabilitePage({
         </div>
       </div>
 
+      {(drivers ?? []).length === 0 ? (
+        <p className="py-12 text-center text-sm text-foreground-muted">
+          Aucun chauffeur pour le moment.
+        </p>
+      ) : (
       <Table>
         <TableHeader>
           <TableRow>
@@ -109,6 +114,7 @@ export default async function RentabilitePage({
           })}
         </TableBody>
       </Table>
+      )}
     </div>
   );
 }

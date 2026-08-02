@@ -65,7 +65,7 @@ export function ComparisonTable({ data }: { data: DriverMetrics[] }) {
               >
                 {col.label}
                 {sortKey === col.key && (
-                  <span className="ml-1 text-km">
+                  <span className="ml-1 text-foreground">
                     {sortDir === "asc" ? "▲" : "▼"}
                   </span>
                 )}
