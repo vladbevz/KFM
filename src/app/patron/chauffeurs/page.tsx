@@ -55,32 +55,55 @@ export default async function ChauffeursPage({
           {showInactive ? "Aucun ancien chauffeur." : "Aucun chauffeur pour le moment."}
         </p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nom</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {drivers.map((driver) => (
+                  <TableRow key={driver.id}>
+                    <TableCell className="font-medium">{driver.full_name}</TableCell>
+                    <TableCell>
+                      <Badge variant={driver.active ? "success" : "secondary"}>
+                        {driver.active ? "Actif" : "Désactivé"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/patron/chauffeurs/${driver.id}`}>Fiche</Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="flex flex-col gap-2 md:hidden">
             {drivers.map((driver) => (
-              <TableRow key={driver.id}>
-                <TableCell className="font-medium">{driver.full_name}</TableCell>
-                <TableCell>
-                  <Badge variant={driver.active ? "success" : "secondary"}>
+              <div
+                key={driver.id}
+                className="flex items-center justify-between gap-2 rounded-2xl border border-border bg-surface shadow-card p-4"
+              >
+                <div className="flex flex-col gap-1">
+                  <p className="font-medium text-foreground">{driver.full_name}</p>
+                  <Badge variant={driver.active ? "success" : "secondary"} className="w-fit">
                     {driver.active ? "Actif" : "Désactivé"}
                   </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button asChild variant="outline" size="sm">
-                    <Link href={`/patron/chauffeurs/${driver.id}`}>Fiche</Link>
-                  </Button>
-                </TableCell>
-              </TableRow>
+                </div>
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/patron/chauffeurs/${driver.id}`}>Fiche</Link>
+                </Button>
+              </div>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+        </>
       )}
     </div>
   );

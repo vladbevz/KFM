@@ -36,40 +36,76 @@ export default async function VehiculesPage() {
           Aucun véhicule enregistré pour le moment.
         </p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Immatriculation</TableHead>
-              <TableHead>Repère</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Immatriculation</TableHead>
+                  <TableHead>Repère</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vehicles.map((vehicle) => (
+                  <TableRow key={vehicle.id}>
+                    <TableCell className="font-medium tabular-nums">{vehicle.plate}</TableCell>
+                    <TableCell className="text-foreground/70">{vehicle.label ?? "—"}</TableCell>
+                    <TableCell>
+                      <VehicleStatusBadge status={vehicle.status} />
+                    </TableCell>
+                    <TableCell className="flex justify-end gap-2 text-right">
+                      <VehicleFormDialog
+                        vehicle={vehicle}
+                        trigger={
+                          <Button variant="outline" size="sm">
+                            Modifier
+                          </Button>
+                        }
+                      />
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/patron/vehicules/${vehicle.id}`}>Détail</Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="flex flex-col gap-2 md:hidden">
             {vehicles.map((vehicle) => (
-              <TableRow key={vehicle.id}>
-                <TableCell className="font-medium tabular-nums">{vehicle.plate}</TableCell>
-                <TableCell className="text-foreground/70">{vehicle.label ?? "—"}</TableCell>
-                <TableCell>
+              <div
+                key={vehicle.id}
+                className="flex flex-col gap-3 rounded-2xl border border-border bg-surface shadow-card p-4"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium tabular-nums text-foreground">{vehicle.plate}</p>
+                    {vehicle.label && (
+                      <p className="text-sm text-foreground/70">{vehicle.label}</p>
+                    )}
+                  </div>
                   <VehicleStatusBadge status={vehicle.status} />
-                </TableCell>
-                <TableCell className="flex justify-end gap-2 text-right">
+                </div>
+                <div className="flex gap-2">
                   <VehicleFormDialog
                     vehicle={vehicle}
                     trigger={
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="flex-1">
                         Modifier
                       </Button>
                     }
                   />
-                  <Button asChild variant="outline" size="sm">
+                  <Button asChild variant="outline" size="sm" className="flex-1">
                     <Link href={`/patron/vehicules/${vehicle.id}`}>Détail</Link>
                   </Button>
-                </TableCell>
-              </TableRow>
+                </div>
+              </div>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+        </>
       )}
     </div>
   );

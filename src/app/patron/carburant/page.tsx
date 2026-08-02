@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { CarburantControls } from "@/components/CarburantControls";
+import { ExpandableCard } from "@/components/ExpandableCard";
 import { getPeriodRange, type PeriodKey } from "@/lib/stats";
 import {
   Table,
@@ -95,26 +96,45 @@ export default async function CarburantPatronPage({
             Aucun plein sur cette période.
           </p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{groupBy === "chauffeur" ? "Chauffeur" : "Véhicule"}</TableHead>
-                <TableHead className="text-right">Pleins</TableHead>
-                <TableHead className="text-right">Total litres</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{groupBy === "chauffeur" ? "Chauffeur" : "Véhicule"}</TableHead>
+                    <TableHead className="text-right">Pleins</TableHead>
+                    <TableHead className="text-right">Total litres</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {groupRows.map((g) => (
+                    <TableRow key={g.label}>
+                      <TableCell className="font-medium">{g.label}</TableCell>
+                      <TableCell className="text-right tabular-nums">{g.count}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {g.liters.toFixed(2)} L
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="flex flex-col gap-2 md:hidden">
               {groupRows.map((g) => (
-                <TableRow key={g.label}>
-                  <TableCell className="font-medium">{g.label}</TableCell>
-                  <TableCell className="text-right tabular-nums">{g.count}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {g.liters.toFixed(2)} L
-                  </TableCell>
-                </TableRow>
+                <div
+                  key={g.label}
+                  className="flex items-center justify-between rounded-2xl border border-border bg-surface shadow-card p-4"
+                >
+                  <p className="font-medium text-foreground">{g.label}</p>
+                  <div className="text-right tabular-nums">
+                    <p className="text-sm font-medium text-foreground">{g.liters.toFixed(2)} L</p>
+                    <p className="text-xs text-foreground-muted">{g.count} pleins</p>
+                  </div>
+                </div>
               ))}
-            </TableBody>
-          </Table>
+            </div>
+          </>
         )}
       </div>
 
@@ -123,28 +143,67 @@ export default async function CarburantPatronPage({
         {rows.length === 0 ? (
           <p className="py-8 text-center text-sm text-foreground/50">Aucun plein.</p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Chauffeur</TableHead>
-                <TableHead>Véhicule</TableHead>
-                <TableHead className="text-right">Litres</TableHead>
-                <TableHead className="text-right">Km</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Chauffeur</TableHead>
+                    <TableHead>Véhicule</TableHead>
+                    <TableHead className="text-right">Litres</TableHead>
+                    <TableHead className="text-right">Km</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell>{formatDate(log.filled_at)}</TableCell>
+                      <TableCell>{driverById.get(log.driver_id) ?? "—"}</TableCell>
+                      <TableCell>{vehicleById.get(log.vehicle_id) ?? "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">{log.liters}</TableCell>
+                      <TableCell className="text-right tabular-nums">{log.odometer}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="flex flex-col gap-2 md:hidden">
               {rows.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell>{formatDate(log.filled_at)}</TableCell>
-                  <TableCell>{driverById.get(log.driver_id) ?? "—"}</TableCell>
-                  <TableCell>{vehicleById.get(log.vehicle_id) ?? "—"}</TableCell>
-                  <TableCell className="text-right tabular-nums">{log.liters}</TableCell>
-                  <TableCell className="text-right tabular-nums">{log.odometer}</TableCell>
-                </TableRow>
+                <ExpandableCard
+                  key={log.id}
+                  header={
+                    <div>
+                      <p className="font-medium capitalize text-foreground">
+                        {formatDate(log.filled_at)}
+                      </p>
+                      <p className="text-sm text-foreground/70">
+                        {vehicleById.get(log.vehicle_id) ?? "—"}
+                      </p>
+                    </div>
+                  }
+                  primary={
+                    <div className="flex gap-4 text-sm tabular-nums text-foreground/70">
+                      <span>
+                        <span className="text-foreground-muted">Litres : </span>
+                        {log.liters}
+                      </span>
+                      <span>
+                        <span className="text-foreground-muted">Km : </span>
+                        {log.odometer}
+                      </span>
+                    </div>
+                  }
+                  detail={
+                    <p className="text-sm text-foreground/70">
+                      Chauffeur : {driverById.get(log.driver_id) ?? "—"}
+                    </p>
+                  }
+                />
               ))}
-            </TableBody>
-          </Table>
+            </div>
+          </>
         )}
       </div>
     </div>
