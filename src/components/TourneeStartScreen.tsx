@@ -6,16 +6,19 @@ import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 type Sector = Database["public"]["Tables"]["sectors"]["Row"];
+type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
 
 export function TourneeStartScreen({
   firstName,
   sectors,
   defaultSectorId,
+  vehicles,
   onStarted,
 }: {
   firstName: string;
   sectors: Sector[];
   defaultSectorId: string | null;
+  vehicles: Vehicle[];
   onStarted: (entry: DailyEntry) => void;
 }) {
   const [sectorId, setSectorId] = useState(defaultSectorId ?? "");
@@ -66,14 +69,21 @@ export function TourneeStartScreen({
           <label htmlFor="vehicle_registration" className="text-sm text-foreground/70">
             Immatriculation du véhicule
           </label>
-          <input
+          <select
             id="vehicle_registration"
-            type="text"
             required
             value={vehicleRegistration}
             onChange={(e) => setVehicleRegistration(e.target.value)}
-            className="rounded-md border border-border bg-background px-3 py-2 uppercase text-foreground outline-none focus:border-km"
-          />
+            className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-km"
+          >
+            <option value="">Sélectionner...</option>
+            {vehicles.map((v) => (
+              <option key={v.id} value={v.plate}>
+                {v.plate}
+                {v.label ? ` — ${v.label}` : ""}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="flex flex-col gap-1">

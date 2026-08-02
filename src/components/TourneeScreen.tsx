@@ -11,6 +11,7 @@ import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 type Sector = Database["public"]["Tables"]["sectors"]["Row"];
+type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
 
 export function TourneeScreen({
   firstName,
@@ -18,12 +19,14 @@ export function TourneeScreen({
   completedToday,
   sectors,
   defaultSectorId,
+  vehicles,
 }: {
   firstName: string;
   inProgressEntry: DailyEntry | null;
   completedToday: DailyEntry[];
   sectors: Sector[];
   defaultSectorId: string | null;
+  vehicles: Vehicle[];
 }) {
   const [activeEntry, setActiveEntry] = useState(inProgressEntry);
   const [showEndForm, setShowEndForm] = useState(false);
@@ -76,6 +79,7 @@ export function TourneeScreen({
         firstName={firstName}
         sectors={sectors}
         defaultSectorId={defaultSectorId}
+        vehicles={vehicles}
         onStarted={setActiveEntry}
       />
 

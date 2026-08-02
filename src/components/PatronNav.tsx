@@ -27,7 +27,7 @@ export function PatronNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="mx-4 mt-3 flex flex-wrap gap-1 rounded-full bg-surface px-2 py-2 shadow-card">
+    <nav className="mx-4 mt-3 flex flex-wrap gap-1 rounded-full bg-nav-surface px-2 py-2 shadow-float">
       {TABS.map((tab) => {
         const active = tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
         const Icon = tab.icon;
@@ -36,7 +36,7 @@ export function PatronNav() {
             key={tab.href}
             href={tab.href}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm ${
-              active ? "bg-km text-accent-ink" : "text-foreground-muted"
+              active ? "bg-km text-accent-ink" : "text-nav-foreground-muted"
             }`}
           >
             <Icon className="h-4 w-4" strokeWidth={1.8} />

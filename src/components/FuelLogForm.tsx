@@ -1,34 +1,33 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
-import { addFuelLog, type FuelLogFormState } from "@/app/chauffeur/carburant/actions";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { addFuelLog } from "@/app/chauffeur/carburant/actions";
 import type { Database } from "@/types/database";
 
 type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
 
-const initialState: FuelLogFormState = { error: null };
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-md bg-km px-4 py-2 font-medium text-black disabled:opacity-60"
-    >
-      {pending ? "Enregistrement..." : "Ajouter le plein"}
-    </button>
-  );
-}
-
 export function FuelLogForm({ vehicles }: { vehicles: Vehicle[] }) {
-  const [state, formAction] = useFormState(addFuelLog, initialState);
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const today = new Date().toISOString().slice(0, 10);
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    const formData = new FormData(event.currentTarget);
+    startTransition(async () => {
+      const result = await addFuelLog({ error: null }, formData);
+      if (result.error) setError(result.error);
+      else router.push("/chauffeur");
+    });
+  }
 
   return (
     <form
-      action={formAction}
-      className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4"
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-4 rounded-2xl border border-border bg-surface shadow-card p-4"
     >
       <div className="flex flex-col gap-1">
         <label htmlFor="vehicle_id" className="text-sm text-foreground/70">
@@ -96,9 +95,15 @@ export function FuelLogForm({ vehicles }: { vehicles: Vehicle[] }) {
         />
       </div>
 
-      {state.error && <p className="text-sm text-red-400">{state.error}</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
 
-      <SubmitButton />
+      <button
+        type="submit"
+        disabled={pending}
+        className="rounded-md bg-km px-4 py-2 font-medium text-accent-ink disabled:opacity-60"
+      >
+        {pending ? "Enregistrement..." : "Ajouter le plein"}
+      </button>
     </form>
   );
 }

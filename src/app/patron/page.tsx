@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { AlertTriangle, BellRing } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { DocumentBadge } from "@/components/DocumentBadge";
 import { VehicleStatusBadge } from "@/components/VehicleStatusBadge";
 import { getUpcomingEcheances } from "@/lib/echeances";
+import { daysUntil } from "@/lib/documents";
 import { entryProfitability, resolveEntrySector, type Sector } from "@/lib/rentabilite";
 import type { Database } from "@/types/database";
 
@@ -93,18 +95,32 @@ export default async function PatronHomePage() {
             )}
           </div>
           <div className="flex flex-col gap-2">
-            {echeancesShown.map((row) => (
-              <Link
-                key={row.id}
-                href={row.href}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface shadow-card p-4 hover:border-km"
-              >
-                <p className="text-sm font-medium text-foreground">
-                  {row.kind} {row.subject} — {row.docName}
-                </p>
-                <DocumentBadge expiryDate={row.expiryDate} />
-              </Link>
-            ))}
+            {echeancesShown.map((row) => {
+              const expired = daysUntil(row.expiryDate) < 0;
+              const Icon = expired ? AlertTriangle : BellRing;
+              return (
+                <Link
+                  key={row.id}
+                  href={row.href}
+                  className={`flex flex-wrap items-center justify-between gap-2 rounded-2xl border-l-4 p-4 shadow-card ${
+                    expired
+                      ? "border-l-destructive bg-destructive/10"
+                      : "border-l-km bg-km/10"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon
+                      className={`h-4 w-4 shrink-0 ${expired ? "text-destructive" : "text-km"}`}
+                      strokeWidth={1.8}
+                    />
+                    <p className="text-sm font-medium text-foreground">
+                      {row.kind} {row.subject} — {row.docName}
+                    </p>
+                  </div>
+                  <DocumentBadge expiryDate={row.expiryDate} />
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}

@@ -5,6 +5,7 @@ import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 type Sector = Database["public"]["Tables"]["sectors"]["Row"];
+type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
 
 export default async function ChauffeurPage() {
   const supabase = await createClient();
@@ -12,21 +13,23 @@ export default async function ChauffeurPage() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const [{ data: todaysEntries }, { data: sectors }, { data: driverProfile }] = await Promise.all([
-    supabase
-      .from("daily_entries")
-      .select("*")
-      .eq("driver_id", user!.id)
-      .eq("entry_date", today)
-      .order("started_at", { ascending: false })
-      .returns<DailyEntry[]>(),
-    supabase.from("sectors").select("*").order("code").returns<Sector[]>(),
-    supabase
-      .from("profiles")
-      .select("default_sector_id")
-      .eq("id", user!.id)
-      .single<{ default_sector_id: string | null }>(),
-  ]);
+  const [{ data: todaysEntries }, { data: sectors }, { data: driverProfile }, { data: vehicles }] =
+    await Promise.all([
+      supabase
+        .from("daily_entries")
+        .select("*")
+        .eq("driver_id", user!.id)
+        .eq("entry_date", today)
+        .order("started_at", { ascending: false })
+        .returns<DailyEntry[]>(),
+      supabase.from("sectors").select("*").order("code").returns<Sector[]>(),
+      supabase
+        .from("profiles")
+        .select("default_sector_id")
+        .eq("id", user!.id)
+        .single<{ default_sector_id: string | null }>(),
+      supabase.from("vehicles").select("*").order("plate").returns<Vehicle[]>(),
+    ]);
 
   const inProgressEntry = (todaysEntries ?? []).find((e) => e.status === "in_progress") ?? null;
   const completedToday = (todaysEntries ?? []).filter((e) => e.status === "completed");
@@ -39,6 +42,7 @@ export default async function ChauffeurPage() {
       completedToday={completedToday}
       sectors={sectors ?? []}
       defaultSectorId={driverProfile?.default_sector_id ?? null}
+      vehicles={vehicles ?? []}
     />
   );
 }

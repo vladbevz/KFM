@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { DocumentFormFields } from "@/components/DocumentFormFields";
 import { saveVehicleDocument, type DocumentFormState } from "@/app/patron/vehicules/documents-actions";
+import { compressImage } from "@/lib/image";
 import type { Database } from "@/types/database";
 
 type VehicleDocument = Pick<
@@ -44,6 +45,18 @@ export function VehicleDocumentDialog({
   const [state, formAction] = useFormState(saveVehicleDocument, initialState);
   const submittedOnce = useRef(false);
 
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const file = formData.get("file");
+    if (file instanceof File && file.size > 0 && file.type.startsWith("image/")) {
+      const compressed = await compressImage(file);
+      formData.set("file", compressed, file.name.replace(/\.\w+$/, ".jpg"));
+    }
+    submittedOnce.current = true;
+    formAction(formData);
+  }
+
   useEffect(() => {
     if (submittedOnce.current && state.error === null) {
       setOpen(false);
@@ -59,13 +72,7 @@ export function VehicleDocumentDialog({
           <DialogTitle>{document ? "Modifier le document" : "Ajouter un document"}</DialogTitle>
         </DialogHeader>
 
-        <form
-          action={(formData) => {
-            submittedOnce.current = true;
-            formAction(formData);
-          }}
-          className="flex flex-col gap-4"
-        >
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input type="hidden" name="vehicle_id" value={vehicleId} />
           {document && <input type="hidden" name="id" value={document.id} />}
 

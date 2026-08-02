@@ -159,13 +159,19 @@ export default async function VehicleDetailPage({
                 <p className="text-sm text-foreground/70">{issue.description}</p>
               )}
 
-              {photoUrlByIssueId.has(issue.id) && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={photoUrlByIssueId.get(issue.id)}
-                  alt="Photo du signalement"
-                  className="h-48 w-full rounded-md border border-border object-cover"
-                />
+              {issue.photo_url && (
+                photoUrlByIssueId.has(issue.id) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={photoUrlByIssueId.get(issue.id)}
+                    alt="Photo du signalement"
+                    className="h-48 w-full rounded-md border border-border object-cover"
+                  />
+                ) : (
+                  <p className="flex h-24 w-full items-center justify-center rounded-md border border-dashed border-border text-sm text-foreground/50">
+                    Photo indisponible
+                  </p>
+                )
               )}
 
               {issue.status === "open" && (

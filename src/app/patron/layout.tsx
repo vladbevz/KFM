@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/supabase/profile";
-import { LogoutButton } from "@/components/LogoutButton";
+import { AppHeader } from "@/components/AppHeader";
 import { PatronNav } from "@/components/PatronNav";
 
 export default async function PatronLayout({
@@ -15,15 +15,7 @@ export default async function PatronLayout({
 
   return (
     <div className="min-h-screen">
-      <header className="flex items-center justify-between border-b border-border bg-surface px-4 py-3">
-        <div>
-          <p className="text-sm font-medium text-foreground">
-            {profile.full_name}
-          </p>
-          <p className="text-xs text-foreground/50">Patron</p>
-        </div>
-        <LogoutButton />
-      </header>
+      <AppHeader fullName={profile.full_name} role="Patron" />
       <PatronNav />
       <main className="px-4 py-6">{children}</main>
     </div>

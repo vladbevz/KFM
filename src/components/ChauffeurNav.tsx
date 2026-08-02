@@ -28,7 +28,7 @@ export function ChauffeurNav() {
             className={`flex items-center gap-2 rounded-full transition-colors ${
               active
                 ? "bg-km px-4 py-2.5 text-accent-ink"
-                : "px-3 py-2.5 text-foreground-muted"
+                : "px-3 py-2.5 text-nav-foreground-muted"
             }`}
           >
             <Icon className="h-5 w-5" strokeWidth={1.8} />
