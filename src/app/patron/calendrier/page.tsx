@@ -21,6 +21,7 @@ export default async function CalendrierPage() {
       .from("profiles")
       .select("id, full_name")
       .eq("role", "driver")
+      .eq("active", true)
       .order("full_name")
       .returns<{ id: string; full_name: string }[]>(),
     supabase.from("sectors").select("*").order("code").returns<Sector[]>(),

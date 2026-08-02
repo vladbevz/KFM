@@ -18,18 +18,21 @@ export interface Database {
           full_name: string;
           role: UserRole;
           default_sector_id: string | null;
+          active: boolean;
         };
         Insert: {
           id: string;
           full_name: string;
           role: UserRole;
           default_sector_id?: string | null;
+          active?: boolean;
         };
         Update: {
           id?: string;
           full_name?: string;
           role?: UserRole;
           default_sector_id?: string | null;
+          active?: boolean;
         };
         Relationships: [
           {

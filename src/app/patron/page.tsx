@@ -51,6 +51,7 @@ export default async function PatronHomePage() {
         .from("profiles")
         .select("id, full_name")
         .in("id", driverIds)
+        .eq("active", true)
         .returns<{ id: string; full_name: string }[]>()
     : { data: [] as { id: string; full_name: string }[] };
 

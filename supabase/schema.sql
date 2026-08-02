@@ -7,6 +7,9 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   full_name text not null,
   role text not null check (role in ('driver', 'boss')),
+  -- Désactivé = accès bloqué (voir admin-actions.ts) mais historique intact.
+  -- Pas de grant update côté authenticated : service role uniquement.
+  active boolean not null default true,
   created_at timestamptz not null default now()
 );
 
@@ -36,6 +39,7 @@ create policy "profiles_update_own"
   using (id = (select auth.uid()));
 
 create index if not exists profiles_role_idx on public.profiles (role);
+create index if not exists profiles_active_idx on public.profiles (role, active);
 
 -- La policy ci-dessus autorise la mise à jour de la ligne, mais pas de
 -- colonne en particulier : sans cette restriction, un chauffeur pourrait

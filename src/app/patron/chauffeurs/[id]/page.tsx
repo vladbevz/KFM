@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { DetailHeader } from "@/components/DetailHeader";
+import { DriverActiveToggle } from "@/components/DriverActiveToggle";
 import { DriverDocumentDialog } from "@/components/DriverDocumentDialog";
 import { DocumentsList, type DocumentItem } from "@/components/DocumentsList";
 import type { Database } from "@/types/database";
@@ -19,9 +21,9 @@ export default async function DriverDetailPage({
   const [{ data: driver }, { data: documents }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, full_name, role")
+      .select("id, full_name, role, active")
       .eq("id", id)
-      .maybeSingle<{ id: string; full_name: string; role: string }>(),
+      .maybeSingle<{ id: string; full_name: string; role: string; active: boolean }>(),
     supabase
       .from("driver_documents")
       .select("*")
@@ -51,7 +53,15 @@ export default async function DriverDetailPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <DetailHeader title={driver.full_name} />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <DetailHeader title={driver.full_name} />
+          <Badge variant={driver.active ? "success" : "secondary"}>
+            {driver.active ? "Actif" : "Désactivé"}
+          </Badge>
+        </div>
+        <DriverActiveToggle driverId={driver.id} active={driver.active} />
+      </div>
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
