@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { LogoutButton } from "@/components/LogoutButton";
 
-export function AppHeader({
+export function AccountMenuButton({
   fullName,
-  role,
+  showName = true,
+  menuSide = "bottom",
 }: {
   fullName: string;
-  role: "Chauffeur" | "Patron";
+  showName?: boolean;
+  menuSide?: "top" | "bottom";
 }) {
   const [open, setOpen] = useState(false);
   const firstName = fullName.split(" ")[0] || "?";
@@ -24,18 +26,18 @@ export function AppHeader({
   }, [open]);
 
   return (
-    <header className="relative flex items-center justify-between border-b border-border bg-surface px-4 py-3">
-      <p className="text-sm font-medium text-foreground">{role}</p>
-
+    <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex items-center gap-2 rounded-full px-2 py-1 hover:bg-accent"
+        className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2"
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground text-sm font-semibold text-background">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-foreground">
           {initial}
         </span>
-        <span className="text-sm font-medium text-foreground">{firstName}</span>
+        {showName && (
+          <span className="text-sm font-medium text-nav-foreground-muted">{firstName}</span>
+        )}
       </button>
 
       {open && (
@@ -45,11 +47,15 @@ export function AppHeader({
             onClick={() => setOpen(false)}
             className="fixed inset-0 z-10 cursor-default"
           />
-          <div className="absolute right-4 top-full z-20 mt-2 w-44 rounded-md border border-border bg-surface p-1 shadow-card">
+          <div
+            className={`absolute right-0 z-20 w-44 rounded-md border border-border bg-surface p-1 shadow-card ${
+              menuSide === "top" ? "bottom-full mb-2" : "top-full mt-2"
+            }`}
+          >
             <LogoutButton />
           </div>
         </>
       )}
-    </header>
+    </div>
   );
 }

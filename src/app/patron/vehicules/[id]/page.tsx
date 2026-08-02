@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DetailHeader } from "@/components/DetailHeader";
+import { PhotoLightbox } from "@/components/PhotoLightbox";
 import { VehicleStatusBadge } from "@/components/VehicleStatusBadge";
 import { VehicleStatusControl } from "@/components/VehicleStatusControl";
 import { VehicleDocumentDialog } from "@/components/VehicleDocumentDialog";
@@ -156,11 +157,9 @@ export default async function VehicleDetailPage({
 
               {issue.photo_url && (
                 photoUrlByIssueId.has(issue.id) ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={photoUrlByIssueId.get(issue.id)}
+                  <PhotoLightbox
+                    src={photoUrlByIssueId.get(issue.id)!}
                     alt="Photo du signalement"
-                    className="h-48 w-full rounded-md border border-border object-cover"
                   />
                 ) : (
                   <p className="flex h-24 w-full items-center justify-center rounded-md border border-dashed border-border text-sm text-foreground/50">

@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/supabase/profile";
-import { AppHeader } from "@/components/AppHeader";
 import { PatronNav } from "@/components/PatronNav";
 
 export default async function PatronLayout({
@@ -15,8 +14,7 @@ export default async function PatronLayout({
 
   return (
     <div className="min-h-screen">
-      <AppHeader fullName={profile.full_name} role="Patron" />
-      <PatronNav />
+      <PatronNav fullName={profile.full_name} />
       <main className="px-4 py-6">{children}</main>
     </div>
   );

@@ -139,7 +139,7 @@ export function ReportIssueForm({ vehicles }: { vehicles: Vehicle[] }) {
           <img
             src={photoPreview}
             alt="Aperçu"
-            className="h-40 w-full rounded-md border border-border object-cover"
+            className="max-h-[400px] w-full rounded-md border border-border object-contain"
           />
         )}
       </div>
