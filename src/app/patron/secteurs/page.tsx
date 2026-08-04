@@ -32,7 +32,7 @@ export default async function SecteursPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-foreground">Secteurs</h1>
+        <h1 className="text-lg font-semibold text-foreground">Tournée</h1>
         <SectorFormDialog trigger={<Button>Nouveau secteur</Button>} />
       </div>
 

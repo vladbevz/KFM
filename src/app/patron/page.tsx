@@ -148,7 +148,7 @@ export default async function PatronHomePage() {
       {hasDriversInProgress && (
         <div className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold text-foreground/80">
-            Chauffeurs en tournée aujourd&apos;hui ({driversInProgress!.length})
+            Chauffeurs en tournée maintenant ({driversInProgress!.length})
           </h2>
           <div className="flex flex-col gap-2">
             {driversInProgress!.map((driver) => (

@@ -98,7 +98,7 @@ export default async function ChauffeursPage({
                   </Badge>
                 </div>
                 <Button asChild variant="outline" size="sm">
-                  <Link href={`/patron/chauffeurs/${driver.id}`}>Fiche</Link>
+                  <Link href={`/patron/chauffeurs/${driver.id}`}>Fiche conducteur</Link>
                 </Button>
               </div>
             ))}
