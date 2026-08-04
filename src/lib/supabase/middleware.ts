@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { REMEMBER_COOKIE_NAME } from "@/lib/supabase/remember";
 
 function redirectTo(
   request: NextRequest,
@@ -31,9 +32,19 @@ export async function updateSession(request: NextRequest) {
             request.cookies.set(name, value),
           );
           supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
-          );
+          // "Se souvenir de moi" décoché : @supabase/ssr réécrit toujours le
+          // cookie avec son maxAge par défaut (~400 jours) à chaque refresh,
+          // y compris ici. On le rabat en cookie de session (sans
+          // maxAge/expires) pour respecter le choix fait à la connexion.
+          const remembered = request.cookies.get(REMEMBER_COOKIE_NAME)?.value !== "0";
+          cookiesToSet.forEach(({ name, value, options }) => {
+            const isAuthToken = name.startsWith("sb-") && name.includes("auth-token");
+            const finalOptions =
+              isAuthToken && !remembered
+                ? { ...options, maxAge: undefined, expires: undefined }
+                : options;
+            supabaseResponse.cookies.set(name, value, finalOptions);
+          });
         },
       },
     },

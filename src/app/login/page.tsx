@@ -2,7 +2,11 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { createClient, downgradeAuthCookiesToSession } from "@/lib/supabase/client";
+import {
+  createClient,
+  downgradeAuthCookiesToSession,
+  setRememberPreference,
+} from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,6 +33,7 @@ export default function LoginPage() {
       return;
     }
 
+    setRememberPreference(rememberMe);
     if (!rememberMe) downgradeAuthCookiesToSession();
 
     router.push("/");

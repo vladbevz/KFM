@@ -2,7 +2,7 @@
 
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, clearRememberPreference } from "@/lib/supabase/client";
 
 export function LogoutButton() {
   const router = useRouter();
@@ -10,6 +10,7 @@ export function LogoutButton() {
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
+    clearRememberPreference();
     router.push("/login");
     router.refresh();
   }
