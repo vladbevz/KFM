@@ -25,9 +25,9 @@ export default async function ChauffeurPage() {
       supabase.from("sectors").select("*").order("code").returns<Sector[]>(),
       supabase
         .from("profiles")
-        .select("default_sector_id")
+        .select("default_sector_id, default_vehicle_id")
         .eq("id", user!.id)
-        .single<{ default_sector_id: string | null }>(),
+        .single<{ default_sector_id: string | null; default_vehicle_id: string | null }>(),
       supabase.from("vehicles").select("*").order("plate").returns<Vehicle[]>(),
     ]);
 
@@ -42,6 +42,7 @@ export default async function ChauffeurPage() {
       completedToday={completedToday}
       sectors={sectors ?? []}
       defaultSectorId={driverProfile?.default_sector_id ?? null}
+      defaultVehicleId={driverProfile?.default_vehicle_id ?? null}
       vehicles={vehicles ?? []}
     />
   );

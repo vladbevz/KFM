@@ -20,6 +20,8 @@ export default async function HistoriquePage() {
     supabase.from("sectors").select("*").returns<Sector[]>(),
   ]);
 
+  const today = new Date().toISOString().slice(0, 10);
+
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4">
       <h1 className="text-lg font-semibold text-foreground">Historique</h1>
@@ -31,7 +33,12 @@ export default async function HistoriquePage() {
       ) : (
         <div className="flex flex-col gap-3">
           {entries.map((entry) => (
-            <EntryCard key={entry.id} entry={entry} sectors={sectors ?? []} />
+            <EntryCard
+              key={entry.id}
+              entry={entry}
+              sectors={sectors ?? []}
+              editable={entry.entry_date === today}
+            />
           ))}
         </div>
       )}

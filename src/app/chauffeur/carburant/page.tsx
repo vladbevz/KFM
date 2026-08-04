@@ -18,7 +18,7 @@ export default async function CarburantPage() {
   const supabase = await createClient();
   const user = await getAuthUser();
 
-  const [{ data: vehicles }, { data: logs }] = await Promise.all([
+  const [{ data: vehicles }, { data: logs }, { data: profile }] = await Promise.all([
     supabase.from("vehicles").select("*").order("plate").returns<Vehicle[]>(),
     supabase
       .from("fuel_logs")
@@ -26,6 +26,11 @@ export default async function CarburantPage() {
       .eq("driver_id", user!.id)
       .order("filled_at", { ascending: false })
       .returns<FuelLog[]>(),
+    supabase
+      .from("profiles")
+      .select("default_vehicle_id")
+      .eq("id", user!.id)
+      .single<{ default_vehicle_id: string | null }>(),
   ]);
 
   const vehicleById = new Map((vehicles ?? []).map((v) => [v.id, v]));
@@ -34,7 +39,7 @@ export default async function CarburantPage() {
     <div className="mx-auto flex max-w-lg flex-col gap-6">
       <h1 className="text-lg font-semibold text-foreground">Carburant</h1>
 
-      <FuelLogForm vehicles={vehicles ?? []} />
+      <FuelLogForm vehicles={vehicles ?? []} defaultVehicleId={profile?.default_vehicle_id} />
 
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold text-foreground/80">Historique des pleins</h2>

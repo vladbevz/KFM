@@ -19,6 +19,7 @@ export function TourneeScreen({
   completedToday,
   sectors,
   defaultSectorId,
+  defaultVehicleId,
   vehicles,
 }: {
   firstName: string;
@@ -26,6 +27,7 @@ export function TourneeScreen({
   completedToday: DailyEntry[];
   sectors: Sector[];
   defaultSectorId: string | null;
+  defaultVehicleId: string | null;
   vehicles: Vehicle[];
 }) {
   const [activeEntry, setActiveEntry] = useState(inProgressEntry);
@@ -79,6 +81,7 @@ export function TourneeScreen({
         firstName={firstName}
         sectors={sectors}
         defaultSectorId={defaultSectorId}
+        defaultVehicleId={defaultVehicleId}
         vehicles={vehicles}
         onStarted={setActiveEntry}
       />
@@ -89,7 +92,7 @@ export function TourneeScreen({
             Tournées d&apos;aujourd&apos;hui
           </h2>
           {todaysEntries.map((entry) => (
-            <EntryCard key={entry.id} entry={entry} sectors={sectors} />
+            <EntryCard key={entry.id} entry={entry} sectors={sectors} editable />
           ))}
         </div>
       )}

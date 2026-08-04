@@ -200,6 +200,12 @@ create policy "vehicles_boss_update"
 create policy "vehicles_boss_delete"
   on public.vehicles for delete using (public.is_boss());
 
+-- Mémorisation de l'immatriculation par défaut, même mécanisme que
+-- default_sector_id (voir plus haut) : préremplie au démarrage de tournée,
+-- mise à jour si le chauffeur change de véhicule.
+alter table public.profiles add column if not exists default_vehicle_id uuid references public.vehicles (id);
+grant update (default_vehicle_id) on public.profiles to authenticated;
+
 create table if not exists public.vehicle_issues (
   id uuid primary key default gen_random_uuid(),
   vehicle_id uuid not null references public.vehicles (id) on delete cascade,

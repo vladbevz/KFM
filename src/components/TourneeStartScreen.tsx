@@ -12,17 +12,20 @@ export function TourneeStartScreen({
   firstName,
   sectors,
   defaultSectorId,
+  defaultVehicleId,
   vehicles,
   onStarted,
 }: {
   firstName: string;
   sectors: Sector[];
   defaultSectorId: string | null;
+  defaultVehicleId: string | null;
   vehicles: Vehicle[];
   onStarted: (entry: DailyEntry) => void;
 }) {
   const [sectorId, setSectorId] = useState(defaultSectorId ?? "");
-  const [vehicleRegistration, setVehicleRegistration] = useState("");
+  const defaultPlate = vehicles.find((v) => v.id === defaultVehicleId)?.plate ?? "";
+  const [vehicleRegistration, setVehicleRegistration] = useState(defaultPlate);
   const [kmDepart, setKmDepart] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);

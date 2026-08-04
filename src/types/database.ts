@@ -18,6 +18,7 @@ export interface Database {
           full_name: string;
           role: UserRole;
           default_sector_id: string | null;
+          default_vehicle_id: string | null;
           active: boolean;
         };
         Insert: {
@@ -25,6 +26,7 @@ export interface Database {
           full_name: string;
           role: UserRole;
           default_sector_id?: string | null;
+          default_vehicle_id?: string | null;
           active?: boolean;
         };
         Update: {
@@ -32,6 +34,7 @@ export interface Database {
           full_name?: string;
           role?: UserRole;
           default_sector_id?: string | null;
+          default_vehicle_id?: string | null;
           active?: boolean;
         };
         Relationships: [
@@ -40,6 +43,13 @@ export interface Database {
             columns: ["default_sector_id"];
             isOneToOne: false;
             referencedRelation: "sectors";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "profiles_default_vehicle_id_fkey";
+            columns: ["default_vehicle_id"];
+            isOneToOne: false;
+            referencedRelation: "vehicles";
             referencedColumns: ["id"];
           },
         ];

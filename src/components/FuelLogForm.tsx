@@ -7,7 +7,13 @@ import type { Database } from "@/types/database";
 
 type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
 
-export function FuelLogForm({ vehicles }: { vehicles: Vehicle[] }) {
+export function FuelLogForm({
+  vehicles,
+  defaultVehicleId,
+}: {
+  vehicles: Vehicle[];
+  defaultVehicleId?: string | null;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +43,7 @@ export function FuelLogForm({ vehicles }: { vehicles: Vehicle[] }) {
           id="vehicle_id"
           name="vehicle_id"
           required
+          defaultValue={defaultVehicleId ?? ""}
           className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
         >
           <option value="">Sélectionner...</option>

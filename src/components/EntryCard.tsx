@@ -1,6 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import { entryEnlevements, entryKm, entryPosesBreakdown } from "@/lib/stats";
 import { entryProfitability, resolveEntrySector } from "@/lib/rentabilite";
 import { ProfitabilityBadges } from "@/components/ProfitabilityBadge";
+import { TourneeEndForm } from "@/components/TourneeEndForm";
 import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
@@ -50,14 +54,41 @@ function HalfDay({
 }
 
 export function EntryCard({
-  entry,
+  entry: initialEntry,
   sectors,
+  editable = false,
   children,
 }: {
   entry: DailyEntry;
   sectors: Sector[];
+  editable?: boolean;
   children?: React.ReactNode;
 }) {
+  const [entry, setEntry] = useState(initialEntry);
+  const [editing, setEditing] = useState(false);
+
+  if (editing) {
+    return (
+      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface shadow-card p-4">
+        <TourneeEndForm
+          entry={entry}
+          mode="edit"
+          onCompleted={(updated) => {
+            setEntry(updated);
+            setEditing(false);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => setEditing(false)}
+          className="text-sm text-foreground/60 underline"
+        >
+          Annuler
+        </button>
+      </div>
+    );
+  }
+
   const sectorsById = new Map(sectors.map((s) => [s.id, s]));
   const profitability = entryProfitability(entry, resolveEntrySector(entry, sectorsById));
   const isNewFlow = Boolean(entry.tournee_type);
@@ -132,6 +163,16 @@ export function EntryCard({
           {entry.anomalie_tournee && <p>Tournée : {entry.anomalie_tournee}</p>}
           {entry.anomalie_vehicule && <p>Véhicule : {entry.anomalie_vehicule}</p>}
         </div>
+      )}
+
+      {editable && isNewFlow && (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="self-start text-sm text-foreground/60 underline"
+        >
+          Modifier
+        </button>
       )}
 
       {children}
