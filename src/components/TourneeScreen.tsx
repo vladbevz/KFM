@@ -6,7 +6,6 @@ import { Fuel, AlertTriangle } from "lucide-react";
 import { TourneeStartScreen } from "@/components/TourneeStartScreen";
 import { TourneeInProgressScreen } from "@/components/TourneeInProgressScreen";
 import { TourneeEndForm } from "@/components/TourneeEndForm";
-import { EntryCard } from "@/components/EntryCard";
 import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
@@ -16,7 +15,6 @@ type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
 export function TourneeScreen({
   firstName,
   inProgressEntry,
-  completedToday,
   sectors,
   defaultSectorId,
   defaultVehicleId,
@@ -24,7 +22,6 @@ export function TourneeScreen({
 }: {
   firstName: string;
   inProgressEntry: DailyEntry | null;
-  completedToday: DailyEntry[];
   sectors: Sector[];
   defaultSectorId: string | null;
   defaultVehicleId: string | null;
@@ -32,7 +29,6 @@ export function TourneeScreen({
 }) {
   const [activeEntry, setActiveEntry] = useState(inProgressEntry);
   const [showEndForm, setShowEndForm] = useState(false);
-  const [todaysEntries, setTodaysEntries] = useState(completedToday);
 
   // Écrans 2 et 3 : un seul bouton / un seul formulaire, rien d'autre — pas
   // de titre, pas de liens secondaires (usage terrain, pas le dashboard).
@@ -41,8 +37,7 @@ export function TourneeScreen({
       <div className="mx-auto max-w-lg">
         <TourneeEndForm
           entry={activeEntry}
-          onCompleted={(entry) => {
-            setTodaysEntries((prev) => [entry, ...prev]);
+          onCompleted={() => {
             setActiveEntry(null);
             setShowEndForm(false);
           }}
@@ -85,17 +80,6 @@ export function TourneeScreen({
         vehicles={vehicles}
         onStarted={setActiveEntry}
       />
-
-      {todaysEntries.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold text-foreground/80">
-            Tournées d&apos;aujourd&apos;hui
-          </h2>
-          {todaysEntries.map((entry) => (
-            <EntryCard key={entry.id} entry={entry} sectors={sectors} editable />
-          ))}
-        </div>
-      )}
     </div>
   );
 }

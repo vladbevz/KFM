@@ -32,14 +32,12 @@ export default async function ChauffeurPage() {
     ]);
 
   const inProgressEntry = (todaysEntries ?? []).find((e) => e.status === "in_progress") ?? null;
-  const completedToday = (todaysEntries ?? []).filter((e) => e.status === "completed");
   const firstName = (profile?.full_name ?? "").split(" ")[0] || "!";
 
   return (
     <TourneeScreen
       firstName={firstName}
       inProgressEntry={inProgressEntry}
-      completedToday={completedToday}
       sectors={sectors ?? []}
       defaultSectorId={driverProfile?.default_sector_id ?? null}
       defaultVehicleId={driverProfile?.default_vehicle_id ?? null}
