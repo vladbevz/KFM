@@ -4,10 +4,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+// Reste entièrement en UTC (Date.UTC + setUTCDate) : passer par l'heure
+// locale puis reformater en UTC via toISOString() fait perdre ou gagner un
+// jour selon le sens dès que le fuseau local a un offset positif (ex.
+// Europe/Paris, été comme hiver) — bug corrigé ici, cf. Correction 2.
 function shiftDate(date: string, days: number): string {
-  const d = new Date(`${date}T00:00:00`);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  const [y, m, d] = date.split("-").map(Number);
+  const utc = new Date(Date.UTC(y, m - 1, d));
+  utc.setUTCDate(utc.getUTCDate() + days);
+  return utc.toISOString().slice(0, 10);
 }
 
 export function RentabiliteDateControl({ date }: { date: string }) {
