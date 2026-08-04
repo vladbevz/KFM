@@ -1,18 +1,12 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { RentabiliteDateControl } from "@/components/RentabiliteDateControl";
-import { ProfitabilityBadges } from "@/components/ProfitabilityBadge";
-import { Badge } from "@/components/ui/badge";
+import { RentabiliteControls } from "@/components/RentabiliteControls";
+import { RentabiliteDayTable } from "@/components/RentabiliteDayTable";
+import { RentabiliteAggregateTable } from "@/components/RentabiliteAggregateTable";
+import { KpiCard } from "@/components/KpiCard";
 import { Button } from "@/components/ui/button";
-import { entryProfitability, resolveEntrySector } from "@/lib/rentabilite";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { computeRentabiliteKpis } from "@/lib/rentabilite";
+import { getPeriodRange, type PeriodKey } from "@/lib/stats";
 import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
@@ -28,9 +22,21 @@ export default async function RentabilitePage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const params = await searchParams;
+  const period = (
+    ["today", "7", "30", "90", "custom"].includes(params.period ?? "today")
+      ? (params.period ?? "today")
+      : "today"
+  ) as PeriodKey;
   const date = params.date ?? toISODate(new Date());
+  const customFrom = params.from ?? null;
+  const customTo = params.to ?? null;
+  const isDayView = period === "today";
 
   const supabase = await createClient();
+
+  const { from, to } = isDayView
+    ? { from: date, to: date }
+    : getPeriodRange(period, customFrom, customTo);
 
   const [{ data: drivers }, { data: sectors }, { data: entries }] = await Promise.all([
     supabase
@@ -44,26 +50,20 @@ export default async function RentabilitePage({
     supabase
       .from("daily_entries")
       .select("*")
-      .eq("entry_date", date)
+      .gte("entry_date", from)
+      .lte("entry_date", to)
       .returns<DailyEntry[]>(),
   ]);
 
   const sectorsById = new Map((sectors ?? []).map((s) => [s.id, s]));
-
-  // Plusieurs tournées possibles pour un même chauffeur ce jour-là.
-  const entriesByDriver = new Map<string, DailyEntry[]>();
-  for (const entry of entries ?? []) {
-    const list = entriesByDriver.get(entry.driver_id) ?? [];
-    list.push(entry);
-    entriesByDriver.set(entry.driver_id, list);
-  }
+  const { met, total } = computeRentabiliteKpis(entries ?? [], sectorsById);
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold text-foreground">Rentabilité</h1>
         <div className="flex items-center gap-2">
-          <RentabiliteDateControl date={date} />
+          <RentabiliteControls period={period} date={date} customFrom={customFrom} customTo={customTo} />
           <Link href="/patron/secteurs">
             <Button variant="outline" size="sm">
               Gérer les secteurs
@@ -72,49 +72,15 @@ export default async function RentabilitePage({
         </div>
       </div>
 
-      {(drivers ?? []).length === 0 ? (
-        <p className="py-12 text-center text-sm text-foreground-muted">
-          Aucun chauffeur pour le moment.
-        </p>
+      <div className="flex gap-3">
+        <KpiCard value={`${met}/${total}`} label="Seuils atteints" />
+        <KpiCard value={total > 0 ? `${((met / total) * 100).toFixed(0)}%` : "—"} label="Taux de réussite global" />
+      </div>
+
+      {isDayView ? (
+        <RentabiliteDayTable drivers={drivers ?? []} entries={entries ?? []} sectorsById={sectorsById} />
       ) : (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Chauffeur</TableHead>
-            <TableHead>Statut du jour</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {(drivers ?? []).map((driver) => {
-            const driverEntries = entriesByDriver.get(driver.id) ?? [];
-            return (
-              <TableRow key={driver.id}>
-                <TableCell className="font-medium">{driver.full_name}</TableCell>
-                <TableCell>
-                  {driverEntries.length === 0 ? (
-                    <span className="text-xs text-foreground/40">Aucune saisie</span>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {driverEntries.map((entry) =>
-                        entry.status === "in_progress" ? (
-                          <Badge key={entry.id} variant="info">
-                            En tournée
-                          </Badge>
-                        ) : (
-                          <ProfitabilityBadges
-                            key={entry.id}
-                            status={entryProfitability(entry, resolveEntrySector(entry, sectorsById))}
-                          />
-                        ),
-                      )}
-                    </div>
-                  )}
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+        <RentabiliteAggregateTable drivers={drivers ?? []} entries={entries ?? []} sectorsById={sectorsById} />
       )}
     </div>
   );

@@ -9,14 +9,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SectorFormDialog } from "@/components/SectorFormDialog";
-import type { Database, PaymentType } from "@/types/database";
+import { PAYMENT_TYPE_LABELS } from "@/lib/rentabilite";
+import type { Database } from "@/types/database";
 
 type Sector = Database["public"]["Tables"]["sectors"]["Row"];
-
-const PAYMENT_LABELS: Record<PaymentType, string> = {
-  a_la_pose: "À la pose",
-  forfait: "Forfait",
-};
 
 function thresholdsSummary(sector: Sector): string {
   return sector.payment_type === "a_la_pose"
@@ -60,7 +56,7 @@ export default async function SecteursPage() {
                 {sectors.map((sector) => (
                   <TableRow key={sector.id}>
                     <TableCell className="font-medium tabular-nums">{sector.code}</TableCell>
-                    <TableCell>{PAYMENT_LABELS[sector.payment_type]}</TableCell>
+                    <TableCell>{PAYMENT_TYPE_LABELS[sector.payment_type]}</TableCell>
                     <TableCell className="tabular-nums text-foreground/70">
                       {thresholdsSummary(sector)}
                     </TableCell>
@@ -88,7 +84,7 @@ export default async function SecteursPage() {
               >
                 <div>
                   <p className="font-medium tabular-nums text-foreground">{sector.code}</p>
-                  <p className="text-sm text-foreground/70">{PAYMENT_LABELS[sector.payment_type]}</p>
+                  <p className="text-sm text-foreground/70">{PAYMENT_TYPE_LABELS[sector.payment_type]}</p>
                   <p className="text-sm tabular-nums text-foreground-muted">
                     {thresholdsSummary(sector)}
                   </p>

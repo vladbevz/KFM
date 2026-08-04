@@ -5,7 +5,8 @@ import { DocumentBadge } from "@/components/DocumentBadge";
 import { VehicleStatusBadge } from "@/components/VehicleStatusBadge";
 import { getUpcomingEcheances } from "@/lib/echeances";
 import { daysUntil } from "@/lib/documents";
-import { entryProfitability, resolveEntrySector, type Sector } from "@/lib/rentabilite";
+import { computeRentabiliteKpis, type Sector } from "@/lib/rentabilite";
+import { KpiCard } from "@/components/KpiCard";
 import type { Database } from "@/types/database";
 
 type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
@@ -57,15 +58,8 @@ export default async function PatronHomePage() {
 
   const sectorsById = new Map((sectors ?? []).map((s) => [s.id, s]));
 
-  let met = 0;
-  let notMet = 0;
-  for (const entry of completedToday ?? []) {
-    const status = entryProfitability(entry, resolveEntrySector(entry, sectorsById));
-    if (status.kind === "a_la_pose") {
-      if (status.check.met) met += 1;
-      else notMet += 1;
-    }
-  }
+  const { met, total } = computeRentabiliteKpis(completedToday ?? [], sectorsById);
+  const notMet = total - met;
 
   const echeancesShown = echeances.slice(0, ECHEANCES_SHOWN);
   const hasEcheances = echeances.length > 0;
@@ -173,16 +167,20 @@ export default async function PatronHomePage() {
       {hasRentabiliteDuJour && (
         <div className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold text-foreground/80">Rentabilité du jour</h2>
-          <div className="flex gap-3">
-            <div className="flex-1 rounded-2xl border border-border bg-surface shadow-card p-4">
-              <p className="text-2xl font-semibold tabular-nums text-enlevements">{met}</p>
-              <p className="text-xs text-foreground/50">Seuil atteint</p>
-            </div>
-            <div className="flex-1 rounded-2xl border border-border bg-surface shadow-card p-4">
-              <p className="text-2xl font-semibold tabular-nums text-destructive">{notMet}</p>
-              <p className="text-xs text-foreground/50">Seuil non atteint</p>
-            </div>
-          </div>
+          <Link href={`/patron/rentabilite?date=${today}`} className="flex gap-3">
+            <KpiCard
+              value={met}
+              label="Seuil atteint"
+              valueClassName="text-enlevements"
+              className="transition-colors hover:border-foreground/30"
+            />
+            <KpiCard
+              value={notMet}
+              label="Seuil non atteint"
+              valueClassName="text-destructive"
+              className="transition-colors hover:border-foreground/30"
+            />
+          </Link>
         </div>
       )}
     </div>
