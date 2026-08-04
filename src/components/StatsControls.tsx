@@ -1,7 +1,9 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { METRIC_OPTIONS, PERIOD_OPTIONS, type Metric, type PeriodKey } from "@/lib/stats";
+import { METRIC_OPTIONS, type Metric, type PeriodKey } from "@/lib/stats";
+import { PeriodSelector } from "@/components/PeriodSelector";
+import { EntitySelect } from "@/components/EntitySelect";
 
 interface Driver {
   id: string;
@@ -58,61 +60,21 @@ export function StatsControls({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
-        {PERIOD_OPTIONS.map((opt) => (
-          <button
-            key={opt.key}
-            onClick={() => updateParams({ period: opt.key })}
-            className={`rounded-full px-3 py-1.5 text-sm ${
-              period === opt.key
-                ? "bg-foreground text-background"
-                : "border border-border bg-surface text-foreground-muted"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-      {period === "custom" && (
-        <div className="flex items-center gap-2">
-          <label className="flex flex-col gap-1 text-sm text-foreground/70">
-            Du
-            <input
-              type="date"
-              defaultValue={customFrom ?? ""}
-              onChange={(e) => updateParams({ from: e.target.value })}
-              className="rounded-md border border-border bg-background px-2 py-1 text-foreground"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-foreground/70">
-            Au
-            <input
-              type="date"
-              defaultValue={customTo ?? ""}
-              onChange={(e) => updateParams({ to: e.target.value })}
-              className="rounded-md border border-border bg-background px-2 py-1 text-foreground"
-            />
-          </label>
-        </div>
-      )}
+      <PeriodSelector
+        period={period}
+        customFrom={customFrom}
+        customTo={customTo}
+        updateParams={updateParams}
+      />
 
       {drivers && (
-        <label className="flex flex-col gap-1 text-sm text-foreground/70">
-          Chauffeur
-          <select
-            value={selectedDriverId ?? "all"}
-            onChange={(e) => updateParams({ driver: e.target.value })}
-            className="rounded-md border border-border bg-background px-2 py-1.5 text-foreground"
-          >
-            <option value="all">Tous les chauffeurs (cumulé)</option>
-            {drivers.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.full_name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <EntitySelect
+          label="Chauffeur"
+          allLabel="Tous les chauffeurs (cumulé)"
+          options={drivers.map((d) => ({ id: d.id, label: d.full_name }))}
+          value={selectedDriverId ?? "all"}
+          onChange={(id) => updateParams({ driver: id })}
+        />
       )}
 
       {metric && (

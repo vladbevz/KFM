@@ -1,18 +1,38 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { PERIOD_OPTIONS, type PeriodKey } from "@/lib/stats";
+import { type PeriodKey } from "@/lib/stats";
+import { PeriodSelector } from "@/components/PeriodSelector";
+import { EntitySelect } from "@/components/EntitySelect";
+
+interface Driver {
+  id: string;
+  full_name: string;
+}
+
+interface Vehicle {
+  id: string;
+  plate: string;
+}
 
 export function CarburantControls({
   period,
   customFrom,
   customTo,
   groupBy,
+  drivers,
+  vehicles,
+  selectedDriverId,
+  selectedVehicleId,
 }: {
   period: PeriodKey;
   customFrom: string | null;
   customTo: string | null;
   groupBy: "chauffeur" | "vehicule";
+  drivers: Driver[];
+  vehicles: Vehicle[];
+  selectedDriverId: string;
+  selectedVehicleId: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -50,44 +70,29 @@ export function CarburantControls({
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {PERIOD_OPTIONS.map((opt) => (
-          <button
-            key={opt.key}
-            onClick={() => updateParams({ period: opt.key })}
-            className={`rounded-md px-3 py-1.5 text-sm ${
-              period === opt.key
-                ? "bg-foreground text-background"
-                : "border border-border text-foreground/70"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
+      <PeriodSelector
+        period={period}
+        customFrom={customFrom}
+        customTo={customTo}
+        updateParams={updateParams}
+      />
 
-      {period === "custom" && (
-        <div className="flex items-center gap-2">
-          <label className="flex flex-col gap-1 text-sm text-foreground/70">
-            Du
-            <input
-              type="date"
-              defaultValue={customFrom ?? ""}
-              onChange={(e) => updateParams({ from: e.target.value })}
-              className="rounded-md border border-border bg-background px-2 py-1 text-foreground"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-foreground/70">
-            Au
-            <input
-              type="date"
-              defaultValue={customTo ?? ""}
-              onChange={(e) => updateParams({ to: e.target.value })}
-              className="rounded-md border border-border bg-background px-2 py-1 text-foreground"
-            />
-          </label>
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <EntitySelect
+          label="Chauffeur"
+          allLabel="Tous les chauffeurs"
+          options={drivers.map((d) => ({ id: d.id, label: d.full_name }))}
+          value={selectedDriverId}
+          onChange={(id) => updateParams({ driver: id })}
+        />
+        <EntitySelect
+          label="Véhicule"
+          allLabel="Tous les véhicules"
+          options={vehicles.map((v) => ({ id: v.id, label: v.plate }))}
+          value={selectedVehicleId}
+          onChange={(id) => updateParams({ vehicle: id })}
+        />
+      </div>
     </div>
   );
 }

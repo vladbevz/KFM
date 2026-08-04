@@ -34,10 +34,26 @@ export default async function CarburantPatronPage({
   const groupBy = params.groupBy === "vehicule" ? "vehicule" : "chauffeur";
   const customFrom = params.from ?? null;
   const customTo = params.to ?? null;
+  const selectedDriverId = params.driver ?? "all";
+  const selectedVehicleId = params.vehicle ?? "all";
 
   const { from, to } = getPeriodRange(period, customFrom, customTo);
 
   const supabase = await createClient();
+
+  let logsQuery = supabase
+    .from("fuel_logs")
+    .select("*")
+    .gte("filled_at", from)
+    .lte("filled_at", to)
+    .order("filled_at", { ascending: false });
+
+  if (selectedDriverId !== "all") {
+    logsQuery = logsQuery.eq("driver_id", selectedDriverId);
+  }
+  if (selectedVehicleId !== "all") {
+    logsQuery = logsQuery.eq("vehicle_id", selectedVehicleId);
+  }
 
   const [{ data: drivers }, { data: vehicles }, { data: logs }] = await Promise.all([
     supabase
@@ -46,13 +62,7 @@ export default async function CarburantPatronPage({
       .eq("role", "driver")
       .returns<{ id: string; full_name: string }[]>(),
     supabase.from("vehicles").select("id, plate").returns<{ id: string; plate: string }[]>(),
-    supabase
-      .from("fuel_logs")
-      .select("*")
-      .gte("filled_at", from)
-      .lte("filled_at", to)
-      .order("filled_at", { ascending: false })
-      .returns<FuelLog[]>(),
+    logsQuery.returns<FuelLog[]>(),
   ]);
 
   const driverById = new Map((drivers ?? []).map((d) => [d.id, d.full_name]));
@@ -84,6 +94,10 @@ export default async function CarburantPatronPage({
         customFrom={customFrom}
         customTo={customTo}
         groupBy={groupBy}
+        drivers={drivers ?? []}
+        vehicles={vehicles ?? []}
+        selectedDriverId={selectedDriverId}
+        selectedVehicleId={selectedVehicleId}
       />
 
       <div>
