@@ -1,5 +1,5 @@
 import type { Database } from "@/types/database";
-import { sectorThreshold, resolveEntrySector, type Sector } from "@/lib/rentabilite";
+import { sectorThreshold, resolveEntrySector, entryProfitability, type Sector } from "@/lib/rentabilite";
 import {
   entryKm,
   entryPosesBreakdown,
@@ -57,6 +57,29 @@ export function getPeriodRange(
   from.setDate(from.getDate() - (days - 1));
 
   return { from: toISODate(from), to };
+}
+
+// Période précédente de même durée (ex. semaine actuelle vs semaine
+// précédente), pour le calcul de tendance du tableau comparatif. Reste
+// entièrement en UTC (Date.UTC + diff en millisecondes) pour ne jamais
+// passer par une conversion de fuseau local — même précédent que le
+// correctif de shiftDate (RentabiliteDateControl), qui perdait/gagnait un
+// jour avec un offset local positif.
+export function getPreviousPeriodRange(from: string, to: string): { from: string; to: string } {
+  const [fy, fm, fd] = from.split("-").map(Number);
+  const [ty, tm, td] = to.split("-").map(Number);
+  const fromUTC = Date.UTC(fy, fm - 1, fd);
+  const toUTC = Date.UTC(ty, tm - 1, td);
+  const dayMs = 24 * 60 * 60 * 1000;
+  const days = Math.round((toUTC - fromUTC) / dayMs) + 1;
+
+  const prevToUTC = fromUTC - dayMs;
+  const prevFromUTC = prevToUTC - (days - 1) * dayMs;
+
+  return {
+    from: new Date(prevFromUTC).toISOString().slice(0, 10),
+    to: new Date(prevToUTC).toISOString().slice(0, 10),
+  };
 }
 
 export interface DateMetrics {
@@ -167,4 +190,110 @@ export function aggregateByDriver(
   }
 
   return Array.from(byDriver.values());
+}
+
+export function sumLitersByDriver(fuelLogs: { driver_id: string; liters: number }[]): Map<string, number> {
+  const byDriver = new Map<string, number>();
+  for (const log of fuelLogs) {
+    byDriver.set(log.driver_id, (byDriver.get(log.driver_id) ?? 0) + Number(log.liters));
+  }
+  return byDriver;
+}
+
+export interface DriverStatsRow {
+  driverId: string;
+  fullName: string;
+  totalKm: number;
+  avgKmPerDay: number | null;
+  totalPoses: number;
+  avgPosesPerDay: number | null;
+  totalEnlevements: number;
+  avgTotalPerDay: number | null;
+  totalLiters: number;
+  totalIncidents: number;
+  seuilsAtteints: number;
+  seuilsNonAtteints: number;
+  tauxReussite: number | null;
+  joursTravailles: number;
+}
+
+// Tableau comparatif enrichi (Statistiques -> Tableau). Seules les entrées
+// terminées comptent pour les moyennes par jour travaillé (règle explicite :
+// pas de dilution par les jours calendaires non travaillés). Tous les
+// chauffeurs actifs apparaissent, même sans activité — même précédent que
+// aggregateByDriver/aggregateRentabiliteByDriver.
+export function aggregateDriverStats(
+  entries: DailyEntry[],
+  drivers: { id: string; full_name: string }[],
+  sectorsById: Map<string, Sector>,
+  litersByDriver: Map<string, number>,
+): DriverStatsRow[] {
+  const byDriver = new Map<
+    string,
+    {
+      dates: Set<string>;
+      totalKm: number;
+      totalPoses: number;
+      totalEnlevements: number;
+      totalIncidents: number;
+      seuilsAtteints: number;
+      seuilsNonAtteints: number;
+    }
+  >();
+  for (const driver of drivers) {
+    byDriver.set(driver.id, {
+      dates: new Set(),
+      totalKm: 0,
+      totalPoses: 0,
+      totalEnlevements: 0,
+      totalIncidents: 0,
+      seuilsAtteints: 0,
+      seuilsNonAtteints: 0,
+    });
+  }
+
+  for (const entry of entries) {
+    if (entry.status !== "completed") continue;
+    const acc = byDriver.get(entry.driver_id);
+    if (!acc) continue;
+
+    acc.dates.add(entry.entry_date);
+    acc.totalKm += entryKm(entry);
+    acc.totalPoses += entryPoses(entry);
+    acc.totalEnlevements += entryEnlevements(entry);
+
+    const breakdown = entryPosesBreakdown(entry);
+    acc.totalIncidents += breakdown.damaged + breakdown.notDelivered;
+
+    const sector = resolveEntrySector(entry, sectorsById);
+    const status = entryProfitability(entry, sector);
+    if (status.kind === "a_la_pose") {
+      if (status.check.met) acc.seuilsAtteints += 1;
+      else acc.seuilsNonAtteints += 1;
+    }
+  }
+
+  return drivers.map((driver) => {
+    const acc = byDriver.get(driver.id)!;
+    const joursTravailles = acc.dates.size;
+    const seuilsTotal = acc.seuilsAtteints + acc.seuilsNonAtteints;
+
+    return {
+      driverId: driver.id,
+      fullName: driver.full_name,
+      totalKm: acc.totalKm,
+      avgKmPerDay: joursTravailles > 0 ? acc.totalKm / joursTravailles : null,
+      totalPoses: acc.totalPoses,
+      avgPosesPerDay: joursTravailles > 0 ? acc.totalPoses / joursTravailles : null,
+      totalEnlevements: acc.totalEnlevements,
+      avgTotalPerDay:
+        joursTravailles > 0 ? (acc.totalPoses + acc.totalEnlevements) / joursTravailles : null,
+      totalLiters: litersByDriver.get(driver.id) ?? 0,
+      totalIncidents: acc.totalIncidents,
+      seuilsAtteints: acc.seuilsAtteints,
+      seuilsNonAtteints: acc.seuilsNonAtteints,
+      tauxReussite: seuilsTotal > 0 ? (acc.seuilsAtteints / seuilsTotal) * 100 : null,
+      joursTravailles,
+    };
+  });
 }
