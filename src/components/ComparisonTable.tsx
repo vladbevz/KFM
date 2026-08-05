@@ -180,14 +180,14 @@ export function ComparisonTable({
       {/* Desktop/tablette : tableau inchangé dans son mécanisme, colonnes
           étendues + ligne de synthèse + tendance + mise en avant. */}
       <div className="hidden overflow-x-auto rounded-lg border border-border md:block">
-        <table className="w-full min-w-[1100px] border-collapse text-sm">
+        <table className="w-full min-w-[950px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-border bg-surface">
               {COLUMNS.map((col) => (
                 <th
                   key={col.key}
                   onClick={() => toggleSort(col.key)}
-                  className={`cursor-pointer select-none whitespace-nowrap px-3 py-2 font-medium text-foreground/70 hover:text-foreground ${
+                  className={`max-w-[110px] cursor-pointer select-none px-3 py-2 align-bottom font-medium leading-tight text-foreground/70 hover:text-foreground ${
                     col.numeric ? "text-right" : "text-left"
                   }`}
                 >
@@ -197,7 +197,7 @@ export function ComparisonTable({
                   )}
                 </th>
               ))}
-              <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-foreground/70">
+              <th className="max-w-[80px] px-3 py-2 align-bottom text-left font-medium leading-tight text-foreground/70">
                 Tendance
               </th>
             </tr>
