@@ -209,6 +209,7 @@ export interface Database {
           plate: string;
           label: string | null;
           status: VehicleStatus;
+          retired: boolean;
           created_at: string;
         };
         Insert: {
@@ -216,6 +217,7 @@ export interface Database {
           plate: string;
           label?: string | null;
           status?: VehicleStatus;
+          retired?: boolean;
           created_at?: string;
         };
         Update: {
@@ -223,6 +225,7 @@ export interface Database {
           plate?: string;
           label?: string | null;
           status?: VehicleStatus;
+          retired?: boolean;
           created_at?: string;
         };
         Relationships: [];
@@ -396,6 +399,54 @@ export interface Database {
             columns: ["vehicle_id"];
             isOneToOne: false;
             referencedRelation: "vehicles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      vehicle_repairs: {
+        Row: {
+          id: string;
+          vehicle_id: string;
+          vehicle_issue_id: string | null;
+          description: string;
+          cost: number;
+          repaired_at: string;
+          invoice_url: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          vehicle_id: string;
+          vehicle_issue_id?: string | null;
+          description: string;
+          cost: number;
+          repaired_at?: string;
+          invoice_url?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          vehicle_id?: string;
+          vehicle_issue_id?: string | null;
+          description?: string;
+          cost?: number;
+          repaired_at?: string;
+          invoice_url?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_repairs_vehicle_id_fkey";
+            columns: ["vehicle_id"];
+            isOneToOne: false;
+            referencedRelation: "vehicles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "vehicle_repairs_vehicle_issue_id_fkey";
+            columns: ["vehicle_issue_id"];
+            isOneToOne: false;
+            referencedRelation: "vehicle_issues";
             referencedColumns: ["id"];
           },
         ];

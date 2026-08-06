@@ -19,6 +19,9 @@ export default async function CarburantPage() {
   const user = await getAuthUser();
 
   const [{ data: vehicles }, { data: logs }, { data: profile }] = await Promise.all([
+    // Non filtré : l'historique ci-dessous doit continuer à afficher la
+    // plaque même pour un plein passé sur un véhicule depuis retiré. Seul le
+    // formulaire (véhicules sélectionnables) exclut les retirés.
     supabase.from("vehicles").select("*").order("plate").returns<Vehicle[]>(),
     supabase
       .from("fuel_logs")
@@ -34,12 +37,13 @@ export default async function CarburantPage() {
   ]);
 
   const vehicleById = new Map((vehicles ?? []).map((v) => [v.id, v]));
+  const selectableVehicles = (vehicles ?? []).filter((v) => !v.retired);
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6">
       <h1 className="text-lg font-semibold text-foreground">Carburant</h1>
 
-      <FuelLogForm vehicles={vehicles ?? []} defaultVehicleId={profile?.default_vehicle_id} />
+      <FuelLogForm vehicles={selectableVehicles} defaultVehicleId={profile?.default_vehicle_id} />
 
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold text-foreground/80">Historique des pleins</h2>

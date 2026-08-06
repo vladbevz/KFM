@@ -29,6 +29,7 @@ export default async function PatronHomePage() {
         .from("vehicles")
         .select("*")
         .neq("status", "operational")
+        .eq("retired", false)
         .order("plate")
         .returns<Vehicle[]>(),
       supabase

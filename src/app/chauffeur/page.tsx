@@ -28,7 +28,7 @@ export default async function ChauffeurPage() {
         .select("default_sector_id, default_vehicle_id")
         .eq("id", user!.id)
         .single<{ default_sector_id: string | null; default_vehicle_id: string | null }>(),
-      supabase.from("vehicles").select("*").order("plate").returns<Vehicle[]>(),
+      supabase.from("vehicles").select("*").eq("retired", false).order("plate").returns<Vehicle[]>(),
     ]);
 
   const inProgressEntry = (todaysEntries ?? []).find((e) => e.status === "in_progress") ?? null;

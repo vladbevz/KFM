@@ -7,6 +7,9 @@ import { PhotoLightbox } from "@/components/PhotoLightbox";
 import { VehicleStatusBadge } from "@/components/VehicleStatusBadge";
 import { VehicleStatusControl } from "@/components/VehicleStatusControl";
 import { VehicleDocumentDialog } from "@/components/VehicleDocumentDialog";
+import { VehicleRepairDialog } from "@/components/VehicleRepairDialog";
+import { VehicleRetireToggle } from "@/components/VehicleRetireToggle";
+import { VehicleDeleteForeverDialog } from "@/components/VehicleDeleteForeverDialog";
 import { DocumentsList, type DocumentItem } from "@/components/DocumentsList";
 import { resolveVehicleIssue } from "@/app/patron/vehicules/actions";
 import type { Database } from "@/types/database";
@@ -14,12 +17,21 @@ import type { Database } from "@/types/database";
 type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
 type VehicleIssue = Database["public"]["Tables"]["vehicle_issues"]["Row"];
 type VehicleDocument = Database["public"]["Tables"]["vehicle_documents"]["Row"];
+type VehicleRepair = Database["public"]["Tables"]["vehicle_repairs"]["Row"];
 
 function formatDateTime(iso: string): string {
   return new Intl.DateTimeFormat("fr-FR", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(iso));
+}
+
+function formatDate(iso: string): string {
+  return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(new Date(`${iso}T00:00:00`));
+}
+
+function formatCost(cost: number): string {
+  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(cost);
 }
 
 export default async function VehicleDetailPage({
@@ -30,7 +42,7 @@ export default async function VehicleDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: vehicle }, { data: issues }, { data: documents }] = await Promise.all([
+  const [{ data: vehicle }, { data: issues }, { data: documents }, { data: repairs }] = await Promise.all([
     supabase.from("vehicles").select("*").eq("id", id).maybeSingle<Vehicle>(),
     supabase
       .from("vehicle_issues")
@@ -44,6 +56,12 @@ export default async function VehicleDetailPage({
       .eq("vehicle_id", id)
       .order("expiry_date", { ascending: true, nullsFirst: false })
       .returns<VehicleDocument[]>(),
+    supabase
+      .from("vehicle_repairs")
+      .select("*")
+      .eq("vehicle_id", id)
+      .order("repaired_at", { ascending: false })
+      .returns<VehicleRepair[]>(),
   ]);
 
   if (!vehicle) notFound();
@@ -80,12 +98,29 @@ export default async function VehicleDetailPage({
     });
   }
 
+  const invoiceUrlByRepairId = new Map<string, string>();
+  for (const repair of repairs ?? []) {
+    if (!repair.invoice_url) continue;
+    const { data: signed } = await supabase.storage
+      .from("vehicle-repairs")
+      .createSignedUrl(repair.invoice_url, 3600);
+    if (signed) invoiceUrlByRepairId.set(repair.id, signed.signedUrl);
+  }
+
+  const totalRepairsCost = (repairs ?? []).reduce((sum, r) => sum + Number(r.cost), 0);
+  const openIssues = (issues ?? [])
+    .filter((i) => i.status === "open")
+    .map((i) => ({ id: i.id, description: i.description, reported_at: i.reported_at }));
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <DetailHeader title={vehicle.plate} />
-          <VehicleStatusBadge status={vehicle.status} />
+          <div className="flex items-center gap-2">
+            {vehicle.retired && <Badge variant="secondary">Retiré de la flotte</Badge>}
+            <VehicleStatusBadge status={vehicle.status} />
+          </div>
         </div>
         {vehicle.label && <p className="pl-9 text-sm text-foreground/60">{vehicle.label}</p>}
       </div>
@@ -121,6 +156,56 @@ export default async function VehicleDetailPage({
             />
           )}
         />
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground/80">
+            Réparations — {formatCost(totalRepairsCost)} au total
+          </h2>
+          <VehicleRepairDialog
+            vehicleId={vehicle.id}
+            openIssues={openIssues}
+            trigger={
+              <Button variant="outline" size="sm">
+                Ajouter une réparation
+              </Button>
+            }
+          />
+        </div>
+
+        {!repairs || repairs.length === 0 ? (
+          <p className="py-6 text-center text-sm text-foreground/50">
+            Aucune réparation enregistrée.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {repairs.map((repair) => (
+              <div
+                key={repair.id}
+                className="flex flex-col gap-1 rounded-md border border-border bg-background px-3 py-2"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-foreground">{formatDate(repair.repaired_at)}</p>
+                  <span className="text-sm font-semibold tabular-nums text-foreground">
+                    {formatCost(Number(repair.cost))}
+                  </span>
+                </div>
+                <p className="text-sm text-foreground/70">{repair.description}</p>
+                {invoiceUrlByRepairId.has(repair.id) && (
+                  <a
+                    href={invoiceUrlByRepairId.get(repair.id)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-foreground underline"
+                  >
+                    Voir la facture
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3">
@@ -186,6 +271,14 @@ export default async function VehicleDetailPage({
             </div>
           ))
         )}
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-border pt-4">
+        <h2 className="text-sm font-semibold text-foreground/80">Gestion du véhicule</h2>
+        <div className="flex flex-wrap gap-2">
+          <VehicleRetireToggle vehicleId={vehicle.id} retired={vehicle.retired} />
+          <VehicleDeleteForeverDialog vehicleId={vehicle.id} plate={vehicle.plate} />
+        </div>
       </div>
     </div>
   );

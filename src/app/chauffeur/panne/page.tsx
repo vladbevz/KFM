@@ -10,7 +10,7 @@ export default async function PannePage() {
   const user = await getAuthUser();
 
   const [{ data: vehicles }, { data: profile }] = await Promise.all([
-    supabase.from("vehicles").select("*").order("plate").returns<Vehicle[]>(),
+    supabase.from("vehicles").select("*").eq("retired", false).order("plate").returns<Vehicle[]>(),
     supabase
       .from("profiles")
       .select("default_vehicle_id")
