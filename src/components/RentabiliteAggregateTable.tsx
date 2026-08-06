@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/table";
 import { ExpandableCard } from "@/components/ExpandableCard";
 import { RentabiliteEntryRow } from "@/components/RentabiliteEntryRow";
+import { ExportButton } from "@/components/ExportButton";
+import type { ExportColumn, ExportRow } from "@/lib/export";
 import {
   PAYMENT_TYPE_LABELS,
   aggregateRentabiliteByDriver,
@@ -21,6 +23,13 @@ import {
   type DriverRentabiliteSummary,
 } from "@/lib/rentabilite";
 import type { Database } from "@/types/database";
+
+const EXPORT_COLUMNS: ExportColumn[] = [
+  { key: "chauffeur", label: "Chauffeur" },
+  { key: "jours", label: "Jours travaillés", numeric: true },
+  { key: "seuils", label: "Seuils atteints" },
+  { key: "taux", label: "Taux de réussite" },
+];
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 
@@ -121,10 +130,12 @@ export function RentabiliteAggregateTable({
   drivers,
   entries,
   sectorsById,
+  periodLabel,
 }: {
   drivers: { id: string; full_name: string }[];
   entries: DailyEntry[];
   sectorsById: Map<string, Sector>;
+  periodLabel: string;
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -145,8 +156,25 @@ export function RentabiliteAggregateTable({
     );
   }
 
+  const exportRows: ExportRow[] = summaries.map((s) => ({
+    chauffeur: s.fullName,
+    jours: s.joursTravailles,
+    seuils: `${s.seuilsAtteints}/${s.seuilsTotal}`,
+    taux: s.tauxReussite !== null ? `${s.tauxReussite.toFixed(0)}%` : "—",
+  }));
+
   return (
     <>
+      <div className="flex justify-end">
+        <ExportButton
+          columns={EXPORT_COLUMNS}
+          rows={exportRows}
+          filename={`rentabilite-${periodLabel.replace(/\s+/g, "-").toLowerCase()}`}
+          title="KFM Suivi — Rentabilité"
+          subtitle={`Période : ${periodLabel}`}
+        />
+      </div>
+
       <div className="hidden md:block">
         <Table>
           <TableHeader>

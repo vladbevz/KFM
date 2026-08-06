@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { CarburantControls } from "@/components/CarburantControls";
 import { ExpandableCard } from "@/components/ExpandableCard";
-import { getPeriodRange, type PeriodKey } from "@/lib/stats";
+import { ExportButton } from "@/components/ExportButton";
+import type { ExportColumn, ExportRow } from "@/lib/export";
+import { getPeriodRange, PERIOD_OPTIONS, type PeriodKey } from "@/lib/stats";
 import {
   Table,
   TableBody,
@@ -85,6 +87,22 @@ export default async function CarburantPatronPage({
   }
   const groupRows = Array.from(groups.values()).sort((a, b) => b.liters - a.liters);
 
+  const periodLabel =
+    period === "custom"
+      ? `${customFrom ?? "?"} au ${customTo ?? "?"}`
+      : (PERIOD_OPTIONS.find((o) => o.key === period)?.label ?? period);
+
+  const exportColumns: ExportColumn[] = [
+    { key: "label", label: groupBy === "chauffeur" ? "Chauffeur" : "Véhicule" },
+    { key: "count", label: "Pleins", numeric: true },
+    { key: "liters", label: "Total litres", numeric: true },
+  ];
+  const exportRows: ExportRow[] = groupRows.map((g) => ({
+    label: g.label,
+    count: g.count,
+    liters: `${g.liters.toFixed(2)} L`,
+  }));
+
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-lg font-semibold text-foreground">Carburant</h1>
@@ -101,10 +119,21 @@ export default async function CarburantPatronPage({
       />
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-foreground/80">
-          Total par {groupBy === "chauffeur" ? "chauffeur" : "véhicule"} —{" "}
-          {grandTotal.toFixed(2)} L au total
-        </h2>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-foreground/80">
+            Total par {groupBy === "chauffeur" ? "chauffeur" : "véhicule"} —{" "}
+            {grandTotal.toFixed(2)} L au total
+          </h2>
+          {groupRows.length > 0 && (
+            <ExportButton
+              columns={exportColumns}
+              rows={exportRows}
+              filename={`carburant-${groupBy}-${periodLabel.replace(/\s+/g, "-").toLowerCase()}`}
+              title="KFM Suivi — Carburant"
+              subtitle={`Période : ${periodLabel} · Groupé par ${groupBy === "chauffeur" ? "chauffeur" : "véhicule"}`}
+            />
+          )}
+        </div>
         {groupRows.length === 0 ? (
           <p className="py-8 text-center text-sm text-foreground/50">
             Aucun plein sur cette période.

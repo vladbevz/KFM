@@ -7,6 +7,7 @@ import {
   getPeriodRange,
   getPreviousPeriodRange,
   sumLitersByDriver,
+  PERIOD_OPTIONS,
   type Metric,
   type PeriodKey,
 } from "@/lib/stats";
@@ -91,6 +92,10 @@ export default async function PatronStatistiquesPage({
         : Promise.resolve({ data: null }),
     ]);
   const sectorsById = new Map((sectors ?? []).map((s) => [s.id, s]));
+  const periodLabel =
+    period === "custom"
+      ? `${customFrom ?? "?"} au ${customTo ?? "?"}`
+      : (PERIOD_OPTIONS.find((o) => o.key === period)?.label ?? period);
 
   return (
     <div className="flex flex-col gap-4">
@@ -124,6 +129,7 @@ export default async function PatronStatistiquesPage({
             sectorsById,
             sumLitersByDriver(prevFuelLogsResult.data ?? []),
           )}
+          periodLabel={periodLabel}
         />
       )}
     </div>

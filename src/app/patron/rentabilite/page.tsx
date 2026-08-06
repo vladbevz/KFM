@@ -6,7 +6,7 @@ import { RentabiliteAggregateTable } from "@/components/RentabiliteAggregateTabl
 import { KpiCard } from "@/components/KpiCard";
 import { Button } from "@/components/ui/button";
 import { computeRentabiliteKpis } from "@/lib/rentabilite";
-import { getPeriodRange, type PeriodKey } from "@/lib/stats";
+import { getPeriodRange, PERIOD_OPTIONS, type PeriodKey } from "@/lib/stats";
 import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
@@ -57,6 +57,13 @@ export default async function RentabilitePage({
 
   const sectorsById = new Map((sectors ?? []).map((s) => [s.id, s]));
   const { met, total } = computeRentabiliteKpis(entries ?? [], sectorsById);
+  const dateLabel = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" }).format(
+    new Date(`${date}T00:00:00`),
+  );
+  const periodLabel =
+    period === "custom"
+      ? `${customFrom ?? "?"} au ${customTo ?? "?"}`
+      : (PERIOD_OPTIONS.find((o) => o.key === period)?.label ?? period);
 
   return (
     <div className="flex flex-col gap-4">
@@ -78,9 +85,19 @@ export default async function RentabilitePage({
       </div>
 
       {isDayView ? (
-        <RentabiliteDayTable drivers={drivers ?? []} entries={entries ?? []} sectorsById={sectorsById} />
+        <RentabiliteDayTable
+          drivers={drivers ?? []}
+          entries={entries ?? []}
+          sectorsById={sectorsById}
+          dateLabel={dateLabel}
+        />
       ) : (
-        <RentabiliteAggregateTable drivers={drivers ?? []} entries={entries ?? []} sectorsById={sectorsById} />
+        <RentabiliteAggregateTable
+          drivers={drivers ?? []}
+          entries={entries ?? []}
+          sectorsById={sectorsById}
+          periodLabel={periodLabel}
+        />
       )}
     </div>
   );

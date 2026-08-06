@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowDownAZ, ArrowUpAZ, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { ExpandableCard } from "@/components/ExpandableCard";
+import { ExportButton } from "@/components/ExportButton";
+import type { ExportColumn, ExportRow } from "@/lib/export";
 import type { DriverStatsRow } from "@/lib/stats";
 
 type SortKey = Exclude<keyof DriverStatsRow, "driverId" | "joursTravailles">;
@@ -60,6 +62,13 @@ function getTrend(row: DriverStatsRow, prevRow: DriverStatsRow | undefined, col:
   if (curr > prev) return "up";
   if (curr < prev) return "down";
   return "flat";
+}
+
+function trendLabel(trend: Trend): string {
+  if (trend === "up") return "↑";
+  if (trend === "down") return "↓";
+  if (trend === "flat") return "→";
+  return "—";
 }
 
 function TrendIcon({ trend }: { trend: Trend }) {
@@ -121,9 +130,11 @@ function summarizeRows(rows: DriverStatsRow[]): DriverStatsRow {
 export function ComparisonTable({
   data,
   prevData,
+  periodLabel,
 }: {
   data: DriverStatsRow[];
   prevData: DriverStatsRow[];
+  periodLabel: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -175,8 +186,33 @@ export function ComparisonTable({
 
   const highlightEnabled = sortKey !== "fullName" && sorted.length > 1;
 
+  // Export : respecte le tri courant et inclut la ligne de synthèse en
+  // premier — ce qui est affiché à l'écran est ce qui s'exporte.
+  const exportColumns: ExportColumn[] = [
+    ...COLUMNS.map((c) => ({ key: c.key, label: c.label, numeric: c.numeric })),
+    { key: "trend", label: `Tendance (${activeColumn.label})`, numeric: false },
+  ];
+  const toExportRow = (row: DriverStatsRow, prevRow: DriverStatsRow | undefined): ExportRow => ({
+    ...Object.fromEntries(COLUMNS.map((c) => [c.key, formatValue(row, c)])),
+    trend: trendLabel(getTrend(row, prevRow, activeColumn)),
+  });
+  const exportRows: ExportRow[] = [
+    toExportRow(summaryRow, summaryPrevRow),
+    ...sorted.map((row) => toExportRow(row, prevByDriverId.get(row.driverId))),
+  ];
+
   return (
     <>
+      <div className="flex justify-end">
+        <ExportButton
+          columns={exportColumns}
+          rows={exportRows}
+          filename={`statistiques-chauffeurs-${periodLabel.replace(/\s+/g, "-").toLowerCase()}`}
+          title="KFM Suivi — Statistiques des chauffeurs"
+          subtitle={`Période : ${periodLabel}`}
+        />
+      </div>
+
       {/* Desktop/tablette : tableau inchangé dans son mécanisme, colonnes
           étendues + ligne de synthèse + tendance + mise en avant. */}
       <div className="hidden overflow-x-auto rounded-lg border border-border md:block">

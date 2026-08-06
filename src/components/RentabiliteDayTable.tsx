@@ -8,8 +8,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RentabiliteEntryRow } from "@/components/RentabiliteEntryRow";
+import { ExportButton } from "@/components/ExportButton";
+import type { ExportColumn, ExportRow } from "@/lib/export";
 import { PAYMENT_TYPE_LABELS, rentabiliteEntryRow, type Sector } from "@/lib/rentabilite";
 import type { Database } from "@/types/database";
+
+const EXPORT_COLUMNS: ExportColumn[] = [
+  { key: "chauffeur", label: "Chauffeur" },
+  { key: "tournee", label: "Tournée" },
+  { key: "paiement", label: "Paiement" },
+  { key: "objectif", label: "Objectif", numeric: true },
+  { key: "realise", label: "Réalisé", numeric: true },
+  { key: "ecart", label: "Écart", numeric: true },
+  { key: "statut", label: "Statut" },
+];
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 
@@ -38,10 +50,12 @@ export function RentabiliteDayTable({
   drivers,
   entries,
   sectorsById,
+  dateLabel,
 }: {
   drivers: { id: string; full_name: string }[];
   entries: DailyEntry[];
   sectorsById: Map<string, Sector>;
+  dateLabel: string;
 }) {
   const entriesByDriver = new Map<string, DailyEntry[]>();
   for (const entry of entries) {
@@ -58,8 +72,47 @@ export function RentabiliteDayTable({
     );
   }
 
+  const exportRows: ExportRow[] = drivers.flatMap((driver) => {
+    const driverEntries = entriesByDriver.get(driver.id) ?? [];
+    if (driverEntries.length === 0) {
+      return [
+        {
+          chauffeur: driver.full_name,
+          tournee: "—",
+          paiement: "—",
+          objectif: "—",
+          realise: "—",
+          ecart: "—",
+          statut: "Aucune saisie",
+        },
+      ];
+    }
+    return driverEntries.map((entry) => {
+      const row = rentabiliteEntryRow(entry, sectorsById);
+      return {
+        chauffeur: driver.full_name,
+        tournee: row.sectorCode ?? "—",
+        paiement: row.paymentType ? PAYMENT_TYPE_LABELS[row.paymentType] : "—",
+        objectif: row.objectif ?? "—",
+        realise: row.realise ?? "—",
+        ecart: row.ecart !== null ? (row.ecart > 0 ? `+${row.ecart}` : row.ecart) : "—",
+        statut: statusLabel(row.statusKind).text,
+      };
+    });
+  });
+
   return (
     <>
+      <div className="flex justify-end">
+        <ExportButton
+          columns={EXPORT_COLUMNS}
+          rows={exportRows}
+          filename={`rentabilite-${dateLabel}`}
+          title="KFM Suivi — Rentabilité"
+          subtitle={`Jour : ${dateLabel}`}
+        />
+      </div>
+
       <div className="hidden md:block">
         <Table>
           <TableHeader>
