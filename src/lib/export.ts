@@ -59,25 +59,41 @@ export async function exportToPdf({
     import("jspdf-autotable"),
   ]);
 
-  const doc = new jsPDF();
+  // Un tableau à beaucoup de colonnes (ex. le comparatif chauffeurs, 13
+  // colonnes) ne tient pas en portrait sans casser les mots des en-têtes
+  // en plein milieu — bascule en paysage et réduit la police à mesure que
+  // le nombre de colonnes augmente.
+  const isWide = columns.length > 6;
+  const fontSize = columns.length > 10 ? 7 : columns.length > 6 ? 7.5 : 9;
+  const doc = new jsPDF({ orientation: isWide ? "landscape" : "portrait" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  const usableWidth = pageWidth - margin * 2;
 
   doc.setFontSize(14);
-  doc.text(title, 14, 15);
+  doc.text(title, margin, 15);
+
   doc.setFontSize(10);
   doc.setTextColor(120);
-  doc.text(subtitle, 14, 22);
+  const subtitleLines: string[] = doc.splitTextToSize(subtitle, usableWidth);
+  let y = 22;
+  for (const line of subtitleLines) {
+    doc.text(line, margin, y);
+    y += 5;
+  }
   doc.text(
     `Généré le ${new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(new Date())}`,
-    14,
-    27,
+    margin,
+    y,
   );
 
   autoTable(doc, {
-    startY: 32,
+    startY: y + 5,
+    margin: { left: margin, right: margin },
     head: [columns.map((c) => c.label)],
     body: rows.map((row) => columns.map((c) => String(row[c.key] ?? ""))),
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [26, 29, 35], fontSize: 8 },
+    styles: { fontSize, cellPadding: isWide ? 2 : 3, overflow: "linebreak" },
+    headStyles: { fillColor: [26, 29, 35], fontSize },
     // columnStyles seul ne suffit pas à aligner l'en-tête ET la donnée de
     // la même façon (l'en-tête restait à gauche, large à cause d'un
     // libellé long, pendant que la donnée courte s'alignait à droite —

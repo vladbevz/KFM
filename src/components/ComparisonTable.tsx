@@ -64,10 +64,13 @@ function getTrend(row: DriverStatsRow, prevRow: DriverStatsRow | undefined, col:
   return "flat";
 }
 
+// Symboles ASCII plutôt que les flèches Unicode utilisées à l'écran : la
+// police standard de jsPDF (WinAnsi) n'a pas ces glyphes et les affichait
+// comme "!" dans le PDF exporté.
 function trendLabel(trend: Trend): string {
-  if (trend === "up") return "↑";
-  if (trend === "down") return "↓";
-  if (trend === "flat") return "→";
+  if (trend === "up") return "+";
+  if (trend === "down") return "-";
+  if (trend === "flat") return "=";
   return "—";
 }
 

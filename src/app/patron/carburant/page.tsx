@@ -89,6 +89,18 @@ export default async function CarburantPatronPage({
 
   const periodLabel = formatPeriodLabel(period, from, to);
 
+  // Le sous-titre du PDF/Excel doit refléter les filtres réellement
+  // appliqués à la requête, pas seulement la période — sinon le document
+  // exporté ne dit pas pour quel chauffeur/véhicule il a été filtré.
+  const filterParts: string[] = [`Groupé par ${groupBy === "chauffeur" ? "chauffeur" : "véhicule"}`];
+  if (selectedDriverId !== "all") {
+    filterParts.push(`Chauffeur : ${driverById.get(selectedDriverId) ?? "?"}`);
+  }
+  if (selectedVehicleId !== "all") {
+    filterParts.push(`Véhicule : ${vehicleById.get(selectedVehicleId) ?? "?"}`);
+  }
+  const exportSubtitle = `Période : ${periodLabel} · ${filterParts.join(" · ")}`;
+
   const exportColumns: ExportColumn[] = [
     { key: "label", label: groupBy === "chauffeur" ? "Chauffeur" : "Véhicule" },
     { key: "count", label: "Pleins", numeric: true },
@@ -125,9 +137,11 @@ export default async function CarburantPatronPage({
             <ExportButton
               columns={exportColumns}
               rows={exportRows}
-              filename={`carburant-${groupBy}-${slugifyFilename(periodLabel)}`}
+              filename={`carburant-${groupBy}-${slugifyFilename(periodLabel)}${
+                selectedDriverId !== "all" || selectedVehicleId !== "all" ? "-filtre" : ""
+              }`}
               title="KFM Suivi — Carburant"
-              subtitle={`Période : ${periodLabel} · Groupé par ${groupBy === "chauffeur" ? "chauffeur" : "véhicule"}`}
+              subtitle={exportSubtitle}
             />
           )}
         </div>
