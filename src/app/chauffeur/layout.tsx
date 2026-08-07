@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import { ChauffeurNav } from "@/components/ChauffeurNav";
+import { ChauffeurAccountButton } from "@/components/ChauffeurAccountButton";
 
 export default async function ChauffeurLayout({
   children,
@@ -26,8 +27,9 @@ export default async function ChauffeurLayout({
 
   return (
     <div className="min-h-screen">
+      <ChauffeurAccountButton fullName={profile.full_name} />
       <main className="px-4 py-6 pb-32">{children}</main>
-      <ChauffeurNav fullName={profile.full_name} />
+      <ChauffeurNav />
     </div>
   );
 }

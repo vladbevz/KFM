@@ -8,6 +8,7 @@ export function AccountMenuButton({
   showName = true,
   menuSide = "bottom",
   size = "default",
+  floating = false,
 }: {
   fullName: string;
   showName?: boolean;
@@ -15,6 +16,10 @@ export function AccountMenuButton({
   // "lg" réservé au nav chauffeur (cible tactile plus généreuse) ; le nav
   // patron ne passe pas cette prop et garde le rendu "default" inchangé.
   size?: "default" | "lg";
+  // Contour + ombre, pour un avatar posé directement sur le fond de page
+  // (ex. bouton compte flottant en haut côté chauffeur) plutôt que sur le
+  // fond sombre d'une pilule de nav où le contraste est déjà suffisant.
+  floating?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const firstName = fullName.split(" ")[0] || "?";
@@ -39,7 +44,7 @@ export function AccountMenuButton({
         <span
           className={`flex shrink-0 items-center justify-center rounded-full bg-surface font-semibold text-foreground ${
             size === "lg" ? "h-12 w-12 text-base" : "h-8 w-8 text-sm"
-          }`}
+          } ${floating ? "border border-border shadow-card" : ""}`}
         >
           {initial}
         </span>
