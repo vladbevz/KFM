@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { compressImage } from "@/lib/image";
 import { reportVehicleIssue } from "@/app/chauffeur/panne/actions";
 import type { Database, VehicleStatus } from "@/types/database";
@@ -57,6 +59,7 @@ export function ReportIssueForm({
       if (result.error) {
         setError(result.error);
       } else {
+        toast.success("Panne signalée !");
         router.push("/chauffeur");
       }
     });
@@ -156,8 +159,9 @@ export function ReportIssueForm({
       <button
         type="submit"
         disabled={busy}
-        className="rounded-md bg-km px-4 py-2 font-medium text-accent-ink disabled:opacity-60"
+        className="flex items-center justify-center gap-2 rounded-md bg-km px-4 py-2 font-medium text-accent-ink disabled:opacity-60"
       >
+        {busy && <Loader2 className="h-4 w-4 animate-spin" />}
         {compressing ? "Traitement de la photo..." : pending ? "Envoi..." : "Signaler"}
       </button>
     </form>

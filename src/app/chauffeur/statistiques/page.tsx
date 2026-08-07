@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/supabase/profile";
 import { StatsControls } from "@/components/StatsControls";
-import { StatsChart } from "@/components/StatsChart";
+import { StatsChartLazy as StatsChart } from "@/components/StatsChartLazy";
 import {
   entryEnlevements,
   entryKm,

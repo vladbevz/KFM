@@ -13,17 +13,13 @@ export default async function ChauffeurLayout({
   if (!profile) redirect("/login");
   if (profile.role !== "driver") redirect("/patron");
 
-  const supabase = await createClient();
-  const { data: activeCheck } = await supabase
-    .from("profiles")
-    .select("active")
-    .eq("id", profile.id)
-    .single<{ active: boolean }>();
-
   // Défense en profondeur : le compte désactivé est banni côté auth.users
   // (admin-actions.ts), mais une session déjà valide peut survivre jusqu'au
-  // prochain refresh de token — on la coupe explicitement ici aussi.
-  if (activeCheck && !activeCheck.active) {
+  // prochain refresh de token — on la coupe explicitement ici aussi. Réutilise
+  // le "active" déjà chargé par getCurrentProfile() (mémoïsé par requête) au
+  // lieu d'une deuxième requête profiles séparée.
+  if (!profile.active) {
+    const supabase = await createClient();
     await supabase.auth.signOut();
     redirect("/login");
   }

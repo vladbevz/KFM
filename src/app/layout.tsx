@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Toaster } from "sonner";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
@@ -29,6 +30,11 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "KFM Suivi",
+    // Fallback pour iOS < 15.4, qui ne lit pas background_color du manifest
+    // pour peindre son écran de démarrage (Safari 15.4+ et Android le font
+    // déjà via manifest.json). Une seule image générique fond clair, pas de
+    // matrice par modèle d'iPhone.
+    startupImage: "/icons/apple-splash.png",
   },
   other: {
     // Chrome/Android utilisent désormais ce tag standard ; Safari ne
@@ -39,7 +45,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#0b0e15",
+  themeColor: "#F7F8FA",
 };
 
 export default function RootLayout({
@@ -48,12 +54,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className="dark">
+    <html lang="fr">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <ServiceWorkerRegister />
         {children}
+        <Toaster position="top-center" theme="light" richColors={false} />
       </body>
     </html>
   );

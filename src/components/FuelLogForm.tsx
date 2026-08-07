@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { addFuelLog } from "@/app/chauffeur/carburant/actions";
 import type { Database } from "@/types/database";
 
@@ -25,8 +27,12 @@ export function FuelLogForm({
     const formData = new FormData(event.currentTarget);
     startTransition(async () => {
       const result = await addFuelLog({ error: null }, formData);
-      if (result.error) setError(result.error);
-      else router.push("/chauffeur");
+      if (result.error) {
+        setError(result.error);
+      } else {
+        toast.success("Plein enregistré !");
+        router.push("/chauffeur");
+      }
     });
   }
 
@@ -107,8 +113,9 @@ export function FuelLogForm({
       <button
         type="submit"
         disabled={pending}
-        className="rounded-md bg-km px-4 py-2 font-medium text-accent-ink disabled:opacity-60"
+        className="flex items-center justify-center gap-2 rounded-md bg-km px-4 py-2 font-medium text-accent-ink disabled:opacity-60"
       >
+        {pending && <Loader2 className="h-4 w-4 animate-spin" />}
         {pending ? "Enregistrement..." : "Ajouter le plein"}
       </button>
     </form>

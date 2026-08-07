@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import { useFormState, useFormStatus } from "react-dom";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { completeTournee, updateTournee, type DailyEntryFormState } from "@/app/chauffeur/actions";
 import type { Database, TourneeType } from "@/types/database";
 
@@ -51,8 +53,9 @@ function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: st
     <button
       type="submit"
       disabled={pending}
-      className="rounded-md bg-km px-4 py-3 font-medium text-accent-ink disabled:opacity-60"
+      className="flex items-center justify-center gap-2 rounded-md bg-km px-4 py-3 font-medium text-accent-ink disabled:opacity-60"
     >
+      {pending && <Loader2 className="h-4 w-4 animate-spin" />}
       {pending ? pendingLabel : label}
     </button>
   );
@@ -73,7 +76,10 @@ export function TourneeEndForm({
   );
 
   useEffect(() => {
-    if (state.entry) onCompleted(state.entry);
+    if (state.entry) {
+      toast.success(mode === "edit" ? "Modifications enregistrées !" : "Tournée terminée !");
+      onCompleted(state.entry);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
