@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ExportButton } from "@/components/ExportButton";
-import type { ExportColumn, ExportRow } from "@/lib/export";
+import { slugifyFilename, type ExportColumn, type ExportRow } from "@/lib/export";
 import type { VehicleCostSummary } from "@/lib/vehicles";
 
 type SortKey = "plate" | "totalCost";
@@ -71,7 +71,7 @@ export function CoutsFlotteTable({ data, periodLabel }: { data: VehicleCostSumma
         <ExportButton
           columns={EXPORT_COLUMNS}
           rows={exportRows}
-          filename={`cout-flotte-${periodLabel.replace(/\s+/g, "-").toLowerCase()}`}
+          filename={`cout-flotte-${slugifyFilename(periodLabel)}`}
           title="KFM Suivi — Coût de la flotte"
           subtitle={`Période : ${periodLabel}`}
         />

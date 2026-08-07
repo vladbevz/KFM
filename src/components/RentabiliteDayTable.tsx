@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { RentabiliteEntryRow } from "@/components/RentabiliteEntryRow";
 import { ExportButton } from "@/components/ExportButton";
-import type { ExportColumn, ExportRow } from "@/lib/export";
+import { slugifyFilename, type ExportColumn, type ExportRow } from "@/lib/export";
 import { PAYMENT_TYPE_LABELS, rentabiliteEntryRow, type Sector } from "@/lib/rentabilite";
 import type { Database } from "@/types/database";
 
@@ -107,7 +107,7 @@ export function RentabiliteDayTable({
         <ExportButton
           columns={EXPORT_COLUMNS}
           rows={exportRows}
-          filename={`rentabilite-${dateLabel}`}
+          filename={`rentabilite-${slugifyFilename(dateLabel)}`}
           title="KFM Suivi — Rentabilité"
           subtitle={`Jour : ${dateLabel}`}
         />

@@ -24,6 +24,18 @@ export const PERIOD_OPTIONS: { key: PeriodKey; label: string }[] = [
   { key: "custom", label: "Personnalisé" },
 ];
 
+// Libellé de période avec dates concrètes (ex. "7 jours (01/08 - 07/08)") —
+// "7 jours" seul ne dit pas AU PATRON quels jours exactement, notamment
+// utile pour les exports PDF/Excel consultés hors contexte de l'écran.
+export function formatPeriodLabel(period: PeriodKey, from: string, to: string): string {
+  const base = PERIOD_OPTIONS.find((o) => o.key === period)?.label ?? period;
+  const fmt = (iso: string) =>
+    new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(
+      new Date(`${iso}T00:00:00`),
+    );
+  return period === "today" ? `${base} (${fmt(from)})` : `${base} (${fmt(from)} – ${fmt(to)})`;
+}
+
 export type Metric = "km" | "poses" | "enlevements";
 
 export const METRIC_OPTIONS: { key: Metric; label: string; color: string }[] = [

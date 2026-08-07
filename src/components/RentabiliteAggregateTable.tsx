@@ -14,7 +14,7 @@ import {
 import { ExpandableCard } from "@/components/ExpandableCard";
 import { RentabiliteEntryRow } from "@/components/RentabiliteEntryRow";
 import { ExportButton } from "@/components/ExportButton";
-import type { ExportColumn, ExportRow } from "@/lib/export";
+import { slugifyFilename, type ExportColumn, type ExportRow } from "@/lib/export";
 import {
   PAYMENT_TYPE_LABELS,
   aggregateRentabiliteByDriver,
@@ -169,7 +169,7 @@ export function RentabiliteAggregateTable({
         <ExportButton
           columns={EXPORT_COLUMNS}
           rows={exportRows}
-          filename={`rentabilite-${periodLabel.replace(/\s+/g, "-").toLowerCase()}`}
+          filename={`rentabilite-${slugifyFilename(periodLabel)}`}
           title="KFM Suivi — Rentabilité"
           subtitle={`Période : ${periodLabel}`}
         />

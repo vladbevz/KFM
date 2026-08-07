@@ -2,8 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { CarburantControls } from "@/components/CarburantControls";
 import { ExpandableCard } from "@/components/ExpandableCard";
 import { ExportButton } from "@/components/ExportButton";
-import type { ExportColumn, ExportRow } from "@/lib/export";
-import { getPeriodRange, PERIOD_OPTIONS, type PeriodKey } from "@/lib/stats";
+import { slugifyFilename, type ExportColumn, type ExportRow } from "@/lib/export";
+import { getPeriodRange, formatPeriodLabel, type PeriodKey } from "@/lib/stats";
 import {
   Table,
   TableBody,
@@ -87,10 +87,7 @@ export default async function CarburantPatronPage({
   }
   const groupRows = Array.from(groups.values()).sort((a, b) => b.liters - a.liters);
 
-  const periodLabel =
-    period === "custom"
-      ? `${customFrom ?? "?"} au ${customTo ?? "?"}`
-      : (PERIOD_OPTIONS.find((o) => o.key === period)?.label ?? period);
+  const periodLabel = formatPeriodLabel(period, from, to);
 
   const exportColumns: ExportColumn[] = [
     { key: "label", label: groupBy === "chauffeur" ? "Chauffeur" : "Véhicule" },
@@ -128,7 +125,7 @@ export default async function CarburantPatronPage({
             <ExportButton
               columns={exportColumns}
               rows={exportRows}
-              filename={`carburant-${groupBy}-${periodLabel.replace(/\s+/g, "-").toLowerCase()}`}
+              filename={`carburant-${groupBy}-${slugifyFilename(periodLabel)}`}
               title="KFM Suivi — Carburant"
               subtitle={`Période : ${periodLabel} · Groupé par ${groupBy === "chauffeur" ? "chauffeur" : "véhicule"}`}
             />

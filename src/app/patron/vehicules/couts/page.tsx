@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { CoutsFlotteControls } from "@/components/CoutsFlotteControls";
 import { CoutsFlotteTable } from "@/components/CoutsFlotteTable";
 import { aggregateRepairCostsByVehicle } from "@/lib/vehicles";
-import { getPeriodRange, PERIOD_OPTIONS, type PeriodKey } from "@/lib/stats";
+import { getPeriodRange, formatPeriodLabel, type PeriodKey } from "@/lib/stats";
 import type { Database } from "@/types/database";
 
 type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
@@ -40,10 +40,7 @@ export default async function CoutsFlottePage({
   ]);
 
   const data = aggregateRepairCostsByVehicle(repairs ?? [], vehicles ?? []);
-  const periodLabel =
-    period === "custom"
-      ? `${customFrom ?? "?"} au ${customTo ?? "?"}`
-      : (PERIOD_OPTIONS.find((o) => o.key === period)?.label ?? period);
+  const periodLabel = formatPeriodLabel(period, from, to);
 
   return (
     <div className="flex flex-col gap-4">

@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowDownAZ, ArrowUpAZ, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { ExpandableCard } from "@/components/ExpandableCard";
 import { ExportButton } from "@/components/ExportButton";
-import type { ExportColumn, ExportRow } from "@/lib/export";
+import { slugifyFilename, type ExportColumn, type ExportRow } from "@/lib/export";
 import type { DriverStatsRow } from "@/lib/stats";
 
 type SortKey = Exclude<keyof DriverStatsRow, "driverId" | "joursTravailles">;
@@ -207,7 +207,7 @@ export function ComparisonTable({
         <ExportButton
           columns={exportColumns}
           rows={exportRows}
-          filename={`statistiques-chauffeurs-${periodLabel.replace(/\s+/g, "-").toLowerCase()}`}
+          filename={`statistiques-chauffeurs-${slugifyFilename(periodLabel)}`}
           title="KFM Suivi — Statistiques des chauffeurs"
           subtitle={`Période : ${periodLabel}`}
         />

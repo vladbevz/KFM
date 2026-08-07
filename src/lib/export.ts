@@ -6,6 +6,18 @@ export interface ExportColumn {
 
 export type ExportRow = Record<string, string | number>;
 
+// Les libellés de période affichés incluent maintenant des dates
+// concrètes ("7 jours (01/08/2026 – 07/08/2026)") — inutilisables tels
+// quels dans un nom de fichier (/, espaces, tiret long...).
+export function slugifyFilename(label: string): string {
+  return label
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
+}
+
 // xlsx/jspdf sont de grosses librairies (des centaines de Ko) : import
 // dynamique pour qu'elles ne fassent partie du bundle que si le patron
 // clique vraiment sur "Exporter", pas du chargement initial de chaque écran
@@ -64,11 +76,17 @@ export async function exportToPdf({
     startY: 32,
     head: [columns.map((c) => c.label)],
     body: rows.map((row) => columns.map((c) => String(row[c.key] ?? ""))),
-    columnStyles: Object.fromEntries(
-      columns.map((c, i) => [i, { halign: c.numeric ? ("right" as const) : ("left" as const) }]),
-    ),
-    headStyles: { fillColor: [26, 29, 35] },
-    styles: { fontSize: 9 },
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [26, 29, 35], fontSize: 8 },
+    // columnStyles seul ne suffit pas à aligner l'en-tête ET la donnée de
+    // la même façon (l'en-tête restait à gauche, large à cause d'un
+    // libellé long, pendant que la donnée courte s'alignait à droite —
+    // visuellement décollée de son propre en-tête). didParseCell force le
+    // même alignement sur les deux sections, colonne par colonne.
+    didParseCell: (data) => {
+      const col = columns[data.column.index];
+      if (col?.numeric) data.cell.styles.halign = "right";
+    },
   });
 
   doc.save(filename);
