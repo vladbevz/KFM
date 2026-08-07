@@ -30,8 +30,8 @@ function Field({
   required?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={name} className="text-sm text-foreground/70">
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={name} className="text-base text-foreground/70">
         {label}
       </label>
       <input
@@ -41,7 +41,7 @@ function Field({
         inputMode={type === "number" ? "numeric" : undefined}
         defaultValue={defaultValue ?? ""}
         required={required}
-        className="rounded-md border border-border bg-background px-3 py-2 text-foreground tabular-nums outline-none focus:border-foreground"
+        className="rounded-md border border-border bg-background px-4 py-3.5 text-base text-foreground tabular-nums outline-none focus:border-foreground"
       />
     </div>
   );
@@ -53,9 +53,9 @@ function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: st
     <button
       type="submit"
       disabled={pending}
-      className="flex items-center justify-center gap-2 rounded-md bg-km px-4 py-3 font-medium text-accent-ink disabled:opacity-60"
+      className="flex items-center justify-center gap-2 rounded-md bg-km px-4 py-4 text-lg font-semibold text-accent-ink disabled:opacity-60"
     >
-      {pending && <Loader2 className="h-4 w-4 animate-spin" />}
+      {pending && <Loader2 className="h-5 w-5 animate-spin" />}
       {pending ? pendingLabel : label}
     </button>
   );
@@ -84,11 +84,11 @@ export function TourneeEndForm({
   }, [state]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <form action={formAction} className="flex flex-col gap-7">
       <input type="hidden" name="entry_id" value={entry.id} />
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="tournee_type" className="text-sm text-foreground/70">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="tournee_type" className="text-base text-foreground/70">
           Type
         </label>
         <select
@@ -96,7 +96,7 @@ export function TourneeEndForm({
           name="tournee_type"
           required
           defaultValue={entry.tournee_type ?? "journee"}
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
+          className="rounded-md border border-border bg-background px-4 py-4 text-base text-foreground outline-none focus:border-foreground"
         >
           {TOURNEE_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
@@ -166,8 +166,8 @@ export function TourneeEndForm({
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="anomalie_tournee" className="text-sm text-foreground/70">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="anomalie_tournee" className="text-base text-foreground/70">
           Anomalie(s) à signaler lors de la tournée
         </label>
         <textarea
@@ -175,12 +175,12 @@ export function TourneeEndForm({
           name="anomalie_tournee"
           rows={3}
           defaultValue={(mode === "edit" ? entry.anomalie_tournee : undefined) ?? ""}
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
+          className="rounded-md border border-border bg-background px-4 py-3 text-base text-foreground outline-none focus:border-foreground"
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="anomalie_vehicule" className="text-sm text-foreground/70">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="anomalie_vehicule" className="text-base text-foreground/70">
           Anomalie(s) à signaler sur le véhicule
         </label>
         <textarea
@@ -188,7 +188,7 @@ export function TourneeEndForm({
           name="anomalie_vehicule"
           rows={3}
           defaultValue={(mode === "edit" ? entry.anomalie_vehicule : undefined) ?? ""}
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
+          className="rounded-md border border-border bg-background px-4 py-3 text-base text-foreground outline-none focus:border-foreground"
         />
       </div>
 

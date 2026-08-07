@@ -15,7 +15,7 @@ export function ChauffeurNav({ fullName }: { fullName: string }) {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-4 bottom-4 z-10 flex items-center justify-between rounded-full bg-nav-surface px-2 py-2 shadow-float">
+    <nav className="fixed inset-x-4 bottom-4 z-10 flex items-center justify-between rounded-full bg-nav-surface px-2.5 py-3 shadow-float">
       <div className="flex flex-1 items-center justify-around">
         {TABS.map((tab) => {
           const active =
@@ -27,20 +27,20 @@ export function ChauffeurNav({ fullName }: { fullName: string }) {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex items-center gap-2 rounded-full transition-colors ${
+              className={`flex items-center gap-2.5 rounded-full transition-colors ${
                 active
-                  ? "bg-km px-4 py-2.5 text-accent-ink"
-                  : "px-3 py-2.5 text-nav-foreground-muted"
+                  ? "bg-km px-5 py-3 text-accent-ink"
+                  : "px-4 py-3 text-nav-foreground-muted"
               }`}
             >
-              <Icon className="h-5 w-5" strokeWidth={1.8} />
-              {active && <span className="text-sm font-medium">{tab.label}</span>}
+              <Icon className="h-6 w-6" strokeWidth={1.8} />
+              {active && <span className="text-base font-medium">{tab.label}</span>}
             </Link>
           );
         })}
       </div>
 
-      <AccountMenuButton fullName={fullName} showName={false} menuSide="top" />
+      <AccountMenuButton fullName={fullName} showName={false} menuSide="top" size="lg" />
     </nav>
   );
 }

@@ -81,7 +81,7 @@ export function EntryCard({
         <button
           type="button"
           onClick={() => setEditing(false)}
-          className="text-sm text-foreground/60 underline"
+          className="-mx-2 self-start rounded-md px-2 py-3 text-base text-foreground/60 underline"
         >
           Annuler
         </button>
@@ -106,9 +106,9 @@ export function EntryCard({
   const poses = entryPosesBreakdown(entry);
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface shadow-card p-4">
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface shadow-card p-5">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-medium capitalize text-foreground">
+        <p className="text-base font-medium capitalize text-foreground">
           {formatDate(entry.entry_date)}
           {isNewFlow && (
             <span className="ml-2 text-xs font-normal text-foreground/50">
@@ -121,7 +121,7 @@ export function EntryCard({
         </span>
       </div>
 
-      <p className="text-sm tabular-nums text-foreground/60">
+      <p className="text-base tabular-nums text-foreground/60">
         {entry.vehicle_registration ?? "—"} · {poses.delivered + poses.damaged + poses.notDelivered} poses ·{" "}
         {entryEnlevements(entry)} enlèvements
       </p>
@@ -169,7 +169,7 @@ export function EntryCard({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="self-start text-sm text-foreground/60 underline"
+          className="-mx-2 self-start rounded-md px-2 py-3 text-base text-foreground/60 underline"
         >
           Modifier
         </button>

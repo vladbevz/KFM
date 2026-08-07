@@ -90,6 +90,7 @@ export default async function StatistiquesPage({
         customFrom={customFrom}
         customTo={customTo}
         metric={metric}
+        size="lg"
       />
 
       <StatsChart entries={rows} metric={metric} period={period} sectorsById={sectorsById} />

@@ -31,7 +31,7 @@ export default async function HistoriquePage() {
           Aucun rapport enregistré pour le moment.
         </p>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           {entries.map((entry) => (
             <EntryCard
               key={entry.id}

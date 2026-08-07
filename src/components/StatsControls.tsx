@@ -18,6 +18,7 @@ export function StatsControls({
   view,
   drivers,
   selectedDriverId,
+  size = "default",
 }: {
   period: PeriodKey;
   customFrom: string | null;
@@ -26,7 +27,11 @@ export function StatsControls({
   view?: "graphique" | "tableau";
   drivers?: Driver[];
   selectedDriverId?: string;
+  // "lg" réservé au côté chauffeur ; les pages patron ne passent pas cette
+  // prop et gardent le rendu "default" inchangé.
+  size?: "default" | "lg";
 }) {
+  const lg = size === "lg";
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -65,6 +70,7 @@ export function StatsControls({
         customFrom={customFrom}
         customTo={customTo}
         updateParams={updateParams}
+        size={size}
       />
 
       {drivers && (
@@ -83,7 +89,7 @@ export function StatsControls({
             <button
               key={opt.key}
               onClick={() => updateParams({ metric: opt.key })}
-              className={`rounded-md px-3 py-1.5 text-sm ${
+              className={`rounded-md ${lg ? "px-4 py-3 text-base" : "px-3 py-1.5 text-sm"} ${
                 metric === opt.key
                   ? "border text-foreground"
                   : "border border-border text-foreground/70"

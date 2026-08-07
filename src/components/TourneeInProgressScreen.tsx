@@ -22,26 +22,26 @@ export function TourneeInProgressScreen({
         En tournée depuis {formatStartedAt(startedAt)}
       </p>
 
-      <div className="flex gap-4">
+      <div className="flex gap-5">
         <Link
           href="/chauffeur/panne"
-          className="flex flex-col items-center gap-2 rounded-lg border border-border px-6 py-4 text-sm text-foreground/70"
+          className="flex flex-col items-center gap-2 rounded-lg border border-border px-6 py-5 text-base text-foreground/70"
         >
-          <Wrench className="h-6 w-6" />
+          <Wrench className="h-7 w-7" />
           Signaler une panne
         </Link>
         <Link
           href="/chauffeur/carburant"
-          className="flex flex-col items-center gap-2 rounded-lg border border-border px-6 py-4 text-sm text-foreground/70"
+          className="flex flex-col items-center gap-2 rounded-lg border border-border px-6 py-5 text-base text-foreground/70"
         >
-          <Fuel className="h-6 w-6" />
+          <Fuel className="h-7 w-7" />
           Ajouter un plein
         </Link>
       </div>
 
       <button
         onClick={onTerminer}
-        className="w-full max-w-xs rounded-full bg-km px-6 py-8 text-xl font-semibold text-accent-ink shadow-accent"
+        className="w-full max-w-xs rounded-full bg-km px-6 py-4 text-xl font-semibold text-accent-ink shadow-accent"
       >
         Terminer la tournée
       </button>

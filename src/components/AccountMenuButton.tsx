@@ -7,10 +7,14 @@ export function AccountMenuButton({
   fullName,
   showName = true,
   menuSide = "bottom",
+  size = "default",
 }: {
   fullName: string;
   showName?: boolean;
   menuSide?: "top" | "bottom";
+  // "lg" réservé au nav chauffeur (cible tactile plus généreuse) ; le nav
+  // patron ne passe pas cette prop et garde le rendu "default" inchangé.
+  size?: "default" | "lg";
 }) {
   const [open, setOpen] = useState(false);
   const firstName = fullName.split(" ")[0] || "?";
@@ -30,9 +34,13 @@ export function AccountMenuButton({
       <button
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2"
+        className={`flex items-center gap-2 rounded-full ${size === "lg" ? "py-1.5 pl-1.5 pr-2.5" : "py-1 pl-1 pr-2"}`}
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-foreground">
+        <span
+          className={`flex shrink-0 items-center justify-center rounded-full bg-surface font-semibold text-foreground ${
+            size === "lg" ? "h-12 w-12 text-base" : "h-8 w-8 text-sm"
+          }`}
+        >
           {initial}
         </span>
         {showName && (
