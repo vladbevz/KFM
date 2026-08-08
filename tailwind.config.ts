@@ -9,6 +9,14 @@ const config: Config = {
   darkMode: "class",
   theme: {
     extend: {
+      screens: {
+        // Seuil mesuré (pas le "md" standard de 768px) : largeur minimale à
+        // partir de laquelle les 7 catégories + le bouton compte de
+        // PatronNav tiennent sur une seule ligne sans wrap. En dessous, la
+        // pilule bascule en hamburger — les deux comportements utilisent ce
+        // même seuil pour ne jamais se chevaucher ni laisser de zone morte.
+        nav: "1080px",
+      },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
