@@ -46,7 +46,7 @@ export function StatsControls({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-4">
       {view && (
         <div className="flex gap-2">
           {(["graphique", "tableau"] as const).map((v) => (
