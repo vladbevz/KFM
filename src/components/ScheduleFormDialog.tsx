@@ -22,6 +22,7 @@ import {
   saveScheduleEntry,
   type ScheduleFormState,
 } from "@/app/patron/calendrier/actions";
+import { TYPE_LABELS } from "@/lib/schedule";
 import type { AssignmentType, Database } from "@/types/database";
 
 type ScheduleRow = Database["public"]["Tables"]["schedule"]["Row"];
@@ -29,14 +30,11 @@ type Sector = Database["public"]["Tables"]["sectors"]["Row"];
 type Driver = { id: string; full_name: string };
 
 export type ScheduleDialogState =
-  | { mode: "create"; date: string }
+  // driverId préempli : ouvert depuis le panneau d'aperçu du jour pour un
+  // chauffeur qui n'a pas encore d'affectation ce jour-là (le sélecteur
+  // Chauffeur ouvert reste réservé au bouton "Ajouter une affectation").
+  | { mode: "create"; date: string; driverId?: string }
   | { mode: "edit"; entry: ScheduleRow };
-
-const TYPE_LABELS: Record<AssignmentType, string> = {
-  tournee: "Tournée",
-  conge: "Congé",
-  absence: "Absence",
-};
 
 const initialState: ScheduleFormState = { error: null };
 
@@ -84,17 +82,21 @@ export function ScheduleFormDialog({
   if (!state) return null;
 
   const date = state.mode === "create" ? state.date : state.entry.date;
-  const driverName =
-    state.mode === "edit"
-      ? (drivers.find((d) => d.id === state.entry.driver_id)?.full_name ?? "Chauffeur")
-      : null;
+  const presetDriverId = state.mode === "create" ? state.driverId : state.entry.driver_id;
+  const driverName = presetDriverId
+    ? (drivers.find((d) => d.id === presetDriverId)?.full_name ?? "Chauffeur")
+    : null;
+  // Sélecteur ouvert uniquement pour une création "libre" (bouton "Ajouter
+  // une affectation") ; venant du panneau d'aperçu (driverId préempli) ou en
+  // édition, le chauffeur est fixé et affiché en lecture seule.
+  const driverLocked = Boolean(driverName);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {state.mode === "edit" ? `${driverName} — ${date}` : `Nouvelle affectation — ${date}`}
+            {driverLocked ? `${driverName} — ${date}` : `Nouvelle affectation — ${date}`}
           </DialogTitle>
         </DialogHeader>
 
@@ -105,9 +107,42 @@ export function ScheduleFormDialog({
           }}
           className="flex flex-col gap-4"
         >
-          <input type="hidden" name="date" value={date} />
+          {/* Une tournée se planifie jour par jour ; un congé/absence créé
+              depuis zéro peut couvrir une plage — mais on n'étend jamais
+              une entrée déjà existante (édition) sur plusieurs jours : elle
+              reste ce qu'elle est, un seul jour. */}
+          {state.mode === "create" && (type === "conge" || type === "absence") ? (
+            <div className="flex gap-3">
+              <div className="flex flex-1 flex-col gap-1.5">
+                <Label htmlFor="date_from">Du</Label>
+                <input
+                  id="date_from"
+                  name="date_from"
+                  type="date"
+                  required
+                  defaultValue={date}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                />
+              </div>
+              <div className="flex flex-1 flex-col gap-1.5">
+                <Label htmlFor="date_to">Au</Label>
+                <input
+                  id="date_to"
+                  name="date_to"
+                  type="date"
+                  required
+                  defaultValue={date}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                />
+              </div>
+            </div>
+          ) : (
+            <input type="hidden" name="date" value={date} />
+          )}
 
-          {state.mode === "create" ? (
+          {driverLocked ? (
+            <input type="hidden" name="driver_id" value={presetDriverId} />
+          ) : (
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="driver_id">Chauffeur</Label>
               <select
@@ -124,8 +159,6 @@ export function ScheduleFormDialog({
                 ))}
               </select>
             </div>
-          ) : (
-            <input type="hidden" name="driver_id" value={state.entry.driver_id} />
           )}
 
           <div className="flex flex-col gap-1.5">

@@ -6,6 +6,7 @@ export type VehicleStatus =
   | "unavailable"
   | "in_repair";
 export type AssignmentType = "tournee" | "conge" | "absence";
+export type ScheduleSource = "prevu" | "reel";
 export type EntryStatus = "in_progress" | "completed";
 export type TourneeType = "journee" | "demi_journee";
 
@@ -287,6 +288,8 @@ export interface Database {
           sector_id: string | null;
           note: string | null;
           created_at: string;
+          source: ScheduleSource;
+          planned_sector_id: string | null;
         };
         Insert: {
           id?: string;
@@ -296,6 +299,8 @@ export interface Database {
           sector_id?: string | null;
           note?: string | null;
           created_at?: string;
+          source?: ScheduleSource;
+          planned_sector_id?: string | null;
         };
         Update: {
           id?: string;
@@ -305,6 +310,8 @@ export interface Database {
           sector_id?: string | null;
           note?: string | null;
           created_at?: string;
+          source?: ScheduleSource;
+          planned_sector_id?: string | null;
         };
         Relationships: [
           {
@@ -317,6 +324,13 @@ export interface Database {
           {
             foreignKeyName: "schedule_sector_id_fkey";
             columns: ["sector_id"];
+            isOneToOne: false;
+            referencedRelation: "sectors";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "schedule_planned_sector_id_fkey";
+            columns: ["planned_sector_id"];
             isOneToOne: false;
             referencedRelation: "sectors";
             referencedColumns: ["id"];

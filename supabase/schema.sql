@@ -305,6 +305,12 @@ create table if not exists public.schedule (
   sector_id uuid references public.sectors (id),
   note text,
   created_at timestamptz not null default now(),
+  -- 'prevu' : planifié à l'avance par le patron (calendrier, planificateur).
+  -- 'reel' : reflète une tournée réellement démarrée par le chauffeur.
+  source text not null default 'reel' check (source in ('prevu', 'reel')),
+  -- Trace ce qui était prévu au moment où 'prevu' est passé à 'reel', pour
+  -- détecter un écart (tournée réelle différente de la tournée prévue).
+  planned_sector_id uuid references public.sectors (id),
   unique (driver_id, date)
 );
 

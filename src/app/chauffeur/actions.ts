@@ -99,12 +99,27 @@ export async function startTournee(
 
   // Reflète automatiquement la tournée dans le calendrier (accès étroit :
   // le chauffeur ne peut upserter que sa propre ligne du jour, en tournee).
-  await supabase
+  // Si une entrée "prevu" existait déjà (planifiée par le patron), elle
+  // passe à "reel" — planned_sector_id garde la trace de la tournée prévue
+  // pour que le calendrier signale un écart si elle diffère de sectorId.
+  const { data: existingSchedule } = await supabase
     .from("schedule")
-    .upsert(
-      { driver_id: user.id, date: today, type: "tournee", sector_id: sectorId },
-      { onConflict: "driver_id,date" },
-    );
+    .select("source, sector_id")
+    .eq("driver_id", user.id)
+    .eq("date", today)
+    .maybeSingle<{ source: string; sector_id: string | null }>();
+
+  await supabase.from("schedule").upsert(
+    {
+      driver_id: user.id,
+      date: today,
+      type: "tournee",
+      sector_id: sectorId,
+      source: "reel",
+      planned_sector_id: existingSchedule?.source === "prevu" ? existingSchedule.sector_id : null,
+    },
+    { onConflict: "driver_id,date" },
+  );
 
   revalidatePath("/chauffeur");
   return { error: null, entry: data };

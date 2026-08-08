@@ -41,23 +41,9 @@
   padding: 1px 4px;
 }
 
-.kfm-calendar .rbc-toolbar button {
-  color: #1a1d23;
-  border-color: #e2e5ea;
-}
-
-.kfm-calendar .rbc-toolbar button:hover,
-.kfm-calendar .rbc-toolbar button:active,
-.kfm-calendar .rbc-toolbar button.rbc-active {
-  background: #f0f1f3;
-  color: #1a1d23;
-  border-color: #1a1d23;
-}
-
-.kfm-calendar .rbc-toolbar-label {
-  color: #1a1d23;
-  font-weight: 600;
-}
+/* La rbc-toolbar par défaut n'est plus rendue (toolbar={false} sur
+   <Calendar>, remplacée par CalendarToolbar dans ScheduleCalendar.tsx) —
+   plus besoin de la surcharger ici. */
 
 .kfm-calendar .rbc-show-more {
   color: #5b616e;
