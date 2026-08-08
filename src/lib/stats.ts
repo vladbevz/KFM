@@ -1,4 +1,4 @@
-import type { Database } from "@/types/database";
+import type { Database, PaymentType } from "@/types/database";
 import { sectorThreshold, resolveEntrySector, entryProfitability, type Sector } from "@/lib/rentabilite";
 import {
   entryKm,
@@ -120,19 +120,36 @@ export function aggregateByDate(entries: DailyEntry[]): DateMetrics[] {
   return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
 
+export interface DayTourneeSummary {
+  sectorCode: string | null;
+  paymentType: PaymentType | null;
+  poses: number;
+  enlevements: number;
+}
+
 export interface PosesDateMetrics {
   date: string;
+  // Volume "à la pose" (compte pour l'objectif du jour, comparé au seuil).
   delivered: number;
   damaged: number;
   notDelivered: number;
   enlevements: number;
+  // Volume "forfait" (réel, mais ne compte pas pour l'objectif) — affiché
+  // distinctement dans la barre plutôt que mélangé au volume à la pose.
+  deliveredForfait: number;
+  damagedForfait: number;
+  notDeliveredForfait: number;
+  enlevementsForfait: number;
   threshold: number | null;
+  tournees: DayTourneeSummary[];
 }
 
 // Pour le graphique empilé (module 9) : poses par catégorie + enlèvements +
 // seuil de rentabilité du jour, sommés sur toutes les tournées de ce
 // jour-là (un chauffeur qui fait deux demi-journées a deux lignes le même
-// jour). Le volume total comparé au seuil = poses + enlèvements.
+// jour). Le volume total comparé au seuil = poses + enlèvements ; seul le
+// volume "à la pose" compte dans le seuil, le volume forfait est sommé à
+// part pour rester visible sans fausser l'objectif (correction v29).
 export function aggregatePosesByDate(
   entries: DailyEntry[],
   sectorsById: Map<string, Sector>,
@@ -146,19 +163,41 @@ export function aggregatePosesByDate(
       damaged: 0,
       notDelivered: 0,
       enlevements: 0,
+      deliveredForfait: 0,
+      damagedForfait: 0,
+      notDeliveredForfait: 0,
+      enlevementsForfait: 0,
       threshold: null,
+      tournees: [],
     };
     const breakdown = entryPosesBreakdown(entry);
-    current.delivered += breakdown.delivered;
-    current.damaged += breakdown.damaged;
-    current.notDelivered += breakdown.notDelivered;
-    current.enlevements += entryEnlevements(entry);
-
+    const enlevements = entryEnlevements(entry);
     const sector = resolveEntrySector(entry, sectorsById);
+    const isForfait = sector?.payment_type === "forfait";
+
+    if (isForfait) {
+      current.deliveredForfait += breakdown.delivered;
+      current.damagedForfait += breakdown.damaged;
+      current.notDeliveredForfait += breakdown.notDelivered;
+      current.enlevementsForfait += enlevements;
+    } else {
+      current.delivered += breakdown.delivered;
+      current.damaged += breakdown.damaged;
+      current.notDelivered += breakdown.notDelivered;
+      current.enlevements += enlevements;
+    }
+
     const threshold = sectorThreshold(sector);
     if (threshold !== null) {
       current.threshold = (current.threshold ?? 0) + threshold;
     }
+
+    current.tournees.push({
+      sectorCode: sector?.code ?? null,
+      paymentType: sector?.payment_type ?? null,
+      poses: breakdown.delivered + breakdown.damaged + breakdown.notDelivered,
+      enlevements,
+    });
 
     byDate.set(entry.entry_date, current);
   }

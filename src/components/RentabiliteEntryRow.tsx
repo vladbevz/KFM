@@ -38,17 +38,24 @@ export function RentabiliteEntryRow({
   sectorsById,
   driverName,
   dateLabel,
+  repeated = false,
 }: {
   entry: DailyEntry;
   sectorsById: Map<string, Sector>;
   driverName?: string;
   dateLabel?: string;
+  // 2e tournée (ou plus) du même chauffeur ce jour-là : nom répété mais
+  // grisé, pour garder chaque ligne autonome (triable, exportable telle
+  // quelle) sans dupliquer visuellement le repère en gras à chaque ligne.
+  repeated?: boolean;
 }) {
   const row = rentabiliteEntryRow(entry, sectorsById);
 
   return (
     <TableRow>
-      <TableCell className="font-medium">{driverName ?? dateLabel}</TableCell>
+      <TableCell className={repeated ? "font-normal text-foreground/40" : "font-medium"}>
+        {driverName ?? dateLabel}
+      </TableCell>
       <TableCell className="font-medium tabular-nums">{row.sectorCode ?? "—"}</TableCell>
       <TableCell>
         {row.paymentType ? (

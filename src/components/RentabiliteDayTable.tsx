@@ -144,12 +144,13 @@ export function RentabiliteDayTable({
                   </TableRow>
                 );
               }
-              return driverEntries.map((entry) => (
+              return driverEntries.map((entry, index) => (
                 <RentabiliteEntryRow
                   key={entry.id}
                   entry={entry}
                   sectorsById={sectorsById}
                   driverName={driver.full_name}
+                  repeated={index > 0}
                 />
               ));
             })}
