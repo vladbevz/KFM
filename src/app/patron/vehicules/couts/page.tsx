@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { DetailHeader } from "@/components/DetailHeader";
 import { CoutsFlotteControls } from "@/components/CoutsFlotteControls";
 import { CoutsFlotteTable } from "@/components/CoutsFlotteTable";
 import { aggregateRepairCostsByVehicle } from "@/lib/vehicles";
@@ -44,7 +45,7 @@ export default async function CoutsFlottePage({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-lg font-semibold text-foreground">Coût de la flotte</h1>
+      <DetailHeader title="Coût de la flotte" />
 
       <CoutsFlotteControls period={period} customFrom={customFrom} customTo={customTo} />
 
