@@ -13,23 +13,14 @@ import {
 } from "@/components/ui/table";
 import { ExpandableCard } from "@/components/ExpandableCard";
 import { RentabiliteEntryRow } from "@/components/RentabiliteEntryRow";
-import { ExportButton } from "@/components/ExportButton";
-import { slugifyFilename, type ExportColumn, type ExportRow } from "@/lib/export";
 import {
   PAYMENT_TYPE_LABELS,
   aggregateRentabiliteByDriver,
   rentabiliteEntryRow,
+  sortRentabiliteSummaries,
   type Sector,
-  type DriverRentabiliteSummary,
 } from "@/lib/rentabilite";
 import type { Database } from "@/types/database";
-
-const EXPORT_COLUMNS: ExportColumn[] = [
-  { key: "chauffeur", label: "Chauffeur" },
-  { key: "jours", label: "Jours travaillés", numeric: true },
-  { key: "seuils", label: "Seuils atteints" },
-  { key: "taux", label: "Taux de réussite" },
-];
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 
@@ -52,15 +43,6 @@ function TauxCell({ taux }: { taux: number | null }) {
       {taux === null ? "—" : `${taux.toFixed(0)}%`}
     </span>
   );
-}
-
-function sortSummaries(summaries: DriverRentabiliteSummary[]): DriverRentabiliteSummary[] {
-  return [...summaries].sort((a, b) => {
-    if (a.tauxReussite === null && b.tauxReussite === null) return a.fullName.localeCompare(b.fullName);
-    if (a.tauxReussite === null) return 1;
-    if (b.tauxReussite === null) return -1;
-    return a.tauxReussite - b.tauxReussite;
-  });
 }
 
 function DriverDetail({ entries, sectorsById }: { entries: DailyEntry[]; sectorsById: Map<string, Sector> }) {
@@ -130,12 +112,10 @@ export function RentabiliteAggregateTable({
   drivers,
   entries,
   sectorsById,
-  periodLabel,
 }: {
   drivers: { id: string; full_name: string }[];
   entries: DailyEntry[];
   sectorsById: Map<string, Sector>;
-  periodLabel: string;
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -146,7 +126,7 @@ export function RentabiliteAggregateTable({
     entriesByDriver.set(entry.driver_id, list);
   }
 
-  const summaries = sortSummaries(aggregateRentabiliteByDriver(entries, drivers, sectorsById));
+  const summaries = sortRentabiliteSummaries(aggregateRentabiliteByDriver(entries, drivers, sectorsById));
 
   if (summaries.length === 0) {
     return (
@@ -156,25 +136,8 @@ export function RentabiliteAggregateTable({
     );
   }
 
-  const exportRows: ExportRow[] = summaries.map((s) => ({
-    chauffeur: s.fullName,
-    jours: s.joursTravailles,
-    seuils: `${s.seuilsAtteints}/${s.seuilsTotal}`,
-    taux: s.tauxReussite !== null ? `${s.tauxReussite.toFixed(0)}%` : "—",
-  }));
-
   return (
     <>
-      <div className="flex justify-end">
-        <ExportButton
-          columns={EXPORT_COLUMNS}
-          rows={exportRows}
-          filename={`rentabilite-${slugifyFilename(periodLabel)}`}
-          title="KFM Suivi — Rentabilité"
-          subtitle={`Période : ${periodLabel}`}
-        />
-      </div>
-
       <div className="hidden md:block">
         <Table>
           <TableHeader>

@@ -8,12 +8,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RentabiliteEntryRow } from "@/components/RentabiliteEntryRow";
-import { ExportButton } from "@/components/ExportButton";
-import { slugifyFilename, type ExportColumn, type ExportRow } from "@/lib/export";
+import type { ExportColumn, ExportRow } from "@/lib/export";
 import { PAYMENT_TYPE_LABELS, rentabiliteEntryRow, type Sector } from "@/lib/rentabilite";
 import type { Database } from "@/types/database";
 
-const EXPORT_COLUMNS: ExportColumn[] = [
+// Exportées pour que la page compose un unique bouton "Exporter" dans son
+// en-tête (groupé avec "Gérer les secteurs") plutôt que d'avoir ce bouton
+// dupliqué dans chaque vue de tableau.
+export const DAY_EXPORT_COLUMNS: ExportColumn[] = [
   { key: "chauffeur", label: "Chauffeur" },
   { key: "tournee", label: "Tournée" },
   { key: "paiement", label: "Paiement" },
@@ -43,36 +45,23 @@ function statusLabel(kind: ReturnType<typeof rentabiliteEntryRow>["statusKind"])
   }
 }
 
-// Vue enrichie d'un jour donné : une ligne par tournée (un chauffeur avec
-// deux tournées le même jour a deux lignes), plus une ligne "Aucune saisie"
-// pour chaque chauffeur sans entrée ce jour-là.
-export function RentabiliteDayTable({
-  drivers,
-  entries,
-  sectorsById,
-  dateLabel,
-}: {
-  drivers: { id: string; full_name: string }[];
-  entries: DailyEntry[];
-  sectorsById: Map<string, Sector>;
-  dateLabel: string;
-}) {
+function groupEntriesByDriver(entries: DailyEntry[]): Map<string, DailyEntry[]> {
   const entriesByDriver = new Map<string, DailyEntry[]>();
   for (const entry of entries) {
     const list = entriesByDriver.get(entry.driver_id) ?? [];
     list.push(entry);
     entriesByDriver.set(entry.driver_id, list);
   }
+  return entriesByDriver;
+}
 
-  if (drivers.length === 0) {
-    return (
-      <p className="py-12 text-center text-sm text-foreground-muted">
-        Aucun chauffeur pour le moment.
-      </p>
-    );
-  }
-
-  const exportRows: ExportRow[] = drivers.flatMap((driver) => {
+export function buildDayExportRows(
+  drivers: { id: string; full_name: string }[],
+  entries: DailyEntry[],
+  sectorsById: Map<string, Sector>,
+): ExportRow[] {
+  const entriesByDriver = groupEntriesByDriver(entries);
+  return drivers.flatMap((driver) => {
     const driverEntries = entriesByDriver.get(driver.id) ?? [];
     if (driverEntries.length === 0) {
       return [
@@ -100,19 +89,32 @@ export function RentabiliteDayTable({
       };
     });
   });
+}
+
+// Vue enrichie d'un jour donné : une ligne par tournée (un chauffeur avec
+// deux tournées le même jour a deux lignes), plus une ligne "Aucune saisie"
+// pour chaque chauffeur sans entrée ce jour-là.
+export function RentabiliteDayTable({
+  drivers,
+  entries,
+  sectorsById,
+}: {
+  drivers: { id: string; full_name: string }[];
+  entries: DailyEntry[];
+  sectorsById: Map<string, Sector>;
+}) {
+  const entriesByDriver = groupEntriesByDriver(entries);
+
+  if (drivers.length === 0) {
+    return (
+      <p className="py-12 text-center text-sm text-foreground-muted">
+        Aucun chauffeur pour le moment.
+      </p>
+    );
+  }
 
   return (
     <>
-      <div className="flex justify-end">
-        <ExportButton
-          columns={EXPORT_COLUMNS}
-          rows={exportRows}
-          filename={`rentabilite-${slugifyFilename(dateLabel)}`}
-          title="KFM Suivi — Rentabilité"
-          subtitle={`Jour : ${dateLabel}`}
-        />
-      </div>
-
       <div className="hidden md:block">
         <Table>
           <TableHeader>

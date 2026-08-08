@@ -32,12 +32,11 @@ export default async function ChauffeursPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold text-foreground">Chauffeurs</h1>
-        <CreateDriverDialog trigger={<Button>Ajouter un chauffeur</Button>} />
-      </div>
+      <h1 className="text-lg font-semibold text-foreground">Chauffeurs</h1>
 
-      <div className="flex gap-2">
+      <CreateDriverDialog trigger={<Button className="w-full sm:w-auto">Ajouter un chauffeur</Button>} />
+
+      <div className="flex flex-wrap gap-2">
         <Link href="/patron/chauffeurs">
           <Button variant={showInactive ? "outline" : "default"} size="sm">
             Actifs

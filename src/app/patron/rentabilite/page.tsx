@@ -1,11 +1,21 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { RentabiliteControls } from "@/components/RentabiliteControls";
-import { RentabiliteDayTable } from "@/components/RentabiliteDayTable";
+import {
+  RentabiliteDayTable,
+  DAY_EXPORT_COLUMNS,
+  buildDayExportRows,
+} from "@/components/RentabiliteDayTable";
 import { RentabiliteAggregateTable } from "@/components/RentabiliteAggregateTable";
+import { ExportButton } from "@/components/ExportButton";
 import { KpiCard } from "@/components/KpiCard";
 import { Button } from "@/components/ui/button";
-import { computeRentabiliteKpis } from "@/lib/rentabilite";
+import {
+  computeRentabiliteKpis,
+  AGGREGATE_EXPORT_COLUMNS,
+  buildAggregateExportRows,
+} from "@/lib/rentabilite";
+import { slugifyFilename } from "@/lib/export";
 import { getPeriodRange, formatPeriodLabel, type PeriodKey } from "@/lib/stats";
 import type { Database } from "@/types/database";
 
@@ -62,18 +72,29 @@ export default async function RentabilitePage({
   );
   const periodLabel = formatPeriodLabel(period, from, to);
 
+  const exportRows = isDayView
+    ? buildDayExportRows(drivers ?? [], entries ?? [], sectorsById)
+    : buildAggregateExportRows(drivers ?? [], entries ?? [], sectorsById);
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold text-foreground">Rentabilité</h1>
-        <div className="flex items-center gap-2">
-          <RentabiliteControls period={period} date={date} customFrom={customFrom} customTo={customTo} />
-          <Link href="/patron/secteurs">
-            <Button variant="outline" size="sm">
-              Gérer les secteurs
-            </Button>
-          </Link>
-        </div>
+      <h1 className="text-lg font-semibold text-foreground">Rentabilité</h1>
+
+      <RentabiliteControls period={period} date={date} customFrom={customFrom} customTo={customTo} />
+
+      <div className="flex flex-wrap gap-2">
+        <Link href="/patron/secteurs">
+          <Button variant="outline" size="sm">
+            Gérer les secteurs
+          </Button>
+        </Link>
+        <ExportButton
+          columns={isDayView ? DAY_EXPORT_COLUMNS : AGGREGATE_EXPORT_COLUMNS}
+          rows={exportRows}
+          filename={`rentabilite-${slugifyFilename(isDayView ? dateLabel : periodLabel)}`}
+          title="KFM Suivi — Rentabilité"
+          subtitle={isDayView ? `Jour : ${dateLabel}` : `Période : ${periodLabel}`}
+        />
       </div>
 
       <div className="flex gap-3">
@@ -82,19 +103,9 @@ export default async function RentabilitePage({
       </div>
 
       {isDayView ? (
-        <RentabiliteDayTable
-          drivers={drivers ?? []}
-          entries={entries ?? []}
-          sectorsById={sectorsById}
-          dateLabel={dateLabel}
-        />
+        <RentabiliteDayTable drivers={drivers ?? []} entries={entries ?? []} sectorsById={sectorsById} />
       ) : (
-        <RentabiliteAggregateTable
-          drivers={drivers ?? []}
-          entries={entries ?? []}
-          sectorsById={sectorsById}
-          periodLabel={periodLabel}
-        />
+        <RentabiliteAggregateTable drivers={drivers ?? []} entries={entries ?? []} sectorsById={sectorsById} />
       )}
     </div>
   );

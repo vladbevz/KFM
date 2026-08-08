@@ -1,5 +1,6 @@
 import type { Database, PaymentType } from "@/types/database";
 import { entryTotal } from "@/lib/entries";
+import type { ExportColumn, ExportRow } from "@/lib/export";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 export type Sector = Database["public"]["Tables"]["sectors"]["Row"];
@@ -134,6 +135,44 @@ export function aggregateRentabiliteByDriver(
       tauxReussite: acc.total > 0 ? (acc.met / acc.total) * 100 : null,
     };
   });
+}
+
+export function sortRentabiliteSummaries(
+  summaries: DriverRentabiliteSummary[],
+): DriverRentabiliteSummary[] {
+  return [...summaries].sort((a, b) => {
+    if (a.tauxReussite === null && b.tauxReussite === null) return a.fullName.localeCompare(b.fullName);
+    if (a.tauxReussite === null) return 1;
+    if (b.tauxReussite === null) return -1;
+    return a.tauxReussite - b.tauxReussite;
+  });
+}
+
+// Colonnes + lignes d'export pour la vue agrégée — vivent ici plutôt que
+// dans RentabiliteAggregateTable.tsx (qui est "use client") car la page
+// (Server Component) doit pouvoir les appeler directement pour composer un
+// unique bouton "Exporter" dans son en-tête ; importer une fonction depuis
+// un module client casse au runtime côté serveur (elle devient une
+// référence client non appelable).
+export const AGGREGATE_EXPORT_COLUMNS: ExportColumn[] = [
+  { key: "chauffeur", label: "Chauffeur" },
+  { key: "jours", label: "Jours travaillés", numeric: true },
+  { key: "seuils", label: "Seuils atteints" },
+  { key: "taux", label: "Taux de réussite" },
+];
+
+export function buildAggregateExportRows(
+  drivers: { id: string; full_name: string }[],
+  entries: DailyEntry[],
+  sectorsById: Map<string, Sector>,
+): ExportRow[] {
+  const summaries = sortRentabiliteSummaries(aggregateRentabiliteByDriver(entries, drivers, sectorsById));
+  return summaries.map((s) => ({
+    chauffeur: s.fullName,
+    jours: s.joursTravailles,
+    seuils: `${s.seuilsAtteints}/${s.seuilsTotal}`,
+    taux: s.tauxReussite !== null ? `${s.tauxReussite.toFixed(0)}%` : "—",
+  }));
 }
 
 // KPI globaux (Accueil + en-tête de l'onglet Rentabilité) : uniquement les

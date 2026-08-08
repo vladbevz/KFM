@@ -35,17 +35,17 @@ export default async function VehiculesPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-foreground">Véhicules</h1>
-        <div className="flex gap-2">
-          <Link href="/patron/vehicules/couts">
-            <Button variant="outline">Voir les coûts</Button>
-          </Link>
-          <VehicleFormDialog trigger={<Button>Nouveau véhicule</Button>} />
-        </div>
-      </div>
+      <h1 className="text-lg font-semibold text-foreground">Véhicules</h1>
 
-      <div className="flex gap-2">
+      <VehicleFormDialog trigger={<Button className="w-full sm:w-auto">Nouveau véhicule</Button>} />
+
+      <Link href="/patron/vehicules/couts" className="w-full sm:w-auto">
+        <Button variant="outline" className="w-full sm:w-auto">
+          Voir les coûts
+        </Button>
+      </Link>
+
+      <div className="flex flex-wrap gap-2">
         <Link href="/patron/vehicules">
           <Button variant={showRetired ? "outline" : "default"} size="sm">
             Actifs

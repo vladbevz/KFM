@@ -37,7 +37,7 @@ export function RentabiliteControls({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-col gap-3">
       <PeriodSelector period={period} customFrom={customFrom} customTo={customTo} updateParams={updateParams} />
       {period === "today" && <RentabiliteDateControl date={date} />}
     </div>
