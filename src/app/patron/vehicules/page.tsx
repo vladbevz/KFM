@@ -37,9 +37,11 @@ export default async function VehiculesPage({
     <div className="flex flex-col gap-4">
       <h1 className="text-lg font-semibold text-foreground">Véhicules</h1>
 
-      <VehicleFormDialog trigger={<Button className="w-full sm:w-auto">Nouveau véhicule</Button>} />
+      <VehicleFormDialog
+        trigger={<Button className="w-full self-start sm:w-auto">Nouveau véhicule</Button>}
+      />
 
-      <Link href="/patron/vehicules/couts" className="w-full sm:w-auto">
+      <Link href="/patron/vehicules/couts" className="w-full self-start sm:w-auto">
         <Button variant="outline" className="w-full sm:w-auto">
           Voir les coûts
         </Button>

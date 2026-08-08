@@ -34,7 +34,7 @@ export default async function ChauffeursPage({
     <div className="flex flex-col gap-4">
       <h1 className="text-lg font-semibold text-foreground">Chauffeurs</h1>
 
-      <CreateDriverDialog trigger={<Button className="w-full sm:w-auto">Ajouter un chauffeur</Button>} />
+      <CreateDriverDialog trigger={<Button className="w-full self-start sm:w-auto">Ajouter un chauffeur</Button>} />
 
       <div className="flex flex-wrap gap-2">
         <Link href="/patron/chauffeurs">
