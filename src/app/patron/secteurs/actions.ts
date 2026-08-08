@@ -35,7 +35,7 @@ export async function saveSector(
   const paymentType = formData.get("payment_type") as PaymentType;
 
   if (!code) {
-    return { error: "Le code du secteur est obligatoire." };
+    return { error: "Le code de la tournée est obligatoire." };
   }
   if (!PAYMENT_TYPES.includes(paymentType)) {
     return { error: "Modèle de paiement invalide." };

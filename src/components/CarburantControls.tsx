@@ -48,7 +48,7 @@ export function CarburantControls({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-5">
       <div className="flex gap-2">
         {(
           [

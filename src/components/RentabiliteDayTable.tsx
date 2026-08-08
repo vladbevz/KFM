@@ -13,7 +13,7 @@ import { PAYMENT_TYPE_LABELS, rentabiliteEntryRow, type Sector } from "@/lib/ren
 import type { Database } from "@/types/database";
 
 // Exportées pour que la page compose un unique bouton "Exporter" dans son
-// en-tête (groupé avec "Gérer les secteurs") plutôt que d'avoir ce bouton
+// en-tête (groupé avec "Gérer les tournées") plutôt que d'avoir ce bouton
 // dupliqué dans chaque vue de tableau.
 export const DAY_EXPORT_COLUMNS: ExportColumn[] = [
   { key: "chauffeur", label: "Chauffeur" },

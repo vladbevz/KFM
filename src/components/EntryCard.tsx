@@ -44,7 +44,7 @@ function HalfDay({
   return (
     <div className="flex flex-col gap-0.5 rounded-md border border-border bg-background px-3 py-2 text-sm">
       <p className="font-medium text-foreground/80">{label}</p>
-      {sectorCode && <p className="text-foreground/60">Secteur : {sectorCode}</p>}
+      {sectorCode && <p className="text-foreground/60">Tournée : {sectorCode}</p>}
       <p className="tabular-nums text-foreground/60">
         Poses livraison : {livraison ?? 0} · Enlèvement : {enlevement ?? 0}
       </p>
@@ -131,7 +131,7 @@ export function EntryCard({
       {isNewFlow ? (
         <div className="flex flex-col gap-2">
           <div className="flex flex-col gap-0.5 rounded-md border border-border bg-background px-3 py-2 text-sm">
-            {sectorCode && <p className="text-foreground/60">Secteur : {sectorCode}</p>}
+            {sectorCode && <p className="text-foreground/60">Tournée : {sectorCode}</p>}
             <p className="tabular-nums text-foreground/60">
               Livrées : {poses.delivered} · Avec avarie : {poses.damaged} · Non livrées :{" "}
               {poses.notDelivered}

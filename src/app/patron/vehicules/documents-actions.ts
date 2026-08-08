@@ -67,3 +67,25 @@ export async function saveVehicleDocument(
   revalidatePath("/patron/echeances");
   return { error: null };
 }
+
+export async function deleteVehicleDocument(id: string): Promise<DocumentFormState> {
+  const supabase = await createClient();
+
+  const { data: doc, error: fetchError } = await supabase
+    .from("vehicle_documents")
+    .select("vehicle_id, file_url")
+    .eq("id", id)
+    .single<{ vehicle_id: string; file_url: string | null }>();
+  if (fetchError || !doc) return { error: "Document introuvable." };
+
+  if (doc.file_url) {
+    await supabase.storage.from("vehicle-documents").remove([doc.file_url]);
+  }
+
+  const { error } = await supabase.from("vehicle_documents").delete().eq("id", id);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/patron/vehicules/${doc.vehicle_id}`);
+  revalidatePath("/patron/echeances");
+  return { error: null };
+}

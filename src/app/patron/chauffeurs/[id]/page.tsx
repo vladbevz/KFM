@@ -6,6 +6,8 @@ import { DetailHeader } from "@/components/DetailHeader";
 import { DriverActiveToggle } from "@/components/DriverActiveToggle";
 import { DriverDocumentDialog } from "@/components/DriverDocumentDialog";
 import { DocumentsList, type DocumentItem } from "@/components/DocumentsList";
+import { DocumentDeleteButton } from "@/components/DocumentDeleteButton";
+import { deleteDriverDocument } from "@/app/patron/chauffeurs/actions";
 import type { Database } from "@/types/database";
 
 type DriverDocument = Database["public"]["Tables"]["driver_documents"]["Row"];
@@ -78,15 +80,21 @@ export default async function DriverDetailPage({
         <DocumentsList
           documents={documentItems}
           renderActions={(doc) => (
-            <DriverDocumentDialog
-              driverId={driver.id}
-              document={doc}
-              trigger={
-                <Button variant="outline" size="sm">
-                  Modifier
-                </Button>
-              }
-            />
+            <div className="flex items-center gap-2">
+              <DriverDocumentDialog
+                driverId={driver.id}
+                document={doc}
+                trigger={
+                  <Button variant="outline" size="sm">
+                    Modifier
+                  </Button>
+                }
+              />
+              <DocumentDeleteButton
+                docName={doc.doc_name}
+                onDelete={deleteDriverDocument.bind(null, doc.id)}
+              />
+            </div>
           )}
         />
       </div>

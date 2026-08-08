@@ -11,7 +11,9 @@ import { VehicleRepairDialog } from "@/components/VehicleRepairDialog";
 import { VehicleRetireToggle } from "@/components/VehicleRetireToggle";
 import { VehicleDeleteForeverDialog } from "@/components/VehicleDeleteForeverDialog";
 import { DocumentsList, type DocumentItem } from "@/components/DocumentsList";
+import { DocumentDeleteButton } from "@/components/DocumentDeleteButton";
 import { resolveVehicleIssue } from "@/app/patron/vehicules/actions";
+import { deleteVehicleDocument } from "@/app/patron/vehicules/documents-actions";
 import type { Database } from "@/types/database";
 
 type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
@@ -145,15 +147,21 @@ export default async function VehicleDetailPage({
         <DocumentsList
           documents={documentItems}
           renderActions={(doc) => (
-            <VehicleDocumentDialog
-              vehicleId={vehicle.id}
-              document={doc}
-              trigger={
-                <Button variant="outline" size="sm">
-                  Modifier
-                </Button>
-              }
-            />
+            <div className="flex items-center gap-2">
+              <VehicleDocumentDialog
+                vehicleId={vehicle.id}
+                document={doc}
+                trigger={
+                  <Button variant="outline" size="sm">
+                    Modifier
+                  </Button>
+                }
+              />
+              <DocumentDeleteButton
+                docName={doc.doc_name}
+                onDelete={deleteVehicleDocument.bind(null, doc.id)}
+              />
+            </div>
           )}
         />
       </div>

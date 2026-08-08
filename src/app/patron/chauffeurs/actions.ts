@@ -64,3 +64,25 @@ export async function saveDriverDocument(
   revalidatePath("/patron/echeances");
   return { error: null };
 }
+
+export async function deleteDriverDocument(id: string): Promise<DocumentFormState> {
+  const supabase = await createClient();
+
+  const { data: doc, error: fetchError } = await supabase
+    .from("driver_documents")
+    .select("driver_id, file_url")
+    .eq("id", id)
+    .single<{ driver_id: string; file_url: string | null }>();
+  if (fetchError || !doc) return { error: "Document introuvable." };
+
+  if (doc.file_url) {
+    await supabase.storage.from("driver-documents").remove([doc.file_url]);
+  }
+
+  const { error } = await supabase.from("driver_documents").delete().eq("id", id);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/patron/chauffeurs/${doc.driver_id}`);
+  revalidatePath("/patron/echeances");
+  return { error: null };
+}

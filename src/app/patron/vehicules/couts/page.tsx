@@ -18,7 +18,7 @@ export default async function CoutsFlottePage({
   const period = (
     ["today", "7", "30", "90", "custom"].includes(params.period ?? "")
       ? params.period
-      : "30"
+      : "today"
   ) as PeriodKey;
   const customFrom = params.from ?? null;
   const customTo = params.to ?? null;

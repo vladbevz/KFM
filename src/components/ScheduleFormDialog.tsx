@@ -146,14 +146,14 @@ export function ScheduleFormDialog({
 
           {type === "tournee" && (
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="sector_id">Secteur</Label>
+              <Label htmlFor="sector_id">Tournée</Label>
               <select
                 id="sector_id"
                 name="sector_id"
                 defaultValue={state.mode === "edit" ? (state.entry.sector_id ?? "") : ""}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
               >
-                <option value="">Aucun secteur</option>
+                <option value="">Aucune tournée</option>
                 {sectors.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.code}

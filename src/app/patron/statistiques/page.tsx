@@ -27,7 +27,7 @@ export default async function PatronStatistiquesPage({
   const period = (
     ["today", "7", "30", "90", "custom"].includes(params.period ?? "")
       ? params.period
-      : "30"
+      : "today"
   ) as PeriodKey;
   const metric = (["km", "poses", "enlevements"].includes(params.metric ?? "")
     ? params.metric

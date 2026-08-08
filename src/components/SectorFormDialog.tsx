@@ -72,7 +72,7 @@ export function SectorFormDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{sector ? `Modifier ${sector.code}` : "Nouveau secteur"}</DialogTitle>
+          <DialogTitle>{sector ? `Modifier ${sector.code}` : "Nouvelle tournée"}</DialogTitle>
         </DialogHeader>
 
         <form
@@ -85,7 +85,7 @@ export function SectorFormDialog({
           {sector && <input type="hidden" name="id" value={sector.id} />}
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="code">Code secteur</Label>
+            <Label htmlFor="code">Code tournée</Label>
             <Input
               id="code"
               name="code"

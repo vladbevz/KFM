@@ -31,7 +31,7 @@ export default async function CarburantPatronPage({
   const period = (
     ["today", "7", "30", "90", "custom"].includes(params.period ?? "")
       ? params.period
-      : "30"
+      : "today"
   ) as PeriodKey;
   const groupBy = params.groupBy === "vehicule" ? "vehicule" : "chauffeur";
   const customFrom = params.from ?? null;

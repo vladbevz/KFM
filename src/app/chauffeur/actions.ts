@@ -42,7 +42,7 @@ export async function startTournee(
 
   if (!user) redirect("/login");
 
-  if (!sectorId) return { error: "Sélectionne un secteur." };
+  if (!sectorId) return { error: "Sélectionne une tournée." };
   if (!Number.isFinite(kmDepart) || kmDepart < 0) {
     return { error: "Le kilométrage au compteur est obligatoire." };
   }
