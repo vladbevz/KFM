@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { SplashRemover } from "@/components/SplashRemover";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -20,11 +21,8 @@ export const metadata: Metadata = {
   description: "Suivi quotidien des chauffeurs",
   manifest: "/manifest.json",
   icons: {
-    icon: [
-      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-    ],
-    apple: "/icons/apple-touch-icon.png",
+    icon: [{ url: "/favicon.ico", sizes: "any" }],
+    apple: "/apple-touch-icon.png",
   },
   appleWebApp: {
     capable: true,
@@ -45,7 +43,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#F7F8FA",
+  themeColor: "#E89D2D",
 };
 
 export default function RootLayout({
@@ -58,6 +56,34 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
+        {/* Écran de lancement statique — HTML/CSS pur rendu côté serveur,
+            visible dès le tout premier paint (avant toute exécution JS),
+            retiré par SplashRemover une fois React hydraté. */}
+        <div id="app-splash" className="app-splash" aria-hidden="true">
+          <div className="app-splash-logo">
+            <span className="app-splash-wordmark">KFM</span>
+            <svg
+              className="app-splash-wheel"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="8" />
+              <path d="M12 4v16M4.4 7.8l15.2 8.4M4.4 16.2l15.2-8.4" />
+            </svg>
+          </div>
+          <p className="app-splash-title">KFM Suivi</p>
+          <p className="app-splash-subtitle">Chargement…</p>
+          <div className="app-splash-dots">
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
+        <SplashRemover />
+
         <ServiceWorkerRegister />
         {children}
         <Toaster position="top-center" theme="light" richColors={false} />

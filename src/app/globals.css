@@ -1,3 +1,12 @@
+/* Fond visible dès le tout premier instant de chargement, avant toute
+   exécution JS — évite l'écran noir pendant l'intervalle entre la requête
+   HTML et le premier paint stylé. */
+html,
+body {
+  background-color: #f7f8fa;
+  margin: 0;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -39,5 +48,112 @@ body {
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+/* Écran de lancement statique (v30) — CSS pur, aucune dépendance JS pour
+   l'affichage ni les animations ; seul le retrait (classe .app-splash--hidden)
+   est déclenché en JS une fois React hydraté, cf. SplashRemover.tsx. */
+.app-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background-color: #f7f8fa;
+  transition: opacity 200ms ease;
+}
+
+.app-splash--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app-splash-logo {
+  width: 88px;
+  height: 88px;
+  border-radius: 22px;
+  background-color: #e89d2d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  animation: app-splash-pulse 1.6s ease-in-out infinite;
+}
+
+.app-splash-wordmark {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.app-splash-wheel {
+  width: 18px;
+  height: 18px;
+  color: #ffffff;
+}
+
+.app-splash-title {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1d23;
+}
+
+.app-splash-subtitle {
+  margin: -12px 0 0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  color: #5b616e;
+}
+
+.app-splash-dots {
+  display: flex;
+  gap: 6px;
+  margin-top: -4px;
+}
+
+.app-splash-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #e89d2d;
+  animation: app-splash-dot 1.2s ease-in-out infinite;
+}
+
+.app-splash-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.app-splash-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes app-splash-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+@keyframes app-splash-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.2;
+  }
+  40% {
+    opacity: 1;
   }
 }
