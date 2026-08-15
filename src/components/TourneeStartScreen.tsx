@@ -45,7 +45,7 @@ export function TourneeStartScreen({
       onSubmit={handleSubmit}
       className="flex flex-col items-center gap-7 px-6 py-10 text-center"
     >
-      <h1 className="text-2xl font-semibold text-foreground">Bonjour {firstName}</h1>
+      <h1 className="text-2xl font-semibold text-foreground">Bonjour, {firstName}</h1>
 
       <div className="flex w-full max-w-xs flex-col gap-5 text-left">
         <div className="flex flex-col gap-1.5">

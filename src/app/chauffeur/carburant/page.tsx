@@ -41,9 +41,16 @@ export default async function CarburantPage() {
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6">
-      <h1 className="text-lg font-semibold text-foreground">Carburant</h1>
-
-      <FuelLogForm vehicles={selectableVehicles} defaultVehicleId={profile?.default_vehicle_id} />
+      {/* min-h calé sur le viewport moins la seule marge qui compte ici :
+          le padding-top de main (py-6) + le gap avant la section suivante
+          (gap-6) — pb-32 sur main ne joue aucun rôle dans ce calcul, c'est
+          un padding de fin de page, pas un décalage vertical du formulaire.
+          Le formulaire occupe tout l'écran initial, l'historique ne devient
+          visible qu'au scroll intentionnel (correction v33). */}
+      <div className="flex min-h-[calc(100dvh-2rem)] flex-col justify-center gap-6">
+        <h1 className="text-lg font-semibold text-foreground">Carburant</h1>
+        <FuelLogForm vehicles={selectableVehicles} defaultVehicleId={profile?.default_vehicle_id} />
+      </div>
 
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold text-foreground/80">Historique des pleins</h2>

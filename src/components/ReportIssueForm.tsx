@@ -68,9 +68,9 @@ export function ReportIssueForm({
   const busy = pending || compressing;
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="vehicle_id" className="text-sm text-foreground/70">
+    <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-7">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="vehicle_id" className="text-base text-foreground/70">
           Véhicule
         </label>
         <select
@@ -78,7 +78,7 @@ export function ReportIssueForm({
           name="vehicle_id"
           required
           defaultValue={defaultVehicleId ?? ""}
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
+          className="rounded-md border border-border bg-background px-4 py-4 text-base text-foreground outline-none focus:border-foreground"
         >
           <option value="">Sélectionner...</option>
           {vehicles.map((v) => (
@@ -90,13 +90,13 @@ export function ReportIssueForm({
         </select>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <span className="text-sm text-foreground/70">Le véhicule peut-il continuer ?</span>
+      <div className="flex flex-col gap-1.5">
+        <span className="text-base text-foreground/70">Le véhicule peut-il continuer ?</span>
         <div className="flex gap-3">
           <button
             type="button"
             onClick={() => setStatus("issue_running")}
-            className={`flex-1 rounded-md border px-4 py-3 text-sm font-medium ${
+            className={`flex-1 rounded-md border px-4 py-4 text-base font-medium ${
               status === "issue_running"
                 ? "border-[#B7791F] bg-[#FBF0DD] text-[#8A5C18]"
                 : "border-border text-foreground/60"
@@ -107,7 +107,7 @@ export function ReportIssueForm({
           <button
             type="button"
             onClick={() => setStatus("unavailable")}
-            className={`flex-1 rounded-md border px-4 py-3 text-sm font-medium ${
+            className={`flex-1 rounded-md border px-4 py-4 text-base font-medium ${
               status === "unavailable"
                 ? "border-destructive bg-[#FBE7E5] text-destructive"
                 : "border-border text-foreground/60"
@@ -118,21 +118,21 @@ export function ReportIssueForm({
         </div>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="description" className="text-sm text-foreground/70">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="description" className="text-base text-foreground/70">
           Description du problème
         </label>
         <textarea
           id="description"
           name="description"
-          rows={4}
+          rows={5}
           required
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
+          className="rounded-md border border-border bg-background px-4 py-3.5 text-base text-foreground outline-none focus:border-foreground"
         />
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="photo" className="text-sm text-foreground/70">
+        <label htmlFor="photo" className="text-base text-foreground/70">
           Photo (optionnel)
         </label>
         <input
@@ -142,7 +142,7 @@ export function ReportIssueForm({
           accept="image/*"
           capture="environment"
           onChange={handlePhotoChange}
-          className="text-sm text-foreground/70 file:mr-3 file:rounded-md file:border-0 file:bg-surface file:px-3 file:py-2 file:text-foreground"
+          className="text-base text-foreground/70 file:mr-3 file:rounded-md file:border-0 file:bg-surface file:px-4 file:py-3 file:text-base file:text-foreground"
         />
         {photoPreview && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -159,9 +159,9 @@ export function ReportIssueForm({
       <button
         type="submit"
         disabled={busy}
-        className="flex items-center justify-center gap-2 rounded-md bg-km px-4 py-2 font-medium text-accent-ink disabled:opacity-60"
+        className="flex items-center justify-center gap-2 rounded-md bg-km px-4 py-4 text-lg font-semibold text-accent-ink disabled:opacity-60"
       >
-        {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+        {busy && <Loader2 className="h-5 w-5 animate-spin" />}
         {compressing ? "Traitement de la photo..." : pending ? "Envoi..." : "Signaler"}
       </button>
     </form>

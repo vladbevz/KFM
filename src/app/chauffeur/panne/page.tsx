@@ -20,8 +20,12 @@ export default async function PannePage() {
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4">
-      <h1 className="text-lg font-semibold text-foreground">Signaler une panne</h1>
-      <ReportIssueForm vehicles={vehicles ?? []} defaultVehicleId={profile?.default_vehicle_id} />
+      {/* min-h calé sur le viewport moins le padding-top de main (py-6) :
+          le formulaire occupe tout l'écran initial (correction v33). */}
+      <div className="flex min-h-[calc(100dvh-2rem)] flex-col justify-center gap-6">
+        <h1 className="text-lg font-semibold text-foreground">Signaler une panne</h1>
+        <ReportIssueForm vehicles={vehicles ?? []} defaultVehicleId={profile?.default_vehicle_id} />
+      </div>
     </div>
   );
 }

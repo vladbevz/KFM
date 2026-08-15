@@ -28,9 +28,9 @@ function SummaryCard({
   color: string;
 }) {
   return (
-    <div className="flex-1 rounded-2xl border border-border bg-surface shadow-card p-4">
-      <p className="text-sm text-foreground/60">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums" style={{ color }}>
+    <div className="min-w-0 flex-1 rounded-2xl border border-border bg-surface shadow-card p-3">
+      <p className="text-xs text-foreground/60">{label}</p>
+      <p className="mt-1 text-xl font-semibold tabular-nums" style={{ color }}>
         {total}
       </p>
       <p className="text-xs tabular-nums text-foreground/50">
@@ -95,7 +95,7 @@ export default async function StatistiquesPage({
 
       <StatsChart entries={rows} metric={metric} period={period} sectorsById={sectorsById} />
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-row gap-2">
         <SummaryCard
           label="Kilomètres"
           total={totalKm}

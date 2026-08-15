@@ -39,10 +39,10 @@ export function FuelLogForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-4 rounded-2xl border border-border bg-surface shadow-card p-4"
+      className="flex flex-col gap-7 rounded-2xl border border-border bg-surface shadow-card p-5"
     >
-      <div className="flex flex-col gap-1">
-        <label htmlFor="vehicle_id" className="text-sm text-foreground/70">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="vehicle_id" className="text-base text-foreground/70">
           Véhicule
         </label>
         <select
@@ -50,7 +50,7 @@ export function FuelLogForm({
           name="vehicle_id"
           required
           defaultValue={defaultVehicleId ?? ""}
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
+          className="rounded-md border border-border bg-background px-4 py-4 text-base text-foreground outline-none focus:border-foreground"
         >
           <option value="">Sélectionner...</option>
           {vehicles.map((v) => (
@@ -62,9 +62,9 @@ export function FuelLogForm({
         </select>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <label htmlFor="liters" className="text-sm text-foreground/70">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="liters" className="text-base text-foreground/70">
             Litres
           </label>
           <input
@@ -75,11 +75,11 @@ export function FuelLogForm({
             min="0"
             inputMode="decimal"
             required
-            className="rounded-md border border-border bg-background px-3 py-2 text-foreground tabular-nums outline-none focus:border-foreground"
+            className="rounded-md border border-border bg-background px-4 py-4 text-base text-foreground tabular-nums outline-none focus:border-foreground"
           />
         </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="odometer" className="text-sm text-foreground/70">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="odometer" className="text-base text-foreground/70">
             Kilométrage
           </label>
           <input
@@ -89,13 +89,13 @@ export function FuelLogForm({
             min="0"
             inputMode="numeric"
             required
-            className="rounded-md border border-border bg-background px-3 py-2 text-foreground tabular-nums outline-none focus:border-foreground"
+            className="rounded-md border border-border bg-background px-4 py-4 text-base text-foreground tabular-nums outline-none focus:border-foreground"
           />
         </div>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="filled_at" className="text-sm text-foreground/70">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="filled_at" className="text-base text-foreground/70">
           Date
         </label>
         <input
@@ -104,7 +104,7 @@ export function FuelLogForm({
           type="date"
           defaultValue={today}
           required
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-foreground"
+          className="rounded-md border border-border bg-background px-4 py-4 text-base text-foreground outline-none focus:border-foreground"
         />
       </div>
 
@@ -113,9 +113,9 @@ export function FuelLogForm({
       <button
         type="submit"
         disabled={pending}
-        className="flex items-center justify-center gap-2 rounded-md bg-km px-4 py-2 font-medium text-accent-ink disabled:opacity-60"
+        className="flex items-center justify-center gap-2 rounded-md bg-km px-4 py-4 text-lg font-semibold text-accent-ink disabled:opacity-60"
       >
-        {pending && <Loader2 className="h-4 w-4 animate-spin" />}
+        {pending && <Loader2 className="h-5 w-5 animate-spin" />}
         {pending ? "Enregistrement..." : "Ajouter le plein"}
       </button>
     </form>
