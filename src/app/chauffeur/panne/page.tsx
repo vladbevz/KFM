@@ -19,13 +19,16 @@ export default async function PannePage() {
   ]);
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-4">
-      {/* min-h calé sur le viewport moins le padding-top de main (py-6) :
-          le formulaire occupe tout l'écran initial (correction v33). */}
-      <div className="flex min-h-[calc(100dvh-2rem)] flex-col justify-center gap-6">
-        <h1 className="text-lg font-semibold text-foreground">Signaler une panne</h1>
-        <ReportIssueForm vehicles={vehicles ?? []} defaultVehicleId={profile?.default_vehicle_id} />
-      </div>
+    <div className="mx-auto flex max-w-lg flex-col gap-6">
+      {/* Pas de liste sous ce formulaire (contrairement à Carburant) : aucune
+          raison de forcer une hauteur — le contenu du formulaire agrandi
+          (v22/v33) suffit déjà à occuper l'écran naturellement. Un min-height
+          calé sur 100dvh avait déjà causé une régression sur appareil réel
+          (bouton "Signaler" masqué sous la nav, dvh/police ne correspondant
+          pas exactement à ce qui avait été mesuré en headless) — mieux vaut
+          un flux naturel, toujours sûr, qu'un calcul fragile. */}
+      <h1 className="text-lg font-semibold text-foreground">Signaler une panne</h1>
+      <ReportIssueForm vehicles={vehicles ?? []} defaultVehicleId={profile?.default_vehicle_id} />
     </div>
   );
 }
