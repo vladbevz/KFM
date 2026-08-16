@@ -111,7 +111,13 @@ export default async function PatronStatistiquesPage({
       />
 
       {view === "graphique" ? (
-        <StatsChart entries={entries ?? []} metric={metric} period={period} sectorsById={sectorsById} />
+        <StatsChart
+          entries={entries ?? []}
+          metric={metric}
+          period={period}
+          sectorsById={sectorsById}
+          groupByTournee={selectedDriverId !== "all"}
+        />
       ) : (
         <ComparisonTable
           data={aggregateDriverStats(

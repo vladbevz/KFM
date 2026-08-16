@@ -205,6 +205,64 @@ export function aggregatePosesByDate(
   return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
 
+export interface TourneeBar {
+  key: string; // unique, ex. "2026-08-10#0"
+  date: string;
+  isFirstOfDay: boolean;
+  sectorCode: string | null;
+  paymentType: PaymentType | null;
+  delivered: number;
+  damaged: number;
+  notDelivered: number;
+  enlevements: number;
+  threshold: number | null;
+}
+
+// Une barre par tournée (pas par jour) — pour le graphique poses d'un
+// chauffeur précis quand il a eu plusieurs tournées le même jour (correction
+// v36) : un jour à tournées mixtes (ex. M55 à la pose + A55 forfait) ne doit
+// jamais fusionner les deux dans une même barre, sous peine de comparer le
+// seuil de M55 seul à un volume gonflé par A55. Triées par started_at pour
+// refléter l'ordre matin -> après-midi.
+export function aggregateTourneesByDate(
+  entries: DailyEntry[],
+  sectorsById: Map<string, Sector>,
+): TourneeBar[] {
+  const byDate = new Map<string, DailyEntry[]>();
+  for (const entry of entries) {
+    const list = byDate.get(entry.entry_date) ?? [];
+    list.push(entry);
+    byDate.set(entry.entry_date, list);
+  }
+
+  const dates = Array.from(byDate.keys()).sort((a, b) => a.localeCompare(b));
+  const result: TourneeBar[] = [];
+
+  for (const date of dates) {
+    const dayEntries = [...byDate.get(date)!].sort((a, b) =>
+      (a.started_at ?? "").localeCompare(b.started_at ?? ""),
+    );
+    dayEntries.forEach((entry, index) => {
+      const sector = resolveEntrySector(entry, sectorsById);
+      const breakdown = entryPosesBreakdown(entry);
+      result.push({
+        key: `${date}#${index}`,
+        date,
+        isFirstOfDay: index === 0,
+        sectorCode: sector?.code ?? null,
+        paymentType: sector?.payment_type ?? null,
+        delivered: breakdown.delivered,
+        damaged: breakdown.damaged,
+        notDelivered: breakdown.notDelivered,
+        enlevements: entryEnlevements(entry),
+        threshold: sectorThreshold(sector),
+      });
+    });
+  }
+
+  return result;
+}
+
 export interface DriverMetrics {
   driverId: string;
   fullName: string;

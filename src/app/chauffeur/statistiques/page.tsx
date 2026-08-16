@@ -93,7 +93,13 @@ export default async function StatistiquesPage({
         size="lg"
       />
 
-      <StatsChart entries={rows} metric={metric} period={period} sectorsById={sectorsById} />
+      <StatsChart
+        entries={rows}
+        metric={metric}
+        period={period}
+        sectorsById={sectorsById}
+        groupByTournee
+      />
 
       <div className="flex flex-row gap-2">
         <SummaryCard
