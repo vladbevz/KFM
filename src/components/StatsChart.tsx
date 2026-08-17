@@ -8,6 +8,7 @@ import {
   LabelList,
   Legend,
   Line,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -108,6 +109,7 @@ function PosesTooltip({
 
 interface TourneeChartRow extends TourneeBar {
   badgeY: number | null; // position du badge "Forfait", juste au-dessus de la barre
+  isLastOfDay: boolean; // dernière sous-barre du groupe du jour (correction v37)
 }
 
 function tourneeTotal(bar: TourneeBar): number {
@@ -173,27 +175,50 @@ function TourneeBarTooltip({
 }
 
 function TourneePerBarChart({ bars, showLabels }: { bars: TourneeBar[]; showLabels: boolean }) {
-  const byKey = new Map(bars.map((b) => [b.key, b]));
-  const data: TourneeChartRow[] = bars.map((b) => ({
-    ...b,
-    badgeY: b.paymentType === "forfait" ? tourneeTotal(b) + 3 : null,
-  }));
+  const data: TourneeChartRow[] = bars.map((b, i) => {
+    const next = bars[i + 1];
+    return {
+      ...b,
+      badgeY: b.paymentType === "forfait" ? tourneeTotal(b) + 3 : null,
+      isLastOfDay: !next || next.date !== b.date,
+    };
+  });
+  const byKey = new Map(data.map((b) => [b.key, b]));
 
-  // Étiquette à deux niveaux sous chaque barre : la date seulement sous la
-  // première tournée du jour (regroupement visuel), le code de la tournée
-  // sous chacune — sans ça, un jour à 2 tournées se lirait comme 2 jours.
+  // Seuil continu (mobile uniquement, correction v37) : n'a de sens que si
+  // toutes les tournées à la pose visibles partagent le même objectif — sinon
+  // une ligne unique serait trompeuse, on garde alors le repère localisé
+  // même sur mobile (cf. prompt v37, cas ambigu).
+  const distinctThresholds = new Set(bars.map((b) => b.threshold).filter((t): t is number => t !== null));
+  const uniformThreshold = distinctThresholds.size === 1 ? [...distinctThresholds][0] : null;
+  const localizedThresholdClassName = uniformThreshold !== null ? "hidden sm:block" : undefined;
+
+  // Étiquette à deux niveaux sous chaque barre, systématiquement dans le
+  // même ordre pour toutes (date en haut, code en bas) : la date n'est
+  // rendue que pour la dernière sous-barre du groupe du jour, mais
+  // recentrée horizontalement sur le milieu du groupe entier (moyenne entre
+  // le x de la première et de la dernière sous-barre, toutes deux fournies
+  // par recharts pour cette même passe de rendu) — jamais sous la première
+  // sous-barre seule, ce qui donnait l'impression trompeuse que la date
+  // n'appartenait qu'à elle (correction v37).
+  const firstXByDate = new Map<string, number>();
+
   function TourneeTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: string } }) {
     if (x == null || y == null || !payload) return null;
     const bar = byKey.get(payload.value);
     if (!bar) return null;
+    if (bar.isFirstOfDay) firstXByDate.set(bar.date, x);
+    const showDate = bar.isLastOfDay;
+    const xFirst = firstXByDate.get(bar.date) ?? x;
+    const dateOffsetX = showDate ? (xFirst - x) / 2 : 0;
     return (
       <g transform={`translate(${x},${y})`}>
-        {bar.isFirstOfDay && (
-          <text x={0} y={12} textAnchor="middle" fontSize={11} fill="#5B616E">
+        {showDate && (
+          <text x={dateOffsetX} y={12} textAnchor="middle" fontSize={11} fill="#5B616E">
             {bar.date.slice(5)}
           </text>
         )}
-        <text x={0} y={bar.isFirstOfDay ? 26 : 14} textAnchor="middle" fontSize={10} fill="#9AA0AC">
+        <text x={0} y={26} textAnchor="middle" fontSize={10} fill="#9AA0AC">
           {bar.sectorCode ?? "?"}
         </text>
       </g>
@@ -251,7 +276,9 @@ function TourneePerBarChart({ bars, showLabels }: { bars: TourneeBar[]; showLabe
                   stroke="none"). legendType="none" : légendé via la légende
                   texte sous le graphique plutôt que la Legend recharts
                   (même convention que la note "Zone plus claire" du rendu
-                  cumulé, correction v29). */}
+                  cumulé, correction v29). Masqué sur mobile (classe
+                  responsive) uniquement quand la ligne continue ci-dessous
+                  prend le relais — correction v37. */}
               <Line
                 dataKey="threshold"
                 stroke="none"
@@ -259,7 +286,21 @@ function TourneePerBarChart({ bars, showLabels }: { bars: TourneeBar[]; showLabe
                 isAnimationActive={false}
                 legendType="none"
                 dot={<ThresholdMark />}
+                className={localizedThresholdClassName}
               />
+              {/* Ligne de seuil continue, mobile uniquement : remplace le
+                  repère localisé quand toutes les tournées à la pose
+                  visibles partagent le même objectif (cas non ambigu,
+                  correction v37). */}
+              {uniformThreshold !== null && (
+                <ReferenceLine
+                  y={uniformThreshold}
+                  stroke="#2A5FBF"
+                  strokeDasharray="4 4"
+                  strokeWidth={2}
+                  className="sm:hidden"
+                />
+              )}
               <Line
                 dataKey="badgeY"
                 stroke="none"
