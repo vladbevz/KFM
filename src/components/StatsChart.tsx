@@ -29,6 +29,11 @@ import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 
+// Même teinte que "Livrées" mais plus claire : les deux étaient rendues
+// dans un vert identique, impossible à distinguer d'un coup d'œil dans la
+// barre empilée.
+const ENLEVEMENTS_COLOR = "#5CB88A";
+
 const tooltipStyle = {
   cursor: { fill: "#1a1d23", opacity: 0.06 },
   contentStyle: {
@@ -247,7 +252,7 @@ function TourneePerBarChart({ bars, showLabels }: { bars: TourneeBar[]; showLabe
                   <LabelList dataKey="delivered" position="center" formatter={nonZero} {...labelProps} fill="#FFFFFF" />
                 )}
               </Bar>
-              <Bar dataKey="enlevements" name="Enlèvements" stackId="poses" fill="#1B8A54" isAnimationActive={false}>
+              <Bar dataKey="enlevements" name="Enlèvements" stackId="poses" fill={ENLEVEMENTS_COLOR} isAnimationActive={false}>
                 {showLabels && (
                   <LabelList dataKey="enlevements" position="center" formatter={nonZero} {...labelProps} fill="#FFFFFF" />
                 )}
@@ -390,12 +395,12 @@ export function StatsChart({
                   <LabelList dataKey="deliveredForfait" position="center" formatter={nonZero} {...labelProps} fill="#FFFFFF" />
                 )}
               </Bar>
-              <Bar dataKey="enlevements" name="Enlèvements" stackId="poses" fill="#1B8A54">
+              <Bar dataKey="enlevements" name="Enlèvements" stackId="poses" fill={ENLEVEMENTS_COLOR}>
                 {showLabels && (
                   <LabelList dataKey="enlevements" position="center" formatter={nonZero} {...labelProps} fill="#FFFFFF" />
                 )}
               </Bar>
-              <Bar dataKey="enlevementsForfait" stackId="poses" fill="#1B8A54" fillOpacity={0.35} legendType="none">
+              <Bar dataKey="enlevementsForfait" stackId="poses" fill={ENLEVEMENTS_COLOR} fillOpacity={0.35} legendType="none">
                 {showLabels && (
                   <LabelList dataKey="enlevementsForfait" position="center" formatter={nonZero} {...labelProps} fill="#FFFFFF" />
                 )}
