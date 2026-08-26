@@ -91,7 +91,7 @@ export default async function RentabilitePage({
           </Link>
           <Link href="/patron/rentabilite/geodis">
             <Button variant="outline" size="sm">
-              Écart Geodis
+              Statistiques financières
             </Button>
           </Link>
           <ExportButton

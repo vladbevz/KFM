@@ -43,12 +43,16 @@ function SubmitButton({ isUpdate }: { isUpdate: boolean }) {
 export function SectorFormDialog({
   sector,
   currentPrice,
+  currentForfaitAmount,
   trigger,
 }: {
   sector?: Sector;
   // Prix par pose actuel (Module A), vient de sector_prices — table séparée
   // réservée au patron, jamais lisible par un chauffeur (cf. RLS is_boss()).
   currentPrice?: number | null;
+  // Montant forfait actuel, vient de sector_forfait_amounts — même
+  // raisonnement d'isolation que currentPrice ci-dessus.
+  currentForfaitAmount?: number | null;
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -152,6 +156,26 @@ export function SectorFormDialog({
                 </p>
               </div>
             </>
+          )}
+
+          {paymentType === "forfait" && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="forfait_amount">Montant forfait (€)</Label>
+              <Input
+                id="forfait_amount"
+                name="forfait_amount"
+                type="number"
+                min={0}
+                step="0.01"
+                placeholder="Non renseigné"
+                defaultValue={currentForfaitAmount ?? ""}
+              />
+              <p className="text-xs text-foreground-muted">
+                Montant fixe payé par Geodis par tournée effectuée, quel que soit le volume. Un
+                changement ne s&apos;applique qu&apos;aux tournées clôturées après la modification —
+                l&apos;historique déjà calculé n&apos;est jamais recalculé.
+              </p>
+            </div>
           )}
 
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}

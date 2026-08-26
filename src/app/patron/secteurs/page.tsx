@@ -20,22 +20,33 @@ function thresholdsSummary(sector: Sector): string {
     : "Forfait";
 }
 
-function priceSummary(sector: Sector, price: number | null | undefined): string {
-  if (sector.payment_type !== "a_la_pose") return "—";
-  return price != null ? `${price.toFixed(2)} €` : "Non renseigné";
+function tariffSummary(
+  sector: Sector,
+  price: number | null | undefined,
+  forfaitAmount: number | null | undefined,
+): string {
+  if (sector.payment_type === "a_la_pose") {
+    return price != null ? `${price.toFixed(2)} €/pose` : "Non renseigné";
+  }
+  return forfaitAmount != null ? `${forfaitAmount.toFixed(2)} € (forfait)` : "Non renseigné";
 }
 
 export default async function SecteursPage() {
   const supabase = await createClient();
 
-  const [{ data: sectors }, { data: prices }] = await Promise.all([
+  const [{ data: sectors }, { data: prices }, { data: forfaitAmounts }] = await Promise.all([
     supabase.from("sectors").select("*").order("code").returns<Sector[]>(),
     supabase
       .from("sector_prices")
       .select("sector_id, price_per_pose")
       .returns<{ sector_id: string; price_per_pose: number | null }[]>(),
+    supabase
+      .from("sector_forfait_amounts")
+      .select("sector_id, forfait_amount")
+      .returns<{ sector_id: string; forfait_amount: number | null }[]>(),
   ]);
   const priceBySectorId = new Map((prices ?? []).map((p) => [p.sector_id, p.price_per_pose]));
+  const forfaitBySectorId = new Map((forfaitAmounts ?? []).map((f) => [f.sector_id, f.forfait_amount]));
 
   return (
     <div className="flex flex-col gap-4">
@@ -57,7 +68,7 @@ export default async function SecteursPage() {
                   <TableHead>Code</TableHead>
                   <TableHead>Modèle</TableHead>
                   <TableHead>Seuils</TableHead>
-                  <TableHead>Prix/pose</TableHead>
+                  <TableHead>Tarif</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
@@ -70,12 +81,13 @@ export default async function SecteursPage() {
                       {thresholdsSummary(sector)}
                     </TableCell>
                     <TableCell className="tabular-nums text-foreground/70">
-                      {priceSummary(sector, priceBySectorId.get(sector.id))}
+                      {tariffSummary(sector, priceBySectorId.get(sector.id), forfaitBySectorId.get(sector.id))}
                     </TableCell>
                     <TableCell className="text-right">
                       <SectorFormDialog
                         sector={sector}
                         currentPrice={priceBySectorId.get(sector.id)}
+                        currentForfaitAmount={forfaitBySectorId.get(sector.id)}
                         trigger={
                           <Button variant="outline" size="sm">
                             Modifier
@@ -102,12 +114,13 @@ export default async function SecteursPage() {
                     {thresholdsSummary(sector)}
                   </p>
                   <p className="text-sm tabular-nums text-foreground-muted">
-                    Prix/pose : {priceSummary(sector, priceBySectorId.get(sector.id))}
+                    Tarif : {tariffSummary(sector, priceBySectorId.get(sector.id), forfaitBySectorId.get(sector.id))}
                   </p>
                 </div>
                 <SectorFormDialog
                   sector={sector}
                   currentPrice={priceBySectorId.get(sector.id)}
+                  currentForfaitAmount={forfaitBySectorId.get(sector.id)}
                   trigger={
                     <Button variant="outline" size="sm">
                       Modifier

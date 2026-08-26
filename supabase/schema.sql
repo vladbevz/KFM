@@ -531,13 +531,35 @@ create policy "sector_prices_boss_only"
   using (public.is_boss())
   with check (public.is_boss());
 
--- Prix figé au moment où la tournée passe à 'completed' : un changement de
--- prix sur sector_prices ne modifie jamais rétroactivement l'écart en euros
--- d'une tournée déjà close.
+-- Montant forfait (revenu fixe par tournée forfait effectuée, indépendant du
+-- volume) — même raisonnement d'isolation que sector_prices ci-dessus.
+create table if not exists public.sector_forfait_amounts (
+  sector_id uuid primary key references public.sectors (id) on delete cascade,
+  forfait_amount numeric,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.sector_forfait_amounts enable row level security;
+
+create policy "sector_forfait_amounts_boss_only"
+  on public.sector_forfait_amounts for all
+  using (public.is_boss())
+  with check (public.is_boss());
+
+-- Prix (à la pose) ou montant (forfait) figé au moment où la tournée passe à
+-- 'completed' : un changement ultérieur sur sector_prices/sector_forfait_
+-- amounts ne modifie jamais rétroactivement le revenu d'une tournée déjà
+-- close. Exactement une des deux colonnes est renseignée selon le type de
+-- paiement du secteur de la tournée, jamais les deux.
 create table if not exists public.daily_entry_price_snapshots (
   entry_id uuid primary key references public.daily_entries (id) on delete cascade,
-  price_per_pose numeric not null,
-  created_at timestamptz not null default now()
+  price_per_pose numeric,
+  forfait_amount numeric,
+  created_at timestamptz not null default now(),
+  constraint daily_entry_price_snapshots_one_value check (
+    (price_per_pose is not null and forfait_amount is null)
+    or (price_per_pose is null and forfait_amount is not null)
+  )
 );
 
 alter table public.daily_entry_price_snapshots enable row level security;

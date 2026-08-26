@@ -106,20 +106,49 @@ export interface Database {
           },
         ];
       };
+      sector_forfait_amounts: {
+        Row: {
+          sector_id: string;
+          forfait_amount: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          sector_id: string;
+          forfait_amount?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          sector_id?: string;
+          forfait_amount?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sector_forfait_amounts_sector_id_fkey";
+            columns: ["sector_id"];
+            isOneToOne: true;
+            referencedRelation: "sectors";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       daily_entry_price_snapshots: {
         Row: {
           entry_id: string;
-          price_per_pose: number;
+          price_per_pose: number | null;
+          forfait_amount: number | null;
           created_at: string;
         };
         Insert: {
           entry_id: string;
-          price_per_pose: number;
+          price_per_pose?: number | null;
+          forfait_amount?: number | null;
           created_at?: string;
         };
         Update: {
           entry_id?: string;
-          price_per_pose?: number;
+          price_per_pose?: number | null;
+          forfait_amount?: number | null;
           created_at?: string;
         };
         Relationships: [

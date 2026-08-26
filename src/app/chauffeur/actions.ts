@@ -215,14 +215,14 @@ export async function completeTournee(
     return { error: error.message };
   }
 
-  // Module A : fige le prix par pose du secteur au moment de la clôture,
-  // pour qu'un futur changement de prix ne modifie jamais rétroactivement
-  // l'écart en euros de cette tournée. Silencieux si le secteur est forfait
-  // ou si aucun prix n'a été renseigné — l'écart Geodis sera simplement
-  // indisponible pour cette tournée. Passe par le client admin (service
-  // role) : sector_prices est réservée au patron par RLS, mais figer le prix
-  // est une opération système déclenchée par la clôture de tournée, pas une
-  // lecture initiée par le chauffeur lui-même.
+  // Module A : fige le prix par pose (à la pose) ou le montant forfait
+  // (forfait) du secteur au moment de la clôture, pour qu'un changement
+  // ultérieur ne modifie jamais rétroactivement le revenu de cette tournée.
+  // Silencieux si rien n'a été renseigné — l'écart Geodis affichera "—" pour
+  // cette tournée. Passe par le client admin (service role) : sector_prices
+  // et sector_forfait_amounts sont réservées au patron par RLS, mais figer
+  // le montant est une opération système déclenchée par la clôture de
+  // tournée, pas une lecture initiée par le chauffeur lui-même.
   if (existing.sector_id) {
     const { data: sector } = await supabase
       .from("sectors")
@@ -230,8 +230,9 @@ export async function completeTournee(
       .eq("id", existing.sector_id)
       .maybeSingle<{ payment_type: string }>();
 
+    const admin = createAdminClient();
+
     if (sector?.payment_type === "a_la_pose") {
-      const admin = createAdminClient();
       const { data: price } = await admin
         .from("sector_prices")
         .select("price_per_pose")
@@ -242,6 +243,18 @@ export async function completeTournee(
         await admin
           .from("daily_entry_price_snapshots")
           .upsert({ entry_id: entryId, price_per_pose: price.price_per_pose }, { onConflict: "entry_id" });
+      }
+    } else if (sector?.payment_type === "forfait") {
+      const { data: forfait } = await admin
+        .from("sector_forfait_amounts")
+        .select("forfait_amount")
+        .eq("sector_id", existing.sector_id)
+        .maybeSingle<{ forfait_amount: number | null }>();
+
+      if (forfait?.forfait_amount !== null && forfait?.forfait_amount !== undefined) {
+        await admin
+          .from("daily_entry_price_snapshots")
+          .upsert({ entry_id: entryId, forfait_amount: forfait.forfait_amount }, { onConflict: "entry_id" });
       }
     }
   }

@@ -58,6 +58,14 @@ export async function saveSector(
     return { error: "Le prix par pose doit être un nombre positif." };
   }
 
+  // Montant forfait (Module A) : même raisonnement d'isolation que
+  // price_per_pose ci-dessus, dans sector_forfait_amounts.
+  const forfaitAmountStr = (formData.get("forfait_amount") as string | null)?.trim();
+  const forfaitAmount = forfaitAmountStr ? Number(forfaitAmountStr) : null;
+  if (forfaitAmountStr && (!Number.isFinite(forfaitAmount) || forfaitAmount! < 0)) {
+    return { error: "Le montant forfait doit être un nombre positif." };
+  }
+
   const payload: SectorInsert = {
     code,
     payment_type: paymentType,
@@ -81,6 +89,18 @@ export async function saveSector(
       );
     if (priceError) {
       return { error: priceError.message };
+    }
+  }
+
+  if (paymentType === "forfait" && savedSector) {
+    const { error: forfaitError } = await supabase
+      .from("sector_forfait_amounts")
+      .upsert(
+        { sector_id: savedSector.id, forfait_amount: forfaitAmount, updated_at: new Date().toISOString() },
+        { onConflict: "sector_id" },
+      );
+    if (forfaitError) {
+      return { error: forfaitError.message };
     }
   }
 
