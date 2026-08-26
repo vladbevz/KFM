@@ -47,21 +47,45 @@ export async function saveSector(
     return { error: "L'objectif de rentabilité est obligatoire pour ce modèle." };
   }
 
+  // Prix payé par Geodis par pose (Module A) : dans sector_prices, jamais
+  // sur sectors — table dédiée, réservée au patron par RLS (is_boss()),
+  // pour qu'un chauffeur ne puisse jamais la lire même via un futur
+  // select("*") sur sectors. Nullable : le patron peut laisser vide (pas
+  // encore négocié avec Geodis pour cette tournée).
+  const pricePerPoseStr = (formData.get("price_per_pose") as string | null)?.trim();
+  const pricePerPose = pricePerPoseStr ? Number(pricePerPoseStr) : null;
+  if (pricePerPoseStr && (!Number.isFinite(pricePerPose) || pricePerPose! < 0)) {
+    return { error: "Le prix par pose doit être un nombre positif." };
+  }
+
   const payload: SectorInsert = {
     code,
     payment_type: paymentType,
     rentability_target: paymentType === "a_la_pose" ? rentabilityTarget : null,
   };
 
-  const { error } = id
-    ? await supabase.from("sectors").update(payload).eq("id", id)
-    : await supabase.from("sectors").insert(payload);
+  const { data: savedSector, error } = id
+    ? await supabase.from("sectors").update(payload).eq("id", id).select("id").single<{ id: string }>()
+    : await supabase.from("sectors").insert(payload).select("id").single<{ id: string }>();
 
   if (error) {
     return { error: error.message };
   }
 
+  if (paymentType === "a_la_pose" && savedSector) {
+    const { error: priceError } = await supabase
+      .from("sector_prices")
+      .upsert(
+        { sector_id: savedSector.id, price_per_pose: pricePerPose, updated_at: new Date().toISOString() },
+        { onConflict: "sector_id" },
+      );
+    if (priceError) {
+      return { error: priceError.message };
+    }
+  }
+
   revalidatePath("/patron/secteurs");
   revalidatePath("/patron/rentabilite");
+  revalidatePath("/patron/rentabilite/geodis");
   return { error: null };
 }

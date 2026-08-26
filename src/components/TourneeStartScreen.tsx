@@ -27,6 +27,7 @@ export function TourneeStartScreen({
   const defaultPlate = vehicles.find((v) => v.id === defaultVehicleId)?.plate ?? "";
   const [vehicleRegistration, setVehicleRegistration] = useState(defaultPlate);
   const [kmDepart, setKmDepart] = useState("");
+  const [dispatchDeclaredTotal, setDispatchDeclaredTotal] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +35,12 @@ export function TourneeStartScreen({
     event.preventDefault();
     setError(null);
     startTransition(async () => {
-      const result = await startTournee(sectorId, Number(kmDepart), vehicleRegistration);
+      const result = await startTournee(
+        sectorId,
+        Number(kmDepart),
+        vehicleRegistration,
+        Number(dispatchDeclaredTotal),
+      );
       if (result.error) setError(result.error);
       else if (result.entry) onStarted(result.entry);
     });
@@ -103,6 +109,26 @@ export function TourneeStartScreen({
             onChange={(e) => setKmDepart(e.target.value)}
             className="rounded-md border border-border bg-background px-4 py-4 text-base text-foreground tabular-nums outline-none focus:border-foreground"
           />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="dispatch_declared_total" className="text-base text-foreground/70">
+            Nombre de poses annoncées par le dispatch
+          </label>
+          <input
+            id="dispatch_declared_total"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            required
+            value={dispatchDeclaredTotal}
+            onChange={(e) => setDispatchDeclaredTotal(e.target.value)}
+            className="rounded-md border border-border bg-background px-4 py-4 text-base text-foreground tabular-nums outline-none focus:border-foreground"
+          />
+          <p className="text-sm text-foreground/50">
+            Poses + enlèvements donnés par le dispatch pour cette tournée. Ce chiffre sera comparé
+            à ton détail en fin de tournée.
+          </p>
         </div>
       </div>
 

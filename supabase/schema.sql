@@ -114,6 +114,11 @@ create table if not exists public.daily_entries (
   poses_enlevement integer check (poses_enlevement >= 0),
   courses text,
 
+  -- Module B (anti-triche) : poses+enlèvements annoncées par le dispatch au
+  -- démarrage, verrouillé ensuite ; comparé au détail saisi en fin de
+  -- tournée pour bloquer une incohérence.
+  dispatch_declared_total integer,
+
   -- Colonnes historiques (modèle "une ligne = un jour", plus utilisées par
   -- le formulaire actuel — conservées pour l'historique déjà affiché).
   matin_tournee_numero text,
@@ -505,6 +510,42 @@ create policy "driver_documents_files_boss_update"
   on storage.objects for update to authenticated
   using (bucket_id = 'driver-documents' and public.is_boss())
   with check (bucket_id = 'driver-documents' and public.is_boss());
+
+-- 10. Écart de rentabilité Geodis (Module A) ----------------------------------
+-- Le prix par pose ne doit jamais être lisible par un chauffeur, même via un
+-- futur select("*") côté chauffeur sur sectors/daily_entries — RLS ne filtre
+-- que des lignes entières, pas des colonnes isolées dans une table déjà
+-- ouverte en lecture aux chauffeurs. D'où deux tables dédiées, chacune avec
+-- sa propre policy is_boss() only.
+
+create table if not exists public.sector_prices (
+  sector_id uuid primary key references public.sectors (id) on delete cascade,
+  price_per_pose numeric,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.sector_prices enable row level security;
+
+create policy "sector_prices_boss_only"
+  on public.sector_prices for all
+  using (public.is_boss())
+  with check (public.is_boss());
+
+-- Prix figé au moment où la tournée passe à 'completed' : un changement de
+-- prix sur sector_prices ne modifie jamais rétroactivement l'écart en euros
+-- d'une tournée déjà close.
+create table if not exists public.daily_entry_price_snapshots (
+  entry_id uuid primary key references public.daily_entries (id) on delete cascade,
+  price_per_pose numeric not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.daily_entry_price_snapshots enable row level security;
+
+create policy "daily_entry_price_snapshots_boss_only"
+  on public.daily_entry_price_snapshots for all
+  using (public.is_boss())
+  with check (public.is_boss());
 
 -- 9. Création automatique du profil à l'inscription --------------------------
 -- Le rôle par défaut est 'driver' ; à changer manuellement en 'boss' dans la

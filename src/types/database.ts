@@ -79,6 +79,58 @@ export interface Database {
         };
         Relationships: [];
       };
+      sector_prices: {
+        Row: {
+          sector_id: string;
+          price_per_pose: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          sector_id: string;
+          price_per_pose?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          sector_id?: string;
+          price_per_pose?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sector_prices_sector_id_fkey";
+            columns: ["sector_id"];
+            isOneToOne: true;
+            referencedRelation: "sectors";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      daily_entry_price_snapshots: {
+        Row: {
+          entry_id: string;
+          price_per_pose: number;
+          created_at: string;
+        };
+        Insert: {
+          entry_id: string;
+          price_per_pose: number;
+          created_at?: string;
+        };
+        Update: {
+          entry_id?: string;
+          price_per_pose?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "daily_entry_price_snapshots_entry_id_fkey";
+            columns: ["entry_id"];
+            isOneToOne: true;
+            referencedRelation: "daily_entries";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       daily_entries: {
         Row: {
           id: string;
@@ -97,6 +149,7 @@ export interface Database {
           poses_not_delivered: number | null;
           poses_enlevement: number | null;
           courses: string | null;
+          dispatch_declared_total: number | null;
           matin_tournee_numero: string | null;
           matin_poses_livraison: number | null;
           matin_poses_enlevement: number | null;
@@ -128,6 +181,7 @@ export interface Database {
           poses_not_delivered?: number | null;
           poses_enlevement?: number | null;
           courses?: string | null;
+          dispatch_declared_total?: number | null;
           matin_tournee_numero?: string | null;
           matin_poses_livraison?: number | null;
           matin_poses_enlevement?: number | null;
@@ -159,6 +213,7 @@ export interface Database {
           poses_not_delivered?: number | null;
           poses_enlevement?: number | null;
           courses?: string | null;
+          dispatch_declared_total?: number | null;
           matin_tournee_numero?: string | null;
           matin_poses_livraison?: number | null;
           matin_poses_enlevement?: number | null;

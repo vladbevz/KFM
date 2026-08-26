@@ -89,6 +89,11 @@ export default async function RentabilitePage({
               Gérer les tournées
             </Button>
           </Link>
+          <Link href="/patron/rentabilite/geodis">
+            <Button variant="outline" size="sm">
+              Écart Geodis
+            </Button>
+          </Link>
           <ExportButton
             columns={isDayView ? DAY_EXPORT_COLUMNS : AGGREGATE_EXPORT_COLUMNS}
             rows={exportRows}

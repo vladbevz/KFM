@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, EntryStatus, TourneeType } from "@/types/database";
 
 type DailyEntryInsert = Database["public"]["Tables"]["daily_entries"]["Insert"];
@@ -33,6 +34,7 @@ export async function startTournee(
   sectorId: string,
   kmDepart: number,
   vehicleRegistration: string,
+  dispatchDeclaredTotal: number,
 ): Promise<DailyEntryFormState> {
   const supabase = await createClient();
 
@@ -48,6 +50,9 @@ export async function startTournee(
   }
   const immat = vehicleRegistration.trim();
   if (!immat) return { error: "L'immatriculation du véhicule est obligatoire." };
+  if (!Number.isFinite(dispatchDeclaredTotal) || dispatchDeclaredTotal < 0) {
+    return { error: "Le nombre de poses annoncées par le dispatch est obligatoire." };
+  }
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -59,6 +64,9 @@ export async function startTournee(
     sector_id: sectorId,
     km_depart: Math.trunc(kmDepart),
     vehicle_registration: immat,
+    // Module B (anti-triche) : verrouillé dès la saisie, comparé au détail
+    // saisi en fin de tournée dans completeTournee.
+    dispatch_declared_total: Math.trunc(dispatchDeclaredTotal),
   };
 
   const { data, error } = await supabase
@@ -140,6 +148,10 @@ export async function completeTournee(
   const entryId = textOrNull(formData.get("entry_id"));
   const tourneeType = formData.get("tournee_type") as TourneeType;
   const kmArrivee = intOrNull(formData.get("km_arrivee"));
+  const posesDelivered = intOrNull(formData.get("poses_delivered"));
+  const posesDamaged = intOrNull(formData.get("poses_damaged"));
+  const posesNotDelivered = intOrNull(formData.get("poses_not_delivered"));
+  const posesEnlevement = intOrNull(formData.get("poses_enlevement"));
 
   if (!entryId) return { error: "Tournée introuvable." };
   if (!["journee", "demi_journee"].includes(tourneeType)) {
@@ -154,14 +166,29 @@ export async function completeTournee(
   // ce qui n'est connu qu'à la fin.
   const { data: existing, error: fetchError } = await supabase
     .from("daily_entries")
-    .select("km_depart")
+    .select("km_depart, sector_id, dispatch_declared_total")
     .eq("id", entryId)
     .eq("driver_id", user.id)
-    .single<{ km_depart: number | null }>();
+    .single<{ km_depart: number | null; sector_id: string | null; dispatch_declared_total: number | null }>();
 
   if (fetchError || !existing) return { error: "Tournée introuvable." };
   if (existing.km_depart !== null && kmArrivee < existing.km_depart) {
     return { error: "Le kilométrage retour doit être supérieur ou égal au départ." };
+  }
+
+  // Module B (anti-triche) : le détail doit correspondre exactement au total
+  // annoncé par le dispatch au démarrage — revalidé ici côté serveur en plus
+  // du contrôle client (TourneeEndForm), jamais uniquement côté client.
+  // dispatch_declared_total peut être null sur une tournée démarrée avant
+  // l'ajout de ce champ : pas de blocage rétroactif dans ce cas.
+  if (existing.dispatch_declared_total !== null) {
+    const detailTotal =
+      (posesDelivered ?? 0) + (posesDamaged ?? 0) + (posesNotDelivered ?? 0) + (posesEnlevement ?? 0);
+    if (detailTotal !== existing.dispatch_declared_total) {
+      return {
+        error: `Le détail (${detailTotal}) ne correspond pas au total annoncé au départ (${existing.dispatch_declared_total}). Vérifiez votre saisie.`,
+      };
+    }
   }
 
   const { data, error } = await supabase
@@ -171,10 +198,10 @@ export async function completeTournee(
       ended_at: new Date().toISOString(),
       tournee_type: tourneeType,
       km_arrivee: kmArrivee,
-      poses_delivered: intOrNull(formData.get("poses_delivered")),
-      poses_damaged: intOrNull(formData.get("poses_damaged")),
-      poses_not_delivered: intOrNull(formData.get("poses_not_delivered")),
-      poses_enlevement: intOrNull(formData.get("poses_enlevement")),
+      poses_delivered: posesDelivered,
+      poses_damaged: posesDamaged,
+      poses_not_delivered: posesNotDelivered,
+      poses_enlevement: posesEnlevement,
       courses: textOrNull(formData.get("courses")),
       anomalie_tournee: textOrNull(formData.get("anomalie_tournee")),
       anomalie_vehicule: textOrNull(formData.get("anomalie_vehicule")),
@@ -186,6 +213,37 @@ export async function completeTournee(
 
   if (error) {
     return { error: error.message };
+  }
+
+  // Module A : fige le prix par pose du secteur au moment de la clôture,
+  // pour qu'un futur changement de prix ne modifie jamais rétroactivement
+  // l'écart en euros de cette tournée. Silencieux si le secteur est forfait
+  // ou si aucun prix n'a été renseigné — l'écart Geodis sera simplement
+  // indisponible pour cette tournée. Passe par le client admin (service
+  // role) : sector_prices est réservée au patron par RLS, mais figer le prix
+  // est une opération système déclenchée par la clôture de tournée, pas une
+  // lecture initiée par le chauffeur lui-même.
+  if (existing.sector_id) {
+    const { data: sector } = await supabase
+      .from("sectors")
+      .select("payment_type")
+      .eq("id", existing.sector_id)
+      .maybeSingle<{ payment_type: string }>();
+
+    if (sector?.payment_type === "a_la_pose") {
+      const admin = createAdminClient();
+      const { data: price } = await admin
+        .from("sector_prices")
+        .select("price_per_pose")
+        .eq("sector_id", existing.sector_id)
+        .maybeSingle<{ price_per_pose: number | null }>();
+
+      if (price?.price_per_pose !== null && price?.price_per_pose !== undefined) {
+        await admin
+          .from("daily_entry_price_snapshots")
+          .upsert({ entry_id: entryId, price_per_pose: price.price_per_pose }, { onConflict: "entry_id" });
+      }
+    }
   }
 
   revalidatePath("/chauffeur");

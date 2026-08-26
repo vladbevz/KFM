@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -47,18 +47,31 @@ function Field({
   );
 }
 
-function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: string }) {
+function SubmitButton({
+  label,
+  pendingLabel,
+  disabled = false,
+}: {
+  label: string;
+  pendingLabel: string;
+  disabled?: boolean;
+}) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={pending || disabled}
       className="flex items-center justify-center gap-2 rounded-md bg-km px-4 py-4 text-lg font-semibold text-accent-ink disabled:opacity-60"
     >
       {pending && <Loader2 className="h-5 w-5 animate-spin" />}
       {pending ? pendingLabel : label}
     </button>
   );
+}
+
+function intOrZero(value: string): number {
+  const n = parseInt(value, 10);
+  return Number.isFinite(n) ? n : 0;
 }
 
 export function TourneeEndForm({
@@ -74,6 +87,23 @@ export function TourneeEndForm({
     mode === "edit" ? updateTournee : completeTournee,
     initialState,
   );
+
+  // Module B (anti-triche) : le détail doit correspondre exactement au total
+  // annoncé par le dispatch au démarrage (écran 1). Contrôlé en direct ici
+  // (champs pilotés plutôt que non contrôlés) pour bloquer le bouton avant
+  // même la tentative de soumission — pas seulement rejeter après coup.
+  // Uniquement en mode "complete" : une correction (mode "edit") ne doit pas
+  // se retrouver bloquée sans issue, cf. décision produit.
+  const [delivered, setDelivered] = useState(mode === "edit" ? String(entry.poses_delivered ?? "") : "");
+  const [damaged, setDamaged] = useState(mode === "edit" ? String(entry.poses_damaged ?? "") : "");
+  const [notDelivered, setNotDelivered] = useState(
+    mode === "edit" ? String(entry.poses_not_delivered ?? "") : "",
+  );
+  const [enlevement, setEnlevement] = useState(mode === "edit" ? String(entry.poses_enlevement ?? "") : "");
+
+  const detailTotal = intOrZero(delivered) + intOrZero(damaged) + intOrZero(notDelivered) + intOrZero(enlevement);
+  const declaredTotal = entry.dispatch_declared_total;
+  const hasMismatch = mode === "complete" && declaredTotal !== null && detailTotal !== declaredTotal;
 
   useEffect(() => {
     if (state.entry) {
@@ -129,42 +159,88 @@ export function TourneeEndForm({
       </div>
 
       <div className="rounded-lg border border-border bg-surface p-4">
-        <h2 className="mb-3 text-sm font-semibold text-foreground/80">Poses</h2>
+        <div className="mb-3 flex items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold text-foreground/80">Poses</h2>
+          {mode === "complete" && declaredTotal !== null && (
+            <p className="text-sm tabular-nums text-foreground/60">
+              Annoncé par le dispatch : <span className="font-medium">{declaredTotal}</span>
+            </p>
+          )}
+        </div>
         <div className="grid grid-cols-3 gap-3">
-          <Field
-            label="Livrées"
-            name="poses_delivered"
-            type="number"
-            defaultValue={mode === "edit" ? entry.poses_delivered : undefined}
-          />
-          <Field
-            label="Avec avarie"
-            name="poses_damaged"
-            type="number"
-            defaultValue={mode === "edit" ? entry.poses_damaged : undefined}
-          />
-          <Field
-            label="Non livrées"
-            name="poses_not_delivered"
-            type="number"
-            defaultValue={mode === "edit" ? entry.poses_not_delivered : undefined}
-          />
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="poses_delivered" className="text-base text-foreground/70">
+              Livrées
+            </label>
+            <input
+              id="poses_delivered"
+              name="poses_delivered"
+              type="number"
+              inputMode="numeric"
+              value={delivered}
+              onChange={(e) => setDelivered(e.target.value)}
+              className="rounded-md border border-border bg-background px-4 py-3.5 text-base text-foreground tabular-nums outline-none focus:border-foreground"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="poses_damaged" className="text-base text-foreground/70">
+              Avec avarie
+            </label>
+            <input
+              id="poses_damaged"
+              name="poses_damaged"
+              type="number"
+              inputMode="numeric"
+              value={damaged}
+              onChange={(e) => setDamaged(e.target.value)}
+              className="rounded-md border border-border bg-background px-4 py-3.5 text-base text-foreground tabular-nums outline-none focus:border-foreground"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="poses_not_delivered" className="text-base text-foreground/70">
+              Non livrées
+            </label>
+            <input
+              id="poses_not_delivered"
+              name="poses_not_delivered"
+              type="number"
+              inputMode="numeric"
+              value={notDelivered}
+              onChange={(e) => setNotDelivered(e.target.value)}
+              className="rounded-md border border-border bg-background px-4 py-3.5 text-base text-foreground tabular-nums outline-none focus:border-foreground"
+            />
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field
-          label="Enlèvements"
-          name="poses_enlevement"
-          type="number"
-          defaultValue={mode === "edit" ? entry.poses_enlevement : undefined}
-        />
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="poses_enlevement" className="text-base text-foreground/70">
+            Enlèvements
+          </label>
+          <input
+            id="poses_enlevement"
+            name="poses_enlevement"
+            type="number"
+            inputMode="numeric"
+            value={enlevement}
+            onChange={(e) => setEnlevement(e.target.value)}
+            className="rounded-md border border-border bg-background px-4 py-3.5 text-base text-foreground tabular-nums outline-none focus:border-foreground"
+          />
+        </div>
         <Field
           label="N° courses (si applicable)"
           name="courses"
           defaultValue={mode === "edit" ? entry.courses : undefined}
         />
       </div>
+
+      {hasMismatch && (
+        <p className="rounded-md border border-destructive/30 bg-[#FBE7E5] px-4 py-3 text-sm text-destructive">
+          Le détail ({detailTotal}) ne correspond pas au total annoncé au départ ({declaredTotal}).
+          Vérifiez votre saisie.
+        </p>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="anomalie_tournee" className="text-base text-foreground/70">
@@ -197,6 +273,7 @@ export function TourneeEndForm({
       <SubmitButton
         label={mode === "edit" ? "Enregistrer les corrections" : "Terminer la tournée"}
         pendingLabel="Enregistrement..."
+        disabled={hasMismatch}
       />
     </form>
   );

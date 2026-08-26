@@ -20,14 +20,22 @@ function thresholdsSummary(sector: Sector): string {
     : "Forfait";
 }
 
+function priceSummary(sector: Sector, price: number | null | undefined): string {
+  if (sector.payment_type !== "a_la_pose") return "—";
+  return price != null ? `${price.toFixed(2)} €` : "Non renseigné";
+}
+
 export default async function SecteursPage() {
   const supabase = await createClient();
 
-  const { data: sectors } = await supabase
-    .from("sectors")
-    .select("*")
-    .order("code")
-    .returns<Sector[]>();
+  const [{ data: sectors }, { data: prices }] = await Promise.all([
+    supabase.from("sectors").select("*").order("code").returns<Sector[]>(),
+    supabase
+      .from("sector_prices")
+      .select("sector_id, price_per_pose")
+      .returns<{ sector_id: string; price_per_pose: number | null }[]>(),
+  ]);
+  const priceBySectorId = new Map((prices ?? []).map((p) => [p.sector_id, p.price_per_pose]));
 
   return (
     <div className="flex flex-col gap-4">
@@ -49,6 +57,7 @@ export default async function SecteursPage() {
                   <TableHead>Code</TableHead>
                   <TableHead>Modèle</TableHead>
                   <TableHead>Seuils</TableHead>
+                  <TableHead>Prix/pose</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
@@ -60,9 +69,13 @@ export default async function SecteursPage() {
                     <TableCell className="tabular-nums text-foreground/70">
                       {thresholdsSummary(sector)}
                     </TableCell>
+                    <TableCell className="tabular-nums text-foreground/70">
+                      {priceSummary(sector, priceBySectorId.get(sector.id))}
+                    </TableCell>
                     <TableCell className="text-right">
                       <SectorFormDialog
                         sector={sector}
+                        currentPrice={priceBySectorId.get(sector.id)}
                         trigger={
                           <Button variant="outline" size="sm">
                             Modifier
@@ -88,9 +101,13 @@ export default async function SecteursPage() {
                   <p className="text-sm tabular-nums text-foreground-muted">
                     {thresholdsSummary(sector)}
                   </p>
+                  <p className="text-sm tabular-nums text-foreground-muted">
+                    Prix/pose : {priceSummary(sector, priceBySectorId.get(sector.id))}
+                  </p>
                 </div>
                 <SectorFormDialog
                   sector={sector}
+                  currentPrice={priceBySectorId.get(sector.id)}
                   trigger={
                     <Button variant="outline" size="sm">
                       Modifier

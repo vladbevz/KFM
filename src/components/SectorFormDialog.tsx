@@ -42,9 +42,13 @@ function SubmitButton({ isUpdate }: { isUpdate: boolean }) {
 
 export function SectorFormDialog({
   sector,
+  currentPrice,
   trigger,
 }: {
   sector?: Sector;
+  // Prix par pose actuel (Module A), vient de sector_prices — table séparée
+  // réservée au patron, jamais lisible par un chauffeur (cf. RLS is_boss()).
+  currentPrice?: number | null;
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -117,17 +121,37 @@ export function SectorFormDialog({
           </div>
 
           {paymentType === "a_la_pose" && (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="rentability_target">Objectif de rentabilité</Label>
-              <Input
-                id="rentability_target"
-                name="rentability_target"
-                type="number"
-                min={0}
-                required
-                defaultValue={sector?.rentability_target ?? ""}
-              />
-            </div>
+            <>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="rentability_target">Objectif de rentabilité</Label>
+                <Input
+                  id="rentability_target"
+                  name="rentability_target"
+                  type="number"
+                  min={0}
+                  required
+                  defaultValue={sector?.rentability_target ?? ""}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="price_per_pose">Prix par pose (€)</Label>
+                <Input
+                  id="price_per_pose"
+                  name="price_per_pose"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="Non renseigné"
+                  defaultValue={currentPrice ?? ""}
+                />
+                <p className="text-xs text-foreground-muted">
+                  Prix payé par Geodis par pose. Un changement ne s&apos;applique qu&apos;aux tournées
+                  clôturées après la modification — l&apos;historique déjà calculé n&apos;est jamais
+                  recalculé.
+                </p>
+              </div>
+            </>
           )}
 
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
