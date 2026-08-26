@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/supabase/profile";
 import { StatsControls } from "@/components/StatsControls";
 import { StatsChartLazy as StatsChart } from "@/components/StatsChartLazy";
+import { MonthlyObjectiveCard } from "@/components/MonthlyObjectiveCard";
 import {
   entryEnlevements,
   entryKm,
@@ -11,8 +12,8 @@ import {
   type Metric,
   type PeriodKey,
 } from "@/lib/stats";
+import { computeMonthlyObjective, type Sector } from "@/lib/rentabilite";
 import type { Database } from "@/types/database";
-import type { Sector } from "@/lib/rentabilite";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 
@@ -62,7 +63,10 @@ export default async function StatistiquesPage({
   const supabase = await createClient();
   const user = await getAuthUser();
 
-  const [{ data: entries }, { data: sectors }] = await Promise.all([
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const monthStartISO = `${todayISO.slice(0, 7)}-01`;
+
+  const [{ data: entries }, { data: sectors }, { data: monthEntries }] = await Promise.all([
     supabase
       .from("daily_entries")
       .select("*")
@@ -71,10 +75,20 @@ export default async function StatistiquesPage({
       .lte("entry_date", to)
       .returns<DailyEntry[]>(),
     supabase.from("sectors").select("*").returns<Sector[]>(),
+    // Objectif du mois (Module A) : toujours du 1er du mois à aujourd'hui,
+    // indépendant de la période sélectionnée pour le graphique ci-dessous.
+    supabase
+      .from("daily_entries")
+      .select("*")
+      .eq("driver_id", user!.id)
+      .gte("entry_date", monthStartISO)
+      .lte("entry_date", todayISO)
+      .returns<DailyEntry[]>(),
   ]);
 
   const rows = entries ?? [];
   const sectorsById = new Map((sectors ?? []).map((s) => [s.id, s]));
+  const monthlyObjective = computeMonthlyObjective(monthEntries ?? [], sectorsById, todayISO);
   const jours = rows.length;
   const totalKm = rows.reduce((sum, e) => sum + entryKm(e), 0);
   const totalPoses = rows.reduce((sum, e) => sum + entryPoses(e), 0);
@@ -84,6 +98,8 @@ export default async function StatistiquesPage({
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4">
       <h1 className="text-lg font-semibold text-foreground">Mes statistiques</h1>
+
+      <MonthlyObjectiveCard summary={monthlyObjective} />
 
       <StatsControls
         period={period}

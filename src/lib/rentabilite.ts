@@ -193,3 +193,90 @@ export function computeRentabiliteKpis(
   }
   return { met, total };
 }
+
+export interface MonthlyObjectiveSummary {
+  monthLabel: string;
+  objectifCumule: number;
+  realiseCumule: number;
+  ecart: number;
+  joursTravailles: number;
+  joursOuvresRestants: number;
+  // Tendance indicative fin de mois, jamais une garantie contractuelle (cf.
+  // demande explicite) — extrapolation linéaire du rythme moyen du chauffeur
+  // sur les jours déjà travaillés, appliquée aux jours ouvrés restants.
+  // null tant qu'aucun jour à la pose n'a encore été travaillé ce mois-ci.
+  objectifProjete: number | null;
+  realiseProjete: number | null;
+  ecartProjete: number | null;
+}
+
+function isWeekday(dateISO: string): boolean {
+  const [y, m, d] = dateISO.split("-").map(Number);
+  const day = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return day >= 1 && day <= 5;
+}
+
+// Objectif du mois côté chauffeur (Module A) : jamais d'euros ici, uniquement
+// des poses — le patron communique la prime verbalement, en dehors de l'app.
+// `entries` doit déjà être filtré sur ce chauffeur et sur le mois en cours
+// (du 1er au jour présent inclus) ; seules les tournées à la pose terminées
+// comptent, comme pour les autres agrégats de rentabilité.
+export function computeMonthlyObjective(
+  entries: DailyEntry[],
+  sectorsById: Map<string, Sector>,
+  todayISO: string,
+): MonthlyObjectiveSummary {
+  const qualifyingDates = new Set<string>();
+  let objectifCumule = 0;
+  let realiseCumule = 0;
+
+  for (const entry of entries) {
+    if (entry.status !== "completed") continue;
+    const sector = resolveEntrySector(entry, sectorsById);
+    if (!sector || sector.payment_type !== "a_la_pose") continue;
+    const threshold = sectorThreshold(sector);
+    if (threshold === null) continue;
+    objectifCumule += threshold;
+    realiseCumule += entryTotal(entry);
+    qualifyingDates.add(entry.entry_date);
+  }
+
+  const joursTravailles = qualifyingDates.size;
+
+  const [y, m, d] = todayISO.split("-").map(Number);
+  const lastDayOfMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  let joursOuvresRestants = 0;
+  for (let day = d + 1; day <= lastDayOfMonth; day++) {
+    const dateISO = `${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    if (isWeekday(dateISO)) joursOuvresRestants += 1;
+  }
+
+  let objectifProjete: number | null = null;
+  let realiseProjete: number | null = null;
+  let ecartProjete: number | null = null;
+  if (joursTravailles > 0) {
+    objectifProjete = Math.round(
+      objectifCumule + (objectifCumule / joursTravailles) * joursOuvresRestants,
+    );
+    realiseProjete = Math.round(
+      realiseCumule + (realiseCumule / joursTravailles) * joursOuvresRestants,
+    );
+    ecartProjete = realiseProjete - objectifProjete;
+  }
+
+  const monthLabel = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
+    new Date(`${todayISO}T00:00:00`),
+  );
+
+  return {
+    monthLabel,
+    objectifCumule,
+    realiseCumule,
+    ecart: realiseCumule - objectifCumule,
+    joursTravailles,
+    joursOuvresRestants,
+    objectifProjete,
+    realiseProjete,
+    ecartProjete,
+  };
+}

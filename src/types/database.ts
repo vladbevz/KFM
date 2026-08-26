@@ -9,6 +9,7 @@ export type AssignmentType = "tournee" | "conge" | "absence";
 export type ScheduleSource = "prevu" | "reel";
 export type EntryStatus = "in_progress" | "completed";
 export type TourneeType = "journee" | "demi_journee";
+export type CongeRequestStatus = "pending" | "approved" | "rejected";
 
 export interface Database {
   public: {
@@ -392,6 +393,57 @@ export interface Database {
           },
         ];
       };
+      conge_requests: {
+        Row: {
+          id: string;
+          driver_id: string;
+          start_date: string;
+          end_date: string;
+          status: CongeRequestStatus;
+          note: string | null;
+          created_at: string;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          driver_id: string;
+          start_date: string;
+          end_date: string;
+          status?: CongeRequestStatus;
+          note?: string | null;
+          created_at?: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          driver_id?: string;
+          start_date?: string;
+          end_date?: string;
+          status?: CongeRequestStatus;
+          note?: string | null;
+          created_at?: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "conge_requests_driver_id_fkey";
+            columns: ["driver_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conge_requests_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       fuel_logs: {
         Row: {
           id: string;
@@ -566,6 +618,13 @@ export interface Database {
           p_photo_url?: string | null;
         };
         Returns: undefined;
+      };
+      conge_dates_other_drivers: {
+        Args: {
+          from_date: string;
+          to_date: string;
+        };
+        Returns: { conge_date: string }[];
       };
     };
     Enums: Record<string, never>;

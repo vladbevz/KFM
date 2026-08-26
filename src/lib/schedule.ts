@@ -39,3 +39,20 @@ export function addDaysISO(dateStr: string, days: number): string {
   dt.setUTCDate(dt.getUTCDate() + days);
   return isoDate(dt);
 }
+
+// Toutes les dates ISO entre from et to (inclus), en UTC — même précaution
+// qu'ailleurs dans ce module (passer par l'heure locale ferait perdre/gagner
+// un jour selon le fuseau). Partagée par la création manuelle de congé côté
+// patron (saveScheduleEntry) et l'approbation d'une demande de congé.
+export function datesInRange(from: string, to: string): string[] {
+  const [fy, fm, fd] = from.split("-").map(Number);
+  const [ty, tm, td] = to.split("-").map(Number);
+  const cursor = new Date(Date.UTC(fy, fm - 1, fd));
+  const end = new Date(Date.UTC(ty, tm - 1, td));
+  const dates: string[] = [];
+  while (cursor.getTime() <= end.getTime()) {
+    dates.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return dates;
+}
