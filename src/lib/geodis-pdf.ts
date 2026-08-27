@@ -34,7 +34,6 @@ export async function exportGeodisNegotiationPdf({
 
   const doc = new jsPDF({ orientation: "portrait" });
   const margin = 14;
-  const pageHeight = doc.internal.pageSize.getHeight();
   const pageWidth = doc.internal.pageSize.getWidth();
   const usableWidth = pageWidth - margin * 2;
 
@@ -119,21 +118,21 @@ export async function exportGeodisNegotiationPdf({
     },
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let cursorY = (doc as any).lastAutoTable.finalY + 10;
+  let cursorY: number;
 
   // Une section par tournée à la pose, triée comme le résumé (écart le plus
   // défavorable en premier — c'est ce que le patron veut montrer d'abord).
+  // Toujours une nouvelle page par tournée (jamais deux tournées sur la même
+  // page, cf. demande explicite) — même la première section démarre après
+  // la page de résumé, jamais à sa suite sur la même page.
   for (const s of summaries) {
     if (s.type !== "a_la_pose") continue;
     const sectorRows = [...(rowsBySector.get(s.sectorId) ?? [])].sort((a, b) => a.date.localeCompare(b.date));
     const sample = sectorRows[0];
     if (!sample || sample.objectif === null || sample.pricePerPose === null) continue;
 
-    if (cursorY > pageHeight - 45) {
-      doc.addPage();
-      cursorY = 20;
-    }
+    doc.addPage();
+    cursorY = 20;
 
     doc.setFontSize(11);
     doc.setTextColor(26, 29, 35);
