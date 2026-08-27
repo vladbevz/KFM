@@ -9,7 +9,6 @@ import {
   buildGeodisRows,
   buildGeodisExportRows,
   formatEuros,
-  rowRevenue,
   GEODIS_EXPORT_COLUMNS,
 } from "@/lib/geodis";
 import type { Sector } from "@/lib/rentabilite";
@@ -81,14 +80,13 @@ export default async function GeodisEcartPage({
 
   const rows = buildGeodisRows(entries ?? [], sectorsById, priceSnapshotByEntryId, forfaitSnapshotByEntryId, driverNameById);
 
-  // Les 3 cartes existantes restent strictement à la pose (comportement
-  // inchangé, cf. demande explicite) ; "Revenu total" est la nouvelle
-  // vision combinée (écarts à la pose + revenus forfait).
-  const alaPoseRows = rows.filter((r) => r.type === "a_la_pose");
-  const totalNet = alaPoseRows.reduce((sum, r) => sum + r.ecartEuros!, 0);
-  const totalPertes = alaPoseRows.reduce((sum, r) => sum + (r.ecartEuros! < 0 ? r.ecartEuros! : 0), 0);
-  const totalGains = alaPoseRows.reduce((sum, r) => sum + (r.ecartEuros! > 0 ? r.ecartEuros! : 0), 0);
-  const revenueTotal = rows.reduce((sum, r) => sum + rowRevenue(r), 0);
+  // Même paire théorique/réel pour les deux modèles de paiement, sommée
+  // directement — le forfait contribue également aux deux totaux (théorique
+  // = réel pour une tournée forfait), donc s'annule naturellement dans
+  // l'écart total sans cas particulier ici.
+  const revenuTheoriqueTotal = rows.reduce((sum, r) => sum + (r.revenuTheorique ?? 0), 0);
+  const revenuReelTotal = rows.reduce((sum, r) => sum + (r.revenuReel ?? 0), 0);
+  const ecartTotal = revenuReelTotal - revenuTheoriqueTotal;
 
   const periodLabel = formatPeriodLabel(period, from, to);
   const exportRows = buildGeodisExportRows(rows);
@@ -119,18 +117,13 @@ export default async function GeodisEcartPage({
       </div>
 
       <div className="flex flex-wrap gap-3">
+        <KpiCard value={formatEuros(revenuTheoriqueTotal)} label="Revenu théorique total" />
+        <KpiCard value={formatEuros(revenuReelTotal)} label="Revenu réel total" />
         <KpiCard
-          value={formatEuros(revenueTotal)}
-          label="Revenu total (à la pose + forfait)"
-          valueClassName={revenueTotal < 0 ? "text-destructive" : revenueTotal > 0 ? "text-enlevements" : undefined}
+          value={formatEuros(ecartTotal)}
+          label="Écart total"
+          valueClassName={ecartTotal < 0 ? "text-destructive" : ecartTotal > 0 ? "text-enlevements" : undefined}
         />
-        <KpiCard
-          value={formatEuros(totalNet)}
-          label="Net à la pose"
-          valueClassName={totalNet < 0 ? "text-destructive" : totalNet > 0 ? "text-enlevements" : undefined}
-        />
-        <KpiCard value={formatEuros(totalPertes)} label="Cumul pertes (à la pose)" valueClassName="text-destructive" />
-        <KpiCard value={formatEuros(totalGains)} label="Cumul gains (à la pose)" valueClassName="text-enlevements" />
       </div>
 
       <GeodisSectorTable rows={rows} />

@@ -7,6 +7,11 @@ type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 
 export type GeodisRowType = "a_la_pose" | "forfait";
 
+// Même paire théorique/réel pour les deux modèles de paiement, à chaque
+// niveau (jour, tournée, total) — pas de cas spécial dans le code
+// d'affichage (cf. demande explicite). Pour le forfait, théorique et réel
+// sont toujours identiques (le forfait ne varie pas avec le volume) : ce
+// n'est pas un raccourci, c'est le calcul explicite demandé.
 export interface GeodisEntryRow {
   entryId: string;
   date: string;
@@ -14,26 +19,17 @@ export interface GeodisEntryRow {
   sectorId: string;
   sectorCode: string;
   type: GeodisRowType;
-  // À la pose uniquement — null pour une ligne forfait (le concept
-  // d'objectif/écart n'existe pas pour ce modèle de paiement).
+  // Poses — à la pose uniquement, null pour une ligne forfait (le concept
+  // n'existe pas pour ce modèle de paiement).
   objectif: number | null;
   realise: number | null;
-  ecartPoses: number | null;
   pricePerPose: number | null;
+  // Revenus en euros — présents pour les deux modèles (null seulement si le
+  // prix/montant n'a pas été renseigné au moment de la clôture : affiché
+  // "—", jamais 0€, cf. demande explicite).
+  revenuTheorique: number | null;
+  revenuReel: number | null;
   ecartEuros: number | null;
-  // Forfait uniquement — null si le montant n'a pas été renseigné pour ce
-  // secteur au moment de la clôture (affiché "—", jamais 0€ : cf. demande
-  // explicite, un 0€ serait trompeur).
-  forfaitAmount: number | null;
-}
-
-// Contribution de cette ligne au revenu total : l'écart pour une tournée à
-// la pose (peut être négatif), le montant forfait complet pour une tournée
-// forfait (jamais négatif — c'est la définition même du forfait). Un
-// montant forfait non renseigné compte pour 0 dans les totaux (mais reste
-// affiché "—" ligne par ligne, cf. buildGeodisExportRows/GeodisSectorTable).
-export function rowRevenue(row: GeodisEntryRow): number {
-  return row.type === "a_la_pose" ? (row.ecartEuros ?? 0) : (row.forfaitAmount ?? 0);
 }
 
 // Une ligne = une tournée terminée (à la pose ou forfait), avec le
@@ -41,7 +37,7 @@ export function rowRevenue(row: GeodisEntryRow): number {
 // valeur courante du secteur, pour ne jamais recalculer rétroactivement un
 // jour déjà clos (cf. demande explicite). Une tournée à la pose sans prix
 // figé n'apparaît pas ici (comportement inchangé) ; une tournée forfait sans
-// montant figé apparaît quand même, avec forfaitAmount à null.
+// montant figé apparaît quand même, avec les revenus à null.
 export function geodisEntryRow(
   entry: DailyEntry,
   sectorsById: Map<string, Sector>,
@@ -56,6 +52,7 @@ export function geodisEntryRow(
   const driverName = driverNameById.get(entry.driver_id) ?? "—";
 
   if (sector.payment_type === "forfait") {
+    const forfaitAmount = forfaitSnapshotByEntryId.get(entry.id) ?? null;
     return {
       entryId: entry.id,
       date: entry.entry_date,
@@ -65,10 +62,10 @@ export function geodisEntryRow(
       type: "forfait",
       objectif: null,
       realise: null,
-      ecartPoses: null,
       pricePerPose: null,
-      ecartEuros: null,
-      forfaitAmount: forfaitSnapshotByEntryId.get(entry.id) ?? null,
+      revenuTheorique: forfaitAmount,
+      revenuReel: forfaitAmount,
+      ecartEuros: forfaitAmount !== null ? 0 : null,
     };
   }
 
@@ -78,7 +75,8 @@ export function geodisEntryRow(
   if (pricePerPose === undefined) return null;
 
   const realise = entryTotal(entry);
-  const ecartPoses = realise - objectif;
+  const revenuTheorique = objectif * pricePerPose;
+  const revenuReel = realise * pricePerPose;
 
   return {
     entryId: entry.id,
@@ -89,10 +87,10 @@ export function geodisEntryRow(
     type: "a_la_pose",
     objectif,
     realise,
-    ecartPoses,
     pricePerPose,
-    ecartEuros: ecartPoses * pricePerPose,
-    forfaitAmount: null,
+    revenuTheorique,
+    revenuReel,
+    ecartEuros: revenuReel - revenuTheorique,
   };
 }
 
@@ -115,20 +113,19 @@ export interface SectorEcartSummary {
   sectorId: string;
   sectorCode: string;
   type: GeodisRowType;
-  // À la pose : net (peut être négatif). Forfait : revenu total (jamais
-  // négatif).
-  totalEcartEuros: number;
-  // Cumuls séparés du net, à la pose uniquement (0 pour un secteur forfait,
-  // le concept perte/gain n'existe pas) : le patron doit voir les deux, pas
-  // seulement le solde (cf. demande explicite).
-  totalPertes: number;
-  totalGains: number;
   tourneesCount: number;
-  // Au moins une tournée forfait sans montant renseigné dans ce secteur —
-  // le total affiché est donc un plancher, pas le revenu réel complet.
+  revenuTheoriqueCumule: number;
+  revenuReelCumule: number;
+  ecartCumule: number;
+  // Au moins une tournée sans prix/montant renseigné dans ce secteur — les
+  // cumuls affichés sont donc un plancher, pas le revenu réel complet.
   hasUnpriced: boolean;
 }
 
+// Même agrégation pour les deux modèles de paiement : plus de distinction
+// pertes/gains ici (le signe de l'écart cumulé, coloré, suffit — cf.
+// demande explicite de ne pas dupliquer cette décomposition dans les KPI de
+// synthèse).
 export function aggregateEcartBySector(rows: GeodisEntryRow[]): SectorEcartSummary[] {
   const bySector = new Map<string, SectorEcartSummary>();
   for (const row of rows) {
@@ -136,24 +133,20 @@ export function aggregateEcartBySector(rows: GeodisEntryRow[]): SectorEcartSumma
       sectorId: row.sectorId,
       sectorCode: row.sectorCode,
       type: row.type,
-      totalEcartEuros: 0,
-      totalPertes: 0,
-      totalGains: 0,
       tourneesCount: 0,
+      revenuTheoriqueCumule: 0,
+      revenuReelCumule: 0,
+      ecartCumule: 0,
       hasUnpriced: false,
     };
-    const revenue = rowRevenue(row);
-    acc.totalEcartEuros += revenue;
-    if (row.type === "a_la_pose") {
-      if (revenue < 0) acc.totalPertes += revenue;
-      else if (revenue > 0) acc.totalGains += revenue;
-    } else if (row.forfaitAmount === null) {
-      acc.hasUnpriced = true;
-    }
+    acc.revenuTheoriqueCumule += row.revenuTheorique ?? 0;
+    acc.revenuReelCumule += row.revenuReel ?? 0;
+    acc.ecartCumule += row.ecartEuros ?? 0;
+    if (row.revenuTheorique === null) acc.hasUnpriced = true;
     acc.tourneesCount += 1;
     bySector.set(row.sectorId, acc);
   }
-  return [...bySector.values()].sort((a, b) => a.totalEcartEuros - b.totalEcartEuros);
+  return [...bySector.values()].sort((a, b) => a.ecartCumule - b.ecartCumule);
 }
 
 export function formatEuros(n: number): string {
@@ -169,10 +162,8 @@ function formatDateFr(iso: string): string {
 
 // Colonnes + lignes d'export partagées par le tableau à l'écran et le PDF —
 // le patron doit voir exactement ce qu'il envoie à Geodis (cf. demande
-// explicite : "Le tableau à l'écran affiche la même chose que le PDF"). Une
-// seule table pour les deux modèles de paiement : "Revenu (€)" porte
-// l'écart à la pose ou le montant forfait selon la ligne, ce qui permet la
-// somme "Revenu total" directement sur cette colonne.
+// explicite). Théorique/réel/écart à chaque ligne : un argument de
+// négociation plus concret qu'un écart seul.
 export const GEODIS_EXPORT_COLUMNS: ExportColumn[] = [
   { key: "date", label: "Date" },
   { key: "chauffeur", label: "Chauffeur" },
@@ -180,14 +171,14 @@ export const GEODIS_EXPORT_COLUMNS: ExportColumn[] = [
   { key: "type", label: "Type" },
   { key: "objectif", label: "Objectif", numeric: true },
   { key: "realise", label: "Réalisé", numeric: true },
-  { key: "ecartPoses", label: "Écart (poses)", numeric: true },
-  { key: "prixParPose", label: "Prix/pose", numeric: true },
-  { key: "revenu", label: "Revenu (€)", numeric: true },
+  { key: "revenuTheorique", label: "Revenu théorique (€)", numeric: true },
+  { key: "revenuReel", label: "Revenu réel (€)", numeric: true },
+  { key: "ecart", label: "Écart (€)", numeric: true },
 ];
 
-// Le tableau exporté est complet (tous les jours, à la pose et forfait, perte
-// ou gain) avec le revenu total du mois bien visible en bas — cf. demande
-// explicite pour les négociations Geodis.
+// Le tableau exporté est complet (tous les jours, à la pose et forfait) avec
+// les totaux bien visibles en bas — cf. demande explicite pour les
+// négociations Geodis.
 export function buildGeodisExportRows(rows: GeodisEntryRow[]): ExportRow[] {
   const exportRows: ExportRow[] = rows.map((r) => ({
     date: formatDateFr(r.date),
@@ -196,27 +187,23 @@ export function buildGeodisExportRows(rows: GeodisEntryRow[]): ExportRow[] {
     type: r.type === "a_la_pose" ? "À la pose" : "Forfait",
     objectif: r.objectif ?? "—",
     realise: r.realise ?? "—",
-    ecartPoses: r.ecartPoses !== null ? (r.ecartPoses > 0 ? `+${r.ecartPoses}` : r.ecartPoses) : "—",
-    prixParPose: r.pricePerPose !== null ? r.pricePerPose.toFixed(2) : "—",
-    revenu:
-      r.type === "a_la_pose"
-        ? formatEuros(r.ecartEuros!)
-        : r.forfaitAmount !== null
-          ? formatEuros(r.forfaitAmount)
-          : "—",
+    revenuTheorique: r.revenuTheorique !== null ? formatEuros(r.revenuTheorique) : "—",
+    revenuReel: r.revenuReel !== null ? formatEuros(r.revenuReel) : "—",
+    ecart: r.ecartEuros !== null ? formatEuros(r.ecartEuros) : "—",
   }));
 
-  const totalEuros = rows.reduce((sum, r) => sum + rowRevenue(r), 0);
+  const totalTheorique = rows.reduce((sum, r) => sum + (r.revenuTheorique ?? 0), 0);
+  const totalReel = rows.reduce((sum, r) => sum + (r.revenuReel ?? 0), 0);
   exportRows.push({
-    date: "REVENU TOTAL",
+    date: "TOTAL",
     chauffeur: "",
     tournee: "",
     type: "",
     objectif: "",
     realise: "",
-    ecartPoses: "",
-    prixParPose: "",
-    revenu: formatEuros(totalEuros),
+    revenuTheorique: formatEuros(totalTheorique),
+    revenuReel: formatEuros(totalReel),
+    ecart: formatEuros(totalReel - totalTheorique),
   });
 
   return exportRows;
