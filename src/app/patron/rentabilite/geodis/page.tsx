@@ -54,15 +54,21 @@ export default async function GeodisEcartPage({
       .returns<DailyEntry[]>(),
   ]);
 
+  // .in("entry_id", entryIds) sur des centaines d'ids dépasse la longueur de
+  // requête acceptée par PostgREST (échoue silencieusement en "Bad Request"
+  // — confirmé avec ~660 tournées sur 30 jours) : découpe en lots.
   const entryIds = (entries ?? []).map((e) => e.id);
-  const { data: snapshots } =
-    entryIds.length > 0
-      ? await supabase
-          .from("daily_entry_price_snapshots")
-          .select("entry_id, price_per_pose, forfait_amount")
-          .in("entry_id", entryIds)
-          .returns<{ entry_id: string; price_per_pose: number | null; forfait_amount: number | null }[]>()
-      : { data: [] as { entry_id: string; price_per_pose: number | null; forfait_amount: number | null }[] };
+  const SNAPSHOT_CHUNK_SIZE = 200;
+  const snapshotChunks = await Promise.all(
+    Array.from({ length: Math.ceil(entryIds.length / SNAPSHOT_CHUNK_SIZE) }, (_, i) =>
+      supabase
+        .from("daily_entry_price_snapshots")
+        .select("entry_id, price_per_pose, forfait_amount")
+        .in("entry_id", entryIds.slice(i * SNAPSHOT_CHUNK_SIZE, (i + 1) * SNAPSHOT_CHUNK_SIZE))
+        .returns<{ entry_id: string; price_per_pose: number | null; forfait_amount: number | null }[]>(),
+    ),
+  );
+  const snapshots = snapshotChunks.flatMap((chunk) => chunk.data ?? []);
 
   const sectorsById = new Map((sectors ?? []).map((s) => [s.id, s]));
   const driverNameById = new Map((drivers ?? []).map((d) => [d.id, d.full_name]));
