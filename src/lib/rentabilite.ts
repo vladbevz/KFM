@@ -196,11 +196,26 @@ export function computeRentabiliteKpis(
 
 export interface MonthlyObjectiveSummary {
   monthLabel: string;
+  // Code du secteur à la pose dont l'objectif est comptabilisé ici — utile
+  // pour un chauffeur qui fait aussi du forfait le même mois (ex. M55 le
+  // matin + A55 forfait l'après-midi) : sans ce repère, il ne peut pas
+  // savoir à quelle tournée le nombre affiché correspond. null si aucune
+  // tournée à la pose ce mois-ci. En pratique un chauffeur n'a jamais deux
+  // secteurs à la pose différents le même mois (pas le cas aujourd'hui) —
+  // sinon ce serait le premier rencontré, pas une moyenne des deux.
+  sectorCode: string | null;
   objectifCumule: number;
   realiseCumule: number;
   ecart: number;
   joursTravailles: number;
   joursOuvresRestants: number;
+  // Tournées forfait terminées ce mois-ci, non comptabilisées dans
+  // l'objectif ci-dessus (le forfait n'a pas d'objectif chiffré) — juste
+  // un repère pour que le chauffeur sache qu'elles existent, sans risquer
+  // de les confondre avec la métrique de poses (cf. demande explicite :
+  // jamais de poses ni d'euros pour le forfait ici, seulement un compte de
+  // tournées).
+  forfaitTourneesCount: number;
   // Tendance indicative fin de mois, jamais une garantie contractuelle (cf.
   // demande explicite) — extrapolation linéaire du rythme moyen du chauffeur
   // sur les jours déjà travaillés, appliquée aux jours ouvrés restants.
@@ -229,16 +244,25 @@ export function computeMonthlyObjective(
   const qualifyingDates = new Set<string>();
   let objectifCumule = 0;
   let realiseCumule = 0;
+  let sectorCode: string | null = null;
+  let forfaitTourneesCount = 0;
 
   for (const entry of entries) {
     if (entry.status !== "completed") continue;
     const sector = resolveEntrySector(entry, sectorsById);
-    if (!sector || sector.payment_type !== "a_la_pose") continue;
+    if (!sector) continue;
+
+    if (sector.payment_type === "forfait") {
+      forfaitTourneesCount += 1;
+      continue;
+    }
+
     const threshold = sectorThreshold(sector);
     if (threshold === null) continue;
     objectifCumule += threshold;
     realiseCumule += entryTotal(entry);
     qualifyingDates.add(entry.entry_date);
+    if (sectorCode === null) sectorCode = sector.code;
   }
 
   const joursTravailles = qualifyingDates.size;
@@ -270,11 +294,13 @@ export function computeMonthlyObjective(
 
   return {
     monthLabel,
+    sectorCode,
     objectifCumule,
     realiseCumule,
     ecart: realiseCumule - objectifCumule,
     joursTravailles,
     joursOuvresRestants,
+    forfaitTourneesCount,
     objectifProjete,
     realiseProjete,
     ecartProjete,
