@@ -87,6 +87,15 @@ export default async function VehicleDetailPage({
     if (signed) photoUrlByIssueId.set(issue.id, signed.signedUrl);
   }
 
+  const voiceUrlByIssueId = new Map<string, string>();
+  for (const issue of issues ?? []) {
+    if (!issue.voice_url) continue;
+    const { data: signed } = await supabase.storage
+      .from("panne-audio")
+      .createSignedUrl(issue.voice_url, 3600);
+    if (signed) voiceUrlByIssueId.set(issue.id, signed.signedUrl);
+  }
+
   const documentItems: DocumentItem[] = [];
   for (const doc of documents ?? []) {
     const { data: signed } = await supabase.storage
@@ -259,6 +268,10 @@ export default async function VehicleDetailPage({
                     Photo indisponible
                   </p>
                 )
+              )}
+
+              {issue.voice_url && voiceUrlByIssueId.has(issue.id) && (
+                <audio controls src={voiceUrlByIssueId.get(issue.id)} className="w-full" />
               )}
 
               {issue.status === "open" && (

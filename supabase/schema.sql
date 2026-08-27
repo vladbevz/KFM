@@ -223,6 +223,9 @@ create table if not exists public.vehicle_issues (
   reported_by uuid references public.profiles (id) on delete set null,
   description text,
   photo_url text,
+  -- Alternative au texte, pas un remplacement : au moins l'un des deux
+  -- (description ou note vocale) doit être renseigné.
+  voice_url text,
   status text not null default 'open' check (status in ('open', 'resolved')),
   reported_at timestamptz not null default now(),
   resolved_at timestamptz
@@ -255,7 +258,8 @@ create or replace function public.report_vehicle_issue(
   p_vehicle_id uuid,
   p_new_status public.vehicle_status,
   p_description text,
-  p_photo_url text default null
+  p_photo_url text default null,
+  p_voice_url text default null
 ) returns void
 language plpgsql
 security definer set search_path = public
@@ -265,15 +269,15 @@ begin
     raise exception 'invalid status for driver report: %', p_new_status;
   end if;
 
-  insert into public.vehicle_issues (vehicle_id, reported_by, description, photo_url)
-  values (p_vehicle_id, auth.uid(), p_description, p_photo_url);
+  insert into public.vehicle_issues (vehicle_id, reported_by, description, photo_url, voice_url)
+  values (p_vehicle_id, auth.uid(), p_description, p_photo_url, p_voice_url);
 
   update public.vehicles set status = p_new_status where id = p_vehicle_id;
 end;
 $$;
 
-revoke all on function public.report_vehicle_issue(uuid, public.vehicle_status, text, text) from public;
-grant execute on function public.report_vehicle_issue(uuid, public.vehicle_status, text, text) to authenticated;
+revoke all on function public.report_vehicle_issue(uuid, public.vehicle_status, text, text, text) from public;
+grant execute on function public.report_vehicle_issue(uuid, public.vehicle_status, text, text, text) to authenticated;
 
 -- Bucket Storage privé pour les photos de panne. Chemin attendu :
 -- {driver_id}/{filename} — les policies s'appuient dessus.
@@ -292,6 +296,29 @@ create policy "vehicle_issues_photos_select_own_or_boss"
   on storage.objects for select to authenticated
   using (
     bucket_id = 'vehicle-issues'
+    and (
+      (storage.foldername(name))[1] = (select auth.uid())::text
+      or public.is_boss()
+    )
+  );
+
+-- Bucket Storage privé pour les notes vocales de panne. Même pattern que
+-- vehicle-issues (photos) : chemin {driver_id}/{filename}.
+insert into storage.buckets (id, name, public)
+values ('panne-audio', 'panne-audio', false)
+on conflict (id) do nothing;
+
+create policy "panne_audio_insert_own"
+  on storage.objects for insert to authenticated
+  with check (
+    bucket_id = 'panne-audio'
+    and (storage.foldername(name))[1] = (select auth.uid())::text
+  );
+
+create policy "panne_audio_select_own_or_boss"
+  on storage.objects for select to authenticated
+  using (
+    bucket_id = 'panne-audio'
     and (
       (storage.foldername(name))[1] = (select auth.uid())::text
       or public.is_boss()

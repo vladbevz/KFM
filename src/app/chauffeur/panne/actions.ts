@@ -31,6 +31,7 @@ export async function reportVehicleIssue(
   const newStatus = formData.get("new_status") as VehicleStatus;
   const description = textOrNull(formData.get("description"));
   const photo = formData.get("photo");
+  const voice = formData.get("voice");
 
   if (!vehicleId) {
     return { error: "Sélectionne un véhicule." };
@@ -38,8 +39,9 @@ export async function reportVehicleIssue(
   if (newStatus !== "issue_running" && newStatus !== "unavailable") {
     return { error: "Statut invalide." };
   }
-  if (!description) {
-    return { error: "Décris rapidement le problème." };
+  const hasVoice = voice instanceof File && voice.size > 0;
+  if (!description && !hasVoice) {
+    return { error: "Décris le problème ou enregistre un message vocal." };
   }
 
   let photoPath: string | null = null;
@@ -55,11 +57,25 @@ export async function reportVehicleIssue(
     }
   }
 
+  let voicePath: string | null = null;
+
+  if (voice instanceof File && voice.size > 0) {
+    voicePath = `${user.id}/${Date.now()}-${crypto.randomUUID()}.webm`;
+    const { error: uploadError } = await supabase.storage
+      .from("panne-audio")
+      .upload(voicePath, voice, { contentType: voice.type || "audio/webm" });
+
+    if (uploadError) {
+      return { error: `Échec de l'envoi du message vocal : ${uploadError.message}` };
+    }
+  }
+
   const { error } = await supabase.rpc("report_vehicle_issue", {
     p_vehicle_id: vehicleId,
     p_new_status: newStatus,
     p_description: description,
     p_photo_url: photoPath,
+    p_voice_url: voicePath,
   });
 
   if (error) {

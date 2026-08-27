@@ -323,6 +323,7 @@ export interface Database {
           reported_by: string | null;
           description: string | null;
           photo_url: string | null;
+          voice_url: string | null;
           status: "open" | "resolved";
           reported_at: string;
           resolved_at: string | null;
@@ -333,6 +334,7 @@ export interface Database {
           reported_by?: string | null;
           description?: string | null;
           photo_url?: string | null;
+          voice_url?: string | null;
           status?: "open" | "resolved";
           reported_at?: string;
           resolved_at?: string | null;
@@ -343,6 +345,7 @@ export interface Database {
           reported_by?: string | null;
           description?: string | null;
           photo_url?: string | null;
+          voice_url?: string | null;
           status?: "open" | "resolved";
           reported_at?: string;
           resolved_at?: string | null;
@@ -645,6 +648,7 @@ export interface Database {
           p_new_status: VehicleStatus;
           p_description: string | null;
           p_photo_url?: string | null;
+          p_voice_url?: string | null;
         };
         Returns: undefined;
       };
