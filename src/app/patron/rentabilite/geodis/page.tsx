@@ -3,14 +3,9 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { GeodisControls } from "@/components/GeodisControls";
 import { GeodisSectorTable } from "@/components/GeodisSectorTable";
-import { ExportButton } from "@/components/ExportButton";
+import { GeodisExportButton } from "@/components/GeodisExportButton";
 import { KpiCard } from "@/components/KpiCard";
-import {
-  buildGeodisRows,
-  buildGeodisExportRows,
-  formatEuros,
-  GEODIS_EXPORT_COLUMNS,
-} from "@/lib/geodis";
+import { buildGeodisRows, formatEuros } from "@/lib/geodis";
 import type { Sector } from "@/lib/rentabilite";
 import { slugifyFilename } from "@/lib/export";
 import { getPeriodRange, formatPeriodLabel, type PeriodKey } from "@/lib/stats";
@@ -89,7 +84,6 @@ export default async function GeodisEcartPage({
   const ecartTotal = revenuReelTotal - revenuTheoriqueTotal;
 
   const periodLabel = formatPeriodLabel(period, from, to);
-  const exportRows = buildGeodisExportRows(rows);
 
   return (
     <div className="flex flex-col gap-4">
@@ -107,12 +101,10 @@ export default async function GeodisEcartPage({
       <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-4">
         <GeodisControls period={period} customFrom={customFrom} customTo={customTo} />
 
-        <ExportButton
-          columns={GEODIS_EXPORT_COLUMNS}
-          rows={exportRows}
+        <GeodisExportButton
+          rows={rows}
           filename={`statistiques-financieres-geodis-${slugifyFilename(periodLabel)}`}
-          title="KFM Suivi — Statistiques financières Geodis"
-          subtitle={`Période : ${periodLabel}`}
+          periodLabel={periodLabel}
         />
       </div>
 

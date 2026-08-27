@@ -154,7 +154,7 @@ export function formatEuros(n: number): string {
   return `${sign}${n.toFixed(2)} €`;
 }
 
-function formatDateFr(iso: string): string {
+export function formatDateFr(iso: string): string {
   return new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(
     new Date(`${iso}T00:00:00`),
   );
