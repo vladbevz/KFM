@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { ExpandableCard } from "@/components/ExpandableCard";
 import { RentabiliteEntryRow } from "@/components/RentabiliteEntryRow";
+import { DispatchEcartBadge } from "@/components/DispatchEcartBadge";
 import {
   PAYMENT_TYPE_LABELS,
   aggregateRentabiliteByDriver,
@@ -20,6 +21,7 @@ import {
   sortRentabiliteSummaries,
   type Sector,
 } from "@/lib/rentabilite";
+import { dispatchEcart } from "@/lib/entries";
 import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
@@ -78,17 +80,21 @@ function DriverDetail({ entries, sectorsById }: { entries: DailyEntry[]; sectors
       <div className="flex flex-col gap-2 md:hidden">
         {sorted.map((entry) => {
           const row = rentabiliteEntryRow(entry, sectorsById);
+          const ecart = dispatchEcart(entry);
           return (
             <div key={entry.id} className="flex flex-col gap-1 rounded-md border border-border bg-background px-3 py-2 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-medium tabular-nums text-foreground">
                   {formatDate(entry.entry_date)} · {row.sectorCode ?? "—"}
                 </span>
-                {row.paymentType && (
-                  <Badge variant={row.paymentType === "a_la_pose" ? "info" : "secondary"} className="shrink-0">
-                    {PAYMENT_TYPE_LABELS[row.paymentType]}
-                  </Badge>
-                )}
+                <div className="flex flex-wrap items-center justify-end gap-1.5">
+                  {row.paymentType && (
+                    <Badge variant={row.paymentType === "a_la_pose" ? "info" : "secondary"} className="shrink-0">
+                      {PAYMENT_TYPE_LABELS[row.paymentType]}
+                    </Badge>
+                  )}
+                  {ecart !== null && <DispatchEcartBadge ecart={ecart} />}
+                </div>
               </div>
               {row.objectif !== null && (
                 <p className="tabular-nums text-foreground-muted">

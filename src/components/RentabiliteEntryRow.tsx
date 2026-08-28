@@ -1,7 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { ProfitabilityBadges } from "@/components/ProfitabilityBadge";
+import { DispatchEcartBadge } from "@/components/DispatchEcartBadge";
 import { PAYMENT_TYPE_LABELS, rentabiliteEntryRow, type Sector } from "@/lib/rentabilite";
+import { dispatchEcart } from "@/lib/entries";
 import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
@@ -50,6 +52,7 @@ export function RentabiliteEntryRow({
   repeated?: boolean;
 }) {
   const row = rentabiliteEntryRow(entry, sectorsById);
+  const ecart = dispatchEcart(entry);
 
   return (
     <TableRow>
@@ -71,7 +74,12 @@ export function RentabiliteEntryRow({
       <TableCell className="text-right tabular-nums">
         {row.ecart !== null ? formatSigned(row.ecart) : "—"}
       </TableCell>
-      <TableCell>{statusBadge(row)}</TableCell>
+      <TableCell>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {statusBadge(row)}
+          {ecart !== null && <DispatchEcartBadge ecart={ecart} />}
+        </div>
+      </TableCell>
     </TableRow>
   );
 }

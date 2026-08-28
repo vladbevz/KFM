@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { entryEnlevements, entryKm, entryPosesBreakdown } from "@/lib/stats";
+import { dispatchEcart } from "@/lib/entries";
 import { entryProfitability, resolveEntrySector } from "@/lib/rentabilite";
 import { ProfitabilityBadges } from "@/components/ProfitabilityBadge";
+import { DispatchEcartBadge } from "@/components/DispatchEcartBadge";
 import { TourneeEndForm } from "@/components/TourneeEndForm";
 import type { Database } from "@/types/database";
 
@@ -104,6 +106,7 @@ export function EntryCard({
     : entry.apres_midi_tournee_numero;
 
   const poses = entryPosesBreakdown(entry);
+  const ecart = dispatchEcart(entry);
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface shadow-card p-5">
@@ -126,7 +129,10 @@ export function EntryCard({
         {entryEnlevements(entry)} enlèvements
       </p>
 
-      <ProfitabilityBadges status={profitability} />
+      <div className="flex flex-wrap items-center gap-2">
+        <ProfitabilityBadges status={profitability} />
+        {ecart !== null && <DispatchEcartBadge ecart={ecart} />}
+      </div>
 
       {isNewFlow ? (
         <div className="flex flex-col gap-2">

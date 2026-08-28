@@ -166,30 +166,21 @@ export async function completeTournee(
   // ce qui n'est connu qu'à la fin.
   const { data: existing, error: fetchError } = await supabase
     .from("daily_entries")
-    .select("km_depart, sector_id, dispatch_declared_total")
+    .select("km_depart, sector_id")
     .eq("id", entryId)
     .eq("driver_id", user.id)
-    .single<{ km_depart: number | null; sector_id: string | null; dispatch_declared_total: number | null }>();
+    .single<{ km_depart: number | null; sector_id: string | null }>();
 
   if (fetchError || !existing) return { error: "Tournée introuvable." };
   if (existing.km_depart !== null && kmArrivee < existing.km_depart) {
     return { error: "Le kilométrage retour doit être supérieur ou égal au départ." };
   }
 
-  // Module B (anti-triche) : le détail doit correspondre exactement au total
-  // annoncé par le dispatch au démarrage — revalidé ici côté serveur en plus
-  // du contrôle client (TourneeEndForm), jamais uniquement côté client.
-  // dispatch_declared_total peut être null sur une tournée démarrée avant
-  // l'ajout de ce champ : pas de blocage rétroactif dans ce cas.
-  if (existing.dispatch_declared_total !== null) {
-    const detailTotal =
-      (posesDelivered ?? 0) + (posesDamaged ?? 0) + (posesNotDelivered ?? 0) + (posesEnlevement ?? 0);
-    if (detailTotal !== existing.dispatch_declared_total) {
-      return {
-        error: `Le détail (${detailTotal}) ne correspond pas au total annoncé au départ (${existing.dispatch_declared_total}). Vérifiez votre saisie.`,
-      };
-    }
-  }
+  // Le dispatch peut légitimement ajouter une pose en cours de tournée : un
+  // écart avec dispatch_declared_total (saisi au démarrage, cf. startTournee)
+  // n'est plus bloquant ici (cf. v47), seulement affiché comme signal de
+  // transparence côté UI (dispatchEcart, lib/entries.ts) — jamais de
+  // conséquence sur la clôture ni sur les calculs de rentabilité.
 
   const { data, error } = await supabase
     .from("daily_entries")

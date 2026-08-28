@@ -8,8 +8,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RentabiliteEntryRow } from "@/components/RentabiliteEntryRow";
+import { DispatchEcartBadge } from "@/components/DispatchEcartBadge";
 import type { ExportColumn, ExportRow } from "@/lib/export";
 import { PAYMENT_TYPE_LABELS, rentabiliteEntryRow, type Sector } from "@/lib/rentabilite";
+import { dispatchEcart } from "@/lib/entries";
 import type { Database } from "@/types/database";
 
 // Exportées pour que la page compose un unique bouton "Exporter" dans son
@@ -175,6 +177,7 @@ export function RentabiliteDayTable({
           return driverEntries.map((entry) => {
             const row = rentabiliteEntryRow(entry, sectorsById);
             const status = statusLabel(row.statusKind);
+            const ecart = dispatchEcart(entry);
             return (
               <div
                 key={entry.id}
@@ -182,7 +185,10 @@ export function RentabiliteDayTable({
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-medium text-foreground">{driver.full_name}</p>
-                  <Badge variant={status.variant}>{status.text}</Badge>
+                  <div className="flex flex-wrap items-center justify-end gap-1.5">
+                    <Badge variant={status.variant}>{status.text}</Badge>
+                    {ecart !== null && <DispatchEcartBadge ecart={ecart} />}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-foreground/70">
                   <span className="font-medium tabular-nums">{row.sectorCode ?? "—"}</span>

@@ -88,12 +88,11 @@ export function TourneeEndForm({
     initialState,
   );
 
-  // Module B (anti-triche) : le détail doit correspondre exactement au total
-  // annoncé par le dispatch au démarrage (écran 1). Contrôlé en direct ici
-  // (champs pilotés plutôt que non contrôlés) pour bloquer le bouton avant
-  // même la tentative de soumission — pas seulement rejeter après coup.
-  // Uniquement en mode "complete" : une correction (mode "edit") ne doit pas
-  // se retrouver bloquée sans issue, cf. décision produit.
+  // Le détail peut légitimement différer du total annoncé par le dispatch au
+  // démarrage (écran 1) — le dispatch peut ajouter une pose en cours de
+  // tournée. L'écart reste affiché en direct (champs pilotés) comme simple
+  // signal de transparence, jamais pour bloquer la soumission (cf. v47 :
+  // suppression du blocage strict de v38).
   const [delivered, setDelivered] = useState(mode === "edit" ? String(entry.poses_delivered ?? "") : "");
   const [damaged, setDamaged] = useState(mode === "edit" ? String(entry.poses_damaged ?? "") : "");
   const [notDelivered, setNotDelivered] = useState(
@@ -236,9 +235,9 @@ export function TourneeEndForm({
       </div>
 
       {hasMismatch && (
-        <p className="rounded-md border border-destructive/30 bg-[#FBE7E5] px-4 py-3 text-sm text-destructive">
-          Le détail ({detailTotal}) ne correspond pas au total annoncé au départ ({declaredTotal}).
-          Vérifiez votre saisie.
+        <p className="rounded-md border border-[#F0D9A8] bg-[#FBF0DD] px-4 py-3 text-sm text-[#8A5C18]">
+          Le détail ({detailTotal}) ne correspond pas au total annoncé au départ ({declaredTotal}). Ce
+          n&apos;est pas bloquant — vérifiez votre saisie si c&apos;est une erreur, sinon continuez.
         </p>
       )}
 
@@ -273,7 +272,6 @@ export function TourneeEndForm({
       <SubmitButton
         label={mode === "edit" ? "Enregistrer les corrections" : "Terminer la tournée"}
         pendingLabel="Enregistrement..."
-        disabled={hasMismatch}
       />
     </form>
   );

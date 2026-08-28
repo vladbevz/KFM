@@ -52,3 +52,18 @@ export function entryEnlevements(entry: DailyEntry): number {
 export function entryTotal(entry: DailyEntry): number {
   return entryPoses(entry) + entryEnlevements(entry);
 }
+
+// Écart entre le total annoncé par le dispatch au démarrage
+// (dispatch_declared_total) et le détail réellement saisi à la clôture —
+// signal de transparence uniquement, jamais un blocage (cf. suppression du
+// blocage strict : le dispatch peut légitimement ajouter une pose en cours
+// de tournée). null si non applicable (tournée pas encore terminée, entrée
+// historique sans total déclaré, ou aucun écart). Pas de colonne dédiée en
+// base : toutes les données nécessaires sont déjà stockées sur l'entrée,
+// recalculé à l'affichage comme les autres indicateurs dérivés
+// (entryProfitability, rentabiliteEntryRow).
+export function dispatchEcart(entry: DailyEntry): number | null {
+  if (entry.status !== "completed" || entry.dispatch_declared_total === null) return null;
+  const ecart = entryTotal(entry) - entry.dispatch_declared_total;
+  return ecart === 0 ? null : ecart;
+}
