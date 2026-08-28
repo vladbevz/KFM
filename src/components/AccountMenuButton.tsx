@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Bell } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 
 export function AccountMenuButton({
@@ -9,6 +11,7 @@ export function AccountMenuButton({
   menuSide = "bottom",
   size = "default",
   floating = false,
+  notificationsHref,
 }: {
   fullName: string;
   showName?: boolean;
@@ -20,6 +23,10 @@ export function AccountMenuButton({
   // (ex. bouton compte flottant en haut côté chauffeur) plutôt que sur le
   // fond sombre d'une pilule de nav où le contraste est déjà suffisant.
   floating?: boolean;
+  // Lien "Notifications" optionnel dans le menu — le module ne cible que le
+  // patron pour l'instant (cf. demande explicite), donc seul PatronNav passe
+  // cette prop ; ChauffeurAccountButton ne l'affiche jamais.
+  notificationsHref?: string;
 }) {
   const [open, setOpen] = useState(false);
   const firstName = fullName.split(" ")[0] || "?";
@@ -65,6 +72,16 @@ export function AccountMenuButton({
               menuSide === "top" ? "bottom-full mb-2" : "top-full mt-2"
             }`}
           >
+            {notificationsHref && (
+              <Link
+                href={notificationsHref}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent"
+              >
+                <Bell className="h-4 w-4" strokeWidth={1.8} />
+                Notifications
+              </Link>
+            )}
             <LogoutButton />
           </div>
         </>

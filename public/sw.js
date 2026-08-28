@@ -1,10 +1,14 @@
-const CACHE_NAME = "kfm-suivi-v2";
+const CACHE_NAME = "kfm-suivi-v3";
 const OFFLINE_URL = "/offline.html";
+// Les icônes vivent à la racine de /public (cf. manifest.json), pas sous
+// /icons/ — un mauvais chemin ici faisait échouer cache.addAll() en entier
+// (404 sur les deux icônes), donc l'installation du service worker échouait
+// silencieusement à chaque fois et il ne s'activait jamais.
 const PRECACHE_URLS = [
   OFFLINE_URL,
   "/manifest.json",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
+  "/icon-192.png",
+  "/icon-512.png",
 ];
 
 self.addEventListener("install", (event) => {
@@ -51,7 +55,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   const isStaticAsset =
     url.origin === self.location.origin &&
-    (url.pathname === "/manifest.json" || url.pathname.startsWith("/icons/"));
+    (url.pathname === "/manifest.json" || /^\/icon-\d+(-maskable)?\.png$/.test(url.pathname));
 
   if (isStaticAsset) {
     event.respondWith(
@@ -66,4 +70,41 @@ self.addEventListener("fetch", (event) => {
       ),
     );
   }
+});
+
+// Notifications push (Module B) — indépendant du cache/offline ci-dessus,
+// n'intercepte aucune requête fetch.
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch {
+    payload = { title: "KFM Suivi", body: event.data.text() };
+  }
+
+  const title = payload.title || "KFM Suivi";
+  const options = {
+    body: payload.body || "",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    data: { url: payload.url || "/" },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data && event.notification.data.url ? event.notification.data.url : "/";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(url) && "focus" in client) return client.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(url);
+    }),
+  );
 });

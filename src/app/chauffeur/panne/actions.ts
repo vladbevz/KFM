@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { notifyBoss } from "@/lib/push";
 import type { VehicleStatus } from "@/types/database";
 
 export interface ReportIssueFormState {
@@ -83,5 +84,21 @@ export async function reportVehicleIssue(
   }
 
   revalidatePath("/patron/vehicules");
+
+  const [{ data: profile }, { data: vehicle }] = await Promise.all([
+    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+    supabase.from("vehicles").select("plate").eq("id", vehicleId).maybeSingle(),
+  ]);
+  try {
+    await notifyBoss("panne_signalee", {
+      title: "Panne signalée",
+      body: `${vehicle?.plate ?? "Véhicule"} par ${profile?.full_name ?? "un chauffeur"}`,
+      url: "/patron/vehicules",
+    });
+  } catch {
+    // Le signalement est déjà enregistré : un échec d'envoi push ne doit pas
+    // faire échouer l'action côté chauffeur.
+  }
+
   return { error: null, success: true };
 }

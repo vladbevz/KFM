@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
@@ -72,4 +73,24 @@ export async function getUpcomingEcheances(
       href: `/patron/chauffeurs/${doc.driver_id}`,
     })),
   ].sort((a, b) => a.expiryDate.localeCompare(b.expiryDate));
+}
+
+// Variante pour le job quotidien (Module B, notifications push) : distingue
+// "approche" (encore à venir, sous `horizonDays`) et "dépassée" (déjà
+// expirée), deux préférences de notification séparées côté patron
+// (echeance_proche / echeance_depassee) — getUpcomingEcheances ci-dessus ne
+// fait pas cette distinction (pas nécessaire pour son seul usage actuel,
+// l'écran Échéances qui affiche tout dans une même liste triée). Prend un
+// SupabaseClient générique plutôt que le client lié aux cookies d'une
+// session utilisateur, car le job cron tourne sans session (client admin).
+export async function getEcheanceBuckets(
+  supabase: SupabaseClient<Database>,
+  horizonDays = 7,
+): Promise<{ approaching: Echeance[]; overdue: Echeance[] }> {
+  const all = await getUpcomingEcheances(supabase as unknown as SupabaseServerClient, horizonDays);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  return {
+    approaching: all.filter((e) => e.expiryDate >= todayStr),
+    overdue: all.filter((e) => e.expiryDate < todayStr),
+  };
 }

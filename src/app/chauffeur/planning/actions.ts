@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { notifyBoss } from "@/lib/push";
 import type { Database } from "@/types/database";
 
 type CongeRequestInsert = Database["public"]["Tables"]["conge_requests"]["Insert"];
@@ -48,5 +49,22 @@ export async function requestConge(
   if (error) return { error: error.message };
 
   revalidatePath("/chauffeur/planning");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
+  try {
+    await notifyBoss("demande_conge", {
+      title: "Nouvelle demande de congé",
+      body: `${profile?.full_name ?? "Un chauffeur"} — du ${startDate} au ${endDate}`,
+      url: "/patron/calendrier/demandes",
+    });
+  } catch {
+    // La demande est déjà enregistrée : un échec d'envoi push ne doit pas
+    // faire échouer l'action côté chauffeur.
+  }
+
   return { error: null };
 }

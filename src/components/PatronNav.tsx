@@ -12,6 +12,7 @@ import {
   Fuel,
   Calendar,
   Menu,
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 import { AccountMenuButton } from "@/components/AccountMenuButton";
@@ -76,7 +77,7 @@ export function PatronNav({ fullName }: { fullName: string }) {
           })}
         </div>
 
-        <AccountMenuButton fullName={fullName} />
+        <AccountMenuButton fullName={fullName} notificationsHref="/patron/notifications" />
       </nav>
 
       <div className="nav:hidden mx-4 mt-3 flex items-center rounded-full bg-nav-surface px-4 py-2.5 shadow-float">
@@ -128,6 +129,14 @@ export function PatronNav({ fullName }: { fullName: string }) {
             </span>
             <span className="text-sm font-medium text-foreground">{firstName}</span>
           </div>
+          <Link
+            href="/patron/notifications"
+            onClick={() => setDrawerOpen(false)}
+            className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground"
+          >
+            <Bell className="h-5 w-5" strokeWidth={1.8} />
+            Notifications
+          </Link>
           <LogoutButton />
         </div>
       </div>

@@ -639,6 +639,73 @@ export interface Database {
           },
         ];
       };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          endpoint?: string;
+          p256dh?: string;
+          auth?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      notification_preferences: {
+        Row: {
+          user_id: string;
+          panne_signalee: boolean;
+          echeance_proche: boolean;
+          echeance_depassee: boolean;
+          demande_conge: boolean;
+        };
+        Insert: {
+          user_id: string;
+          panne_signalee?: boolean;
+          echeance_proche?: boolean;
+          echeance_depassee?: boolean;
+          demande_conge?: boolean;
+        };
+        Update: {
+          user_id?: string;
+          panne_signalee?: boolean;
+          echeance_proche?: boolean;
+          echeance_depassee?: boolean;
+          demande_conge?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
