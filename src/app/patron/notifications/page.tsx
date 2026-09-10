@@ -37,7 +37,7 @@ export default async function NotificationsPage() {
     : DEFAULT_PREFERENCES;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
       <h1 className="text-lg font-semibold text-foreground">Notifications</h1>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface shadow-card p-4">
@@ -48,7 +48,10 @@ export default async function NotificationsPage() {
         <NotificationSubscribeButton />
       </div>
 
-      <NotificationPreferenceToggles preferences={preferences} />
+      <div className="flex flex-col gap-2">
+        <h2 className="text-sm font-semibold text-foreground/80">Types d&apos;événements</h2>
+        <NotificationPreferenceToggles preferences={preferences} />
+      </div>
     </div>
   );
 }

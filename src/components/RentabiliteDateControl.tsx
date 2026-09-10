@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -24,9 +25,15 @@ export function RentabiliteDateControl({ date }: { date: string }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <Button variant="outline" size="sm" onClick={() => goTo(shiftDate(date, -1))}>
-        ← Veille
+    <div className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label="Jour précédent"
+        onClick={() => goTo(shiftDate(date, -1))}
+        className="h-9 w-9 p-0"
+      >
+        <ChevronLeft className="h-4 w-4" strokeWidth={1.8} />
       </Button>
       <Input
         type="date"
@@ -34,8 +41,14 @@ export function RentabiliteDateControl({ date }: { date: string }) {
         onChange={(e) => e.target.value && goTo(e.target.value)}
         className="w-auto"
       />
-      <Button variant="outline" size="sm" onClick={() => goTo(shiftDate(date, 1))}>
-        Lendemain →
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label="Jour suivant"
+        onClick={() => goTo(shiftDate(date, 1))}
+        className="h-9 w-9 p-0"
+      >
+        <ChevronRight className="h-4 w-4" strokeWidth={1.8} />
       </Button>
     </div>
   );

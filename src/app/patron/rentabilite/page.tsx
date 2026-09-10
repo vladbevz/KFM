@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { RentabiliteControls } from "@/components/RentabiliteControls";
 import {
@@ -7,9 +6,8 @@ import {
   buildDayExportRows,
 } from "@/components/RentabiliteDayTable";
 import { RentabiliteAggregateTable } from "@/components/RentabiliteAggregateTable";
-import { ExportButton } from "@/components/ExportButton";
+import { RentabiliteActionsMenu } from "@/components/RentabiliteActionsMenu";
 import { KpiCard } from "@/components/KpiCard";
-import { Button } from "@/components/ui/button";
 import {
   computeRentabiliteKpis,
   AGGREGATE_EXPORT_COLUMNS,
@@ -80,29 +78,21 @@ export default async function RentabilitePage({
     <div className="flex flex-col gap-4">
       <h1 className="text-lg font-semibold text-foreground">Rentabilité</h1>
 
-      <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-4">
-        <RentabiliteControls period={period} date={date} customFrom={customFrom} customTo={customTo} />
-
-        <div className="flex flex-wrap gap-2">
-          <Link href="/patron/secteurs">
-            <Button variant="outline" size="sm">
-              Gérer les tournées
-            </Button>
-          </Link>
-          <Link href="/patron/rentabilite/geodis">
-            <Button variant="outline" size="sm">
-              Statistiques financières
-            </Button>
-          </Link>
-          <ExportButton
+      <RentabiliteControls
+        period={period}
+        date={date}
+        customFrom={customFrom}
+        customTo={customTo}
+        actions={
+          <RentabiliteActionsMenu
             columns={isDayView ? DAY_EXPORT_COLUMNS : AGGREGATE_EXPORT_COLUMNS}
             rows={exportRows}
             filename={`rentabilite-${slugifyFilename(isDayView ? dateLabel : periodLabel)}`}
             title="KFM Suivi — Rentabilité"
             subtitle={isDayView ? `Jour : ${dateLabel}` : `Période : ${periodLabel}`}
           />
-        </div>
-      </div>
+        }
+      />
 
       <div className="flex gap-3">
         <KpiCard value={`${met}/${total}`} label="Seuils atteints" />

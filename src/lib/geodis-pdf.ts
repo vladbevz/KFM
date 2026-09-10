@@ -39,7 +39,7 @@ export async function exportGeodisNegotiationPdf({
 
   doc.setFontSize(14);
   doc.setTextColor(26, 29, 35);
-  doc.text("KFM Suivi — Statistiques financières Geodis", margin, 15);
+  doc.text("KFM Suivi — Statistiques financières", margin, 15);
 
   doc.setFontSize(10);
   doc.setTextColor(120);

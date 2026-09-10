@@ -150,7 +150,7 @@ export function SectorFormDialog({
                   defaultValue={currentPrice ?? ""}
                 />
                 <p className="text-xs text-foreground-muted">
-                  Prix payé par Geodis par pose. Un changement ne s&apos;applique qu&apos;aux tournées
+                  Prix payé par pose. Un changement ne s&apos;applique qu&apos;aux tournées
                   clôturées après la modification — l&apos;historique déjà calculé n&apos;est jamais
                   recalculé.
                 </p>
@@ -171,7 +171,7 @@ export function SectorFormDialog({
                 defaultValue={currentForfaitAmount ?? ""}
               />
               <p className="text-xs text-foreground-muted">
-                Montant fixe payé par Geodis par tournée effectuée, quel que soit le volume. Un
+                Montant fixe payé par tournée effectuée, quel que soit le volume. Un
                 changement ne s&apos;applique qu&apos;aux tournées clôturées après la modification —
                 l&apos;historique déjà calculé n&apos;est jamais recalculé.
               </p>

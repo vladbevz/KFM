@@ -95,7 +95,7 @@ export default async function GeodisEcartPage({
           <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.8} />
           Rentabilité
         </Link>
-        <h1 className="text-lg font-semibold text-foreground">Statistiques financières — Geodis</h1>
+        <h1 className="text-lg font-semibold text-foreground">Statistiques financières</h1>
       </div>
 
       <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-4">
@@ -103,7 +103,7 @@ export default async function GeodisEcartPage({
 
         <GeodisExportButton
           rows={rows}
-          filename={`statistiques-financieres-geodis-${slugifyFilename(periodLabel)}`}
+          filename={`statistiques-financieres-${slugifyFilename(periodLabel)}`}
           periodLabel={periodLabel}
         />
       </div>
