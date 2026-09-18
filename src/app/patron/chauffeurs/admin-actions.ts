@@ -3,9 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { generatePassword } from "@/lib/generate-password";
 
 export interface DriverActionState {
   error: string | null;
+}
+
+export interface ResetPasswordState {
+  error: string | null;
+  password: string | null;
 }
 
 function textOrNull(value: FormDataEntryValue | null): string | null {
@@ -88,4 +94,21 @@ export async function setDriverActive(driverId: string, active: boolean): Promis
   revalidatePath("/patron/chauffeurs");
   revalidatePath(`/patron/chauffeurs/${driverId}`);
   return { error: null };
+}
+
+// Le nouveau mot de passe n'est retourné qu'une fois à l'appelant : il n'est
+// jamais stocké (ni en base, ni dans les logs) au-delà de cet appel.
+export async function resetDriverPassword(driverId: string): Promise<ResetPasswordState> {
+  const auth = await verifyBoss();
+  if (auth.error) return { error: auth.error, password: null };
+
+  const admin = createAdminClient();
+  const newPassword = generatePassword();
+
+  const { error } = await admin.auth.admin.updateUserById(driverId, {
+    password: newPassword,
+  });
+  if (error) return { error: error.message, password: null };
+
+  return { error: null, password: newPassword };
 }

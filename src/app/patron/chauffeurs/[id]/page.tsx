@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DetailHeader } from "@/components/DetailHeader";
 import { DriverActiveToggle } from "@/components/DriverActiveToggle";
+import { DriverResetPasswordButton } from "@/components/DriverResetPasswordButton";
 import { DriverDocumentDialog } from "@/components/DriverDocumentDialog";
 import { DocumentsList, type DocumentItem } from "@/components/DocumentsList";
 import { DocumentDeleteButton } from "@/components/DocumentDeleteButton";
@@ -62,7 +63,10 @@ export default async function DriverDetailPage({
             {driver.active ? "Actif" : "Désactivé"}
           </Badge>
         </div>
-        <DriverActiveToggle driverId={driver.id} active={driver.active} />
+        <div className="flex items-center gap-2">
+          <DriverResetPasswordButton driverId={driver.id} />
+          <DriverActiveToggle driverId={driver.id} active={driver.active} />
+        </div>
       </div>
 
       <div className="flex flex-col gap-3">

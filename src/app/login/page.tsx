@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   createClient,
@@ -78,15 +79,20 @@ export default function LoginPage() {
             />
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-foreground/70">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded border-border accent-foreground"
-            />
-            Se souvenir de moi sur cet appareil
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 text-sm text-foreground/70">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 rounded border-border accent-foreground"
+              />
+              Se souvenir de moi
+            </label>
+            <Link href="/reset-password" className="text-sm text-foreground/70 underline hover:text-foreground">
+              Mot de passe oublié ?
+            </Link>
+          </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 

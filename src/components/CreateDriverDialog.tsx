@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Copy, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,36 +12,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { CopyButton } from "@/components/CopyButton";
+import { generatePassword } from "@/lib/generate-password";
 import { createDriver } from "@/app/patron/chauffeurs/admin-actions";
-
-// Exclut les caractères ambigus à la lecture/transcription (I/O/l/0/1).
-const PASSWORD_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-
-function generatePassword(length = 12): string {
-  let password = "";
-  for (let i = 0; i < length; i++) {
-    password += PASSWORD_ALPHABET[Math.floor(Math.random() * PASSWORD_ALPHABET.length)];
-  }
-  return password;
-}
-
-function CopyButton({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={async () => {
-        await navigator.clipboard.writeText(value);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      }}
-      className="rounded-md border border-border p-1.5 text-foreground/70 hover:text-foreground"
-      aria-label="Copier"
-    >
-      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-    </button>
-  );
-}
 
 export function CreateDriverDialog({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false);
