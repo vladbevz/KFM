@@ -30,6 +30,33 @@ export default async function ChauffeursPage({
     .order("full_name")
     .returns<{ id: string; full_name: string; active: boolean }[]>();
 
+  // Dernière tournée par chauffeur : évite d'avoir à ouvrir chaque fiche
+  // pour savoir qui a été actif récemment. Fenêtre de 45 jours plutôt qu'un
+  // historique complet — largement suffisant pour repérer une activité
+  // récente, et reste sous la limite de lignes par défaut de PostgREST même
+  // avec 20 chauffeurs actifs sur plusieurs tournées/jour.
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 45);
+  const { data: recentEntries } = await supabase
+    .from("daily_entries")
+    .select("driver_id, entry_date")
+    .gte("entry_date", cutoff.toISOString().slice(0, 10))
+    .order("entry_date", { ascending: false })
+    .returns<{ driver_id: string; entry_date: string }[]>();
+  const lastEntryDateByDriver = new Map<string, string>();
+  for (const entry of recentEntries ?? []) {
+    if (!lastEntryDateByDriver.has(entry.driver_id)) {
+      lastEntryDateByDriver.set(entry.driver_id, entry.entry_date);
+    }
+  }
+  function lastActivityLabel(driverId: string): string {
+    const date = lastEntryDateByDriver.get(driverId);
+    if (!date) return "—";
+    return new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit" }).format(
+      new Date(`${date}T00:00:00`),
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -64,6 +91,7 @@ export default async function ChauffeursPage({
                 <TableRow>
                   <TableHead>Nom</TableHead>
                   <TableHead>Statut</TableHead>
+                  <TableHead>Dernière tournée</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
@@ -75,6 +103,9 @@ export default async function ChauffeursPage({
                       <Badge variant={driver.active ? "success" : "secondary"}>
                         {driver.active ? "Actif" : "Désactivé"}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="tabular-nums text-foreground-muted">
+                      {lastActivityLabel(driver.id)}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button asChild variant="outline" size="sm">
@@ -98,6 +129,9 @@ export default async function ChauffeursPage({
                   <Badge variant={driver.active ? "success" : "secondary"} className="w-fit">
                     {driver.active ? "Actif" : "Désactivé"}
                   </Badge>
+                  <p className="text-xs text-foreground-muted">
+                    Dernière tournée : {lastActivityLabel(driver.id)}
+                  </p>
                 </div>
                 <Button asChild variant="outline" size="sm">
                   <Link href={`/patron/chauffeurs/${driver.id}`}>Fiche conducteur</Link>

@@ -10,7 +10,7 @@ import {
 import { RentabiliteEntryRow } from "@/components/RentabiliteEntryRow";
 import { DispatchEcartBadge } from "@/components/DispatchEcartBadge";
 import type { ExportColumn, ExportRow } from "@/lib/export";
-import { PAYMENT_TYPE_LABELS, rentabiliteEntryRow, type Sector } from "@/lib/rentabilite";
+import { PAYMENT_TYPE_LABELS, rentabiliteEntryRow, sortDayDrivers, type Sector } from "@/lib/rentabilite";
 import { dispatchEcart } from "@/lib/entries";
 import type { Database } from "@/types/database";
 
@@ -115,6 +115,10 @@ export function RentabiliteDayTable({
     );
   }
 
+  // Exceptions en premier ("Seuil non atteint") plutôt que l'ordre
+  // alphabétique brut, pour rester scannable même avec 20 chauffeurs.
+  const sortedDrivers = sortDayDrivers(drivers, entries, sectorsById);
+
   return (
     <>
       <div className="hidden md:block">
@@ -131,7 +135,7 @@ export function RentabiliteDayTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {drivers.map((driver) => {
+            {sortedDrivers.map((driver) => {
               const driverEntries = entriesByDriver.get(driver.id) ?? [];
               if (driverEntries.length === 0) {
                 return (
@@ -161,7 +165,7 @@ export function RentabiliteDayTable({
       </div>
 
       <div className="flex flex-col gap-2 md:hidden">
-        {drivers.map((driver) => {
+        {sortedDrivers.map((driver) => {
           const driverEntries = entriesByDriver.get(driver.id) ?? [];
           if (driverEntries.length === 0) {
             return (

@@ -137,6 +137,50 @@ export function aggregateRentabiliteByDriver(
   });
 }
 
+const DAY_STATUS_RANK: Record<RentabiliteEntryRow["statusKind"] | "no_entry", number> = {
+  not_met: 0,
+  in_progress: 1,
+  met: 2,
+  forfait: 3,
+  none: 4,
+  no_entry: 5,
+};
+
+// Ordonne les chauffeurs pour la vue jour (RentabiliteDayTable) en mettant
+// les exceptions en avant — même intention que sortRentabiliteSummaries pour
+// la vue période, mais par statut de tournée plutôt que par taux : sur un
+// seul jour, "Seuil non atteint" est le signal qui doit sauter aux yeux
+// avant les 15+ lignes "Aucune saisie"/"Seuil atteint" qui le noient sinon
+// dans un tri alphabétique.
+export function sortDayDrivers(
+  drivers: { id: string; full_name: string }[],
+  entries: DailyEntry[],
+  sectorsById: Map<string, Sector>,
+): { id: string; full_name: string }[] {
+  const entriesByDriver = new Map<string, DailyEntry[]>();
+  for (const entry of entries) {
+    const list = entriesByDriver.get(entry.driver_id) ?? [];
+    list.push(entry);
+    entriesByDriver.set(entry.driver_id, list);
+  }
+
+  function worstRank(driverId: string): number {
+    const driverEntries = entriesByDriver.get(driverId);
+    if (!driverEntries || driverEntries.length === 0) return DAY_STATUS_RANK.no_entry;
+    let best = DAY_STATUS_RANK.no_entry;
+    for (const entry of driverEntries) {
+      const rank = DAY_STATUS_RANK[rentabiliteEntryRow(entry, sectorsById).statusKind];
+      if (rank < best) best = rank;
+    }
+    return best;
+  }
+
+  return [...drivers].sort((a, b) => {
+    const diff = worstRank(a.id) - worstRank(b.id);
+    return diff !== 0 ? diff : a.full_name.localeCompare(b.full_name);
+  });
+}
+
 export function sortRentabiliteSummaries(
   summaries: DriverRentabiliteSummary[],
 ): DriverRentabiliteSummary[] {

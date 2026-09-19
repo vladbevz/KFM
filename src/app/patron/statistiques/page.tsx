@@ -2,12 +2,16 @@ import { createClient } from "@/lib/supabase/server";
 import { StatsControls } from "@/components/StatsControls";
 import { StatsChart } from "@/components/StatsChart";
 import { ComparisonTable } from "@/components/ComparisonTable";
+import { KpiCard } from "@/components/KpiCard";
 import {
   aggregateDriverStats,
   getPeriodRange,
   getPreviousPeriodRange,
   sumLitersByDriver,
   formatPeriodLabel,
+  entryKm,
+  entryPoses,
+  entryEnlevements,
   type Metric,
   type PeriodKey,
 } from "@/lib/stats";
@@ -24,10 +28,12 @@ export default async function PatronStatistiquesPage({
 }) {
   const params = await searchParams;
   const view = params.view === "tableau" ? "tableau" : "graphique";
+  // "7 jours" par défaut plutôt que "Aujourd'hui" : sur un seul jour, le
+  // graphique se réduit à une barre unique — peu informatif en première vue.
   const period = (
     ["today", "7", "30", "90", "custom"].includes(params.period ?? "")
       ? params.period
-      : "today"
+      : "7"
   ) as PeriodKey;
   const metric = (["km", "poses", "enlevements"].includes(params.metric ?? "")
     ? params.metric
@@ -94,6 +100,18 @@ export default async function PatronStatistiquesPage({
   const sectorsById = new Map((sectors ?? []).map((s) => [s.id, s]));
   const periodLabel = formatPeriodLabel(period, from, to);
 
+  // Rangée de totaux, visible dans les deux vues : comble l'espace vide
+  // sous un graphique à une seule métrique et donne un chiffre scannable
+  // sans devoir déjà lire le graphique ou le tableau.
+  let totalKm = 0;
+  let totalPoses = 0;
+  let totalEnlevements = 0;
+  for (const entry of entries ?? []) {
+    totalKm += entryKm(entry);
+    totalPoses += entryPoses(entry);
+    totalEnlevements += entryEnlevements(entry);
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-lg font-semibold text-foreground">
@@ -109,6 +127,12 @@ export default async function PatronStatistiquesPage({
         drivers={view === "graphique" ? (drivers ?? []) : undefined}
         selectedDriverId={selectedDriverId}
       />
+
+      <div className="flex flex-wrap gap-3">
+        <KpiCard value={totalKm.toLocaleString("fr-FR")} label="Kilomètres" />
+        <KpiCard value={totalPoses.toLocaleString("fr-FR")} label="Poses (livraison)" />
+        <KpiCard value={totalEnlevements.toLocaleString("fr-FR")} label="Enlèvements" />
+      </div>
 
       {view === "graphique" ? (
         <StatsChart

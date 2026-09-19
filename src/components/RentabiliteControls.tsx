@@ -15,15 +15,15 @@ export function RentabiliteControls({
   date,
   customFrom,
   customTo,
+  view,
   actions,
 }: {
   period: PeriodKey;
   date: string;
   customFrom: string | null;
   customTo: string | null;
-  // Menu "⋯" (Tournées/Geodis/Export) affiché à côté des pastilles de
-  // période — regroupé ici plutôt que dans une rangée de boutons séparée,
-  // pour éviter d'empiler plusieurs rangées de boutons au look identique.
+  view: "financier" | "operationnel";
+  // Bouton d'export, différent selon la vue active — composé par la page.
   actions: ReactNode;
 }) {
   const router = useRouter();
@@ -44,11 +44,26 @@ export function RentabiliteControls({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <PeriodSelector period={period} customFrom={customFrom} customTo={customTo} updateParams={updateParams} />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-2">
+            {(["financier", "operationnel"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => updateParams({ view: v })}
+                className={`rounded-md px-3 py-1.5 text-sm ${
+                  view === v ? "bg-foreground text-background" : "border border-border text-foreground/70"
+                }`}
+              >
+                {v === "financier" ? "Financier" : "Opérationnel"}
+              </button>
+            ))}
+          </div>
+          <PeriodSelector period={period} customFrom={customFrom} customTo={customTo} updateParams={updateParams} />
+        </div>
         {actions}
       </div>
-      {period === "today" && <RentabiliteDateControl date={date} />}
+      {view === "operationnel" && period === "today" && <RentabiliteDateControl date={date} />}
     </div>
   );
 }

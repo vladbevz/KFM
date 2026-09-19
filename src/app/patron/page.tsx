@@ -6,6 +6,7 @@ import { VehicleStatusBadge } from "@/components/VehicleStatusBadge";
 import { getUpcomingEcheances } from "@/lib/echeances";
 import { daysUntil } from "@/lib/documents";
 import { computeRentabiliteKpis, type Sector } from "@/lib/rentabilite";
+import { buildGeodisRows, formatEuros } from "@/lib/geodis";
 import { KpiCard } from "@/components/KpiCard";
 import type { Database } from "@/types/database";
 
@@ -62,11 +63,38 @@ export default async function PatronHomePage() {
   const { met, total } = computeRentabiliteKpis(completedToday ?? [], sectorsById);
   const notMet = total - met;
 
+  // Rappel financier du jour — même donnée que l'onglet Rentabilité (vue
+  // Financier), pour que le chiffre qui compte vraiment soit visible dès
+  // l'Accueil plutôt qu'enterré derrière une navigation.
+  const todayEntryIds = (completedToday ?? []).map((e) => e.id);
+  const { data: todaySnapshots } = todayEntryIds.length
+    ? await supabase
+        .from("daily_entry_price_snapshots")
+        .select("entry_id, price_per_pose, forfait_amount")
+        .in("entry_id", todayEntryIds)
+        .returns<{ entry_id: string; price_per_pose: number | null; forfait_amount: number | null }[]>()
+    : { data: [] as { entry_id: string; price_per_pose: number | null; forfait_amount: number | null }[] };
+  const todayPriceSnapshotByEntryId = new Map(
+    (todaySnapshots ?? []).filter((s) => s.price_per_pose !== null).map((s) => [s.entry_id, s.price_per_pose!]),
+  );
+  const todayForfaitSnapshotByEntryId = new Map(
+    (todaySnapshots ?? []).filter((s) => s.forfait_amount !== null).map((s) => [s.entry_id, s.forfait_amount!]),
+  );
+  const todayGeodisRows = buildGeodisRows(
+    completedToday ?? [],
+    sectorsById,
+    todayPriceSnapshotByEntryId,
+    todayForfaitSnapshotByEntryId,
+    new Map(),
+  );
+  const revenuReelDuJour = todayGeodisRows.reduce((sum, r) => sum + (r.revenuReel ?? 0), 0);
+  const ecartDuJour = todayGeodisRows.reduce((sum, r) => sum + (r.ecartEuros ?? 0), 0);
+
   const echeancesShown = echeances.slice(0, ECHEANCES_SHOWN);
   const hasEcheances = echeances.length > 0;
   const hasVehiclesAttention = (vehiclesAttention ?? []).length > 0;
   const hasDriversInProgress = (driversInProgress ?? []).length > 0;
-  const hasRentabiliteDuJour = met + notMet > 0;
+  const hasRentabiliteDuJour = met + notMet > 0 || todayGeodisRows.length > 0;
   const nothingToShow =
     !hasEcheances && !hasVehiclesAttention && !hasDriversInProgress && !hasRentabiliteDuJour;
 
@@ -80,6 +108,10 @@ export default async function PatronHomePage() {
         </p>
       )}
 
+      {/* Deux colonnes à partir de lg : sur desktop, une seule colonne
+          étirée sur toute la largeur laissait la moitié de l'écran vide. */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+      <div className="flex flex-col gap-6">
       {hasEcheances && (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
@@ -145,7 +177,9 @@ export default async function PatronHomePage() {
           </div>
         </div>
       )}
+      </div>
 
+      <div className="flex flex-col gap-6">
       {hasDriversInProgress && (
         <div className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold text-foreground/80">
@@ -168,22 +202,28 @@ export default async function PatronHomePage() {
       {hasRentabiliteDuJour && (
         <div className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold text-foreground/80">Rentabilité du jour</h2>
-          <Link href={`/patron/rentabilite?date=${today}`} className="flex gap-3">
+          <Link href="/patron/rentabilite" className="flex flex-wrap gap-3">
             <KpiCard
-              value={met}
-              label="Seuil atteint"
-              valueClassName="text-enlevements"
+              value={formatEuros(revenuReelDuJour)}
+              label="Revenu réel"
               className="transition-colors hover:border-foreground/30"
             />
             <KpiCard
-              value={notMet}
-              label="Seuil non atteint"
-              valueClassName="text-destructive"
+              value={formatEuros(ecartDuJour)}
+              label="Écart"
+              valueClassName={ecartDuJour < 0 ? "text-destructive" : ecartDuJour > 0 ? "text-enlevements" : undefined}
+              className="transition-colors hover:border-foreground/30"
+            />
+            <KpiCard
+              value={`${met}/${total}`}
+              label="Seuils atteints"
               className="transition-colors hover:border-foreground/30"
             />
           </Link>
         </div>
       )}
+      </div>
+      </div>
     </div>
   );
 }

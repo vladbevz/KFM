@@ -28,10 +28,12 @@ export default async function CarburantPatronPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const params = await searchParams;
+  // "7 jours" par défaut plutôt que "Aujourd'hui" : sur un seul jour, la
+  // page atterrit presque toujours sur "Aucun plein" en première vue.
   const period = (
     ["today", "7", "30", "90", "custom"].includes(params.period ?? "")
       ? params.period
-      : "today"
+      : "7"
   ) as PeriodKey;
   const groupBy = params.groupBy === "vehicule" ? "vehicule" : "chauffeur";
   const customFrom = params.from ?? null;
