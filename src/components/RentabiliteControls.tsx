@@ -44,26 +44,33 @@ export function RentabiliteControls({
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Ligne 1 : bascule Financier/Opérationnel + export — jamais mélangée
+          avec les pastilles de période, pour ne pas produire un retour à la
+          ligne imprévisible quand "Personnalisé" ajoute les champs Du/Au. */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex gap-2">
-            {(["financier", "operationnel"] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => updateParams({ view: v })}
-                className={`rounded-md px-3 py-1.5 text-sm ${
-                  view === v ? "bg-foreground text-background" : "border border-border text-foreground/70"
-                }`}
-              >
-                {v === "financier" ? "Financier" : "Opérationnel"}
-              </button>
-            ))}
-          </div>
-          <PeriodSelector period={period} customFrom={customFrom} customTo={customTo} updateParams={updateParams} />
+        <div className="flex gap-2">
+          {(["financier", "operationnel"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => updateParams({ view: v })}
+              className={`rounded-md px-3 py-1.5 text-sm ${
+                view === v ? "bg-foreground text-background" : "border border-border text-foreground/70"
+              }`}
+            >
+              {v === "financier" ? "Financier" : "Opérationnel"}
+            </button>
+          ))}
         </div>
         {actions}
       </div>
-      {view === "operationnel" && period === "today" && <RentabiliteDateControl date={date} />}
+
+      {/* Ligne 2 : période, + navigation jour par jour uniquement en mode
+          "Aujourd'hui" — jamais en même temps que Du/Au ("Personnalisé"),
+          les deux étant mutuellement exclusifs. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <PeriodSelector period={period} customFrom={customFrom} customTo={customTo} updateParams={updateParams} />
+        {view === "operationnel" && period === "today" && <RentabiliteDateControl date={date} />}
+      </div>
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,7 +53,16 @@ export default async function SecteursPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-foreground">Tournées</h1>
+        <div>
+          <Link
+            href="/patron/rentabilite"
+            className="inline-flex items-center gap-1 text-sm text-foreground-muted hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.8} />
+            Rentabilité
+          </Link>
+          <h1 className="text-lg font-semibold text-foreground">Tournées</h1>
+        </div>
         <SectorFormDialog trigger={<Button>Nouvelle tournée</Button>} />
       </div>
 

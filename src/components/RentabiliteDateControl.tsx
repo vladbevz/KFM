@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,9 +19,16 @@ function shiftDate(date: string, days: number): string {
 export function RentabiliteDateControl({ date }: { date: string }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
+  // Ne changer que "date" et garder le reste de l'URL (period, view...) —
+  // écraser tout avec `?date=...` faisait retomber sur les valeurs par
+  // défaut de la page (vue Financier, période 30 jours) à chaque clic sur
+  // une flèche, donnant l'impression d'atterrir sur un autre écran.
   function goTo(next: string) {
-    router.push(`${pathname}?date=${next}`);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("date", next);
+    router.push(`${pathname}?${params.toString()}`);
   }
 
   return (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { DocumentBadge } from "@/components/DocumentBadge";
 import { getUpcomingEcheances } from "@/lib/echeances";
@@ -9,7 +10,16 @@ export default async function EcheancesPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-lg font-semibold text-foreground">Échéances à venir</h1>
+      <div>
+        <Link
+          href="/patron"
+          className="inline-flex items-center gap-1 text-sm text-foreground-muted hover:text-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.8} />
+          Accueil
+        </Link>
+        <h1 className="text-lg font-semibold text-foreground">Échéances à venir</h1>
+      </div>
       <p className="text-sm text-foreground/60">
         Documents véhicules et chauffeurs expirant dans les 60 prochains jours (ou déjà expirés).
       </p>

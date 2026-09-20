@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { NotificationSubscribeButton } from "@/components/NotificationSubscribeButton";
 import { NotificationPreferenceToggles } from "@/components/NotificationPreferenceToggles";
@@ -38,7 +40,16 @@ export default async function NotificationsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
-      <h1 className="text-lg font-semibold text-foreground">Notifications</h1>
+      <div>
+        <Link
+          href="/patron"
+          className="inline-flex items-center gap-1 text-sm text-foreground-muted hover:text-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.8} />
+          Accueil
+        </Link>
+        <h1 className="text-lg font-semibold text-foreground">Notifications</h1>
+      </div>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface shadow-card p-4">
         <p className="text-sm text-foreground-muted">
