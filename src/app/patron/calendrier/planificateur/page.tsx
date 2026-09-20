@@ -24,7 +24,7 @@ export default async function PlanificateurPage({
 
   const supabase = await createClient();
 
-  const [{ data: drivers }, { data: sectors }, { data: entries }] = await Promise.all([
+  const [{ data: drivers }, { data: sectors }, { data: entries }, { count: pendingCount }] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, full_name")
@@ -39,18 +39,29 @@ export default async function PlanificateurPage({
       .gte("date", weekStart)
       .lte("date", weekEnd)
       .returns<ScheduleRow[]>(),
+    supabase.from("conge_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
   ]);
 
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-lg font-semibold text-foreground">Calendrier</h1>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button variant="outline" size="sm" asChild>
           <Link href="/patron/calendrier">Calendrier</Link>
         </Button>
         <Button variant="default" size="sm" asChild>
           <Link href="/patron/calendrier/planificateur">Planificateur</Link>
+        </Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/patron/calendrier/demandes" className="inline-flex items-center gap-1.5">
+            Demandes de congé
+            {!!pendingCount && (
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-semibold text-destructive-foreground">
+                {pendingCount}
+              </span>
+            )}
+          </Link>
         </Button>
       </div>
 

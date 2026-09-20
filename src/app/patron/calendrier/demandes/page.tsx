@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { CongeRequestReviewButtons } from "@/components/CongeRequestReviewButtons";
 import type { Database } from "@/types/database";
 
@@ -47,15 +47,28 @@ export default async function CongeRequestsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <Link
-          href="/patron/calendrier"
-          className="inline-flex items-center gap-1 text-sm text-foreground-muted hover:text-foreground"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.8} />
-          Calendrier
-        </Link>
-        <h1 className="text-lg font-semibold text-foreground">Demandes de congé</h1>
+      <h1 className="text-lg font-semibold text-foreground">Calendrier</h1>
+
+      {/* Même barre d'onglets que Calendrier/Planificateur — on ne veut pas
+          que "Demandes de congé" soit un cul-de-sac obligeant à repasser
+          par Calendrier pour rejoindre Planificateur, et inversement. */}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/patron/calendrier">Calendrier</Link>
+        </Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/patron/calendrier/planificateur">Planificateur</Link>
+        </Button>
+        <Button variant="default" size="sm" asChild>
+          <Link href="/patron/calendrier/demandes" className="inline-flex items-center gap-1.5">
+            Demandes de congé
+            {pending.length > 0 && (
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-semibold text-destructive-foreground">
+                {pending.length}
+              </span>
+            )}
+          </Link>
+        </Button>
       </div>
 
       <div className="flex flex-col gap-3">

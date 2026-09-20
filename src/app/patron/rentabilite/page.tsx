@@ -130,7 +130,7 @@ export default async function RentabilitePage({
           className="inline-flex items-center gap-1.5 text-sm text-foreground-muted hover:text-foreground"
         >
           <Settings2 className="h-3.5 w-3.5" strokeWidth={1.8} />
-          Gérer les tarifs
+          Gérer les tournées
         </Link>
       </div>
 

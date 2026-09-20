@@ -15,10 +15,12 @@ export default async function CoutsFlottePage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const params = await searchParams;
+  // "30 jours" par défaut : les réparations sont des événements peu
+  // fréquents, "Aujourd'hui" atterrit presque toujours sur une page vide.
   const period = (
-    ["today", "7", "30", "90", "custom"].includes(params.period ?? "")
-      ? params.period
-      : "today"
+    ["today", "7", "30", "90", "custom"].includes(params.period ?? "30")
+      ? (params.period ?? "30")
+      : "30"
   ) as PeriodKey;
   const customFrom = params.from ?? null;
   const customTo = params.to ?? null;
