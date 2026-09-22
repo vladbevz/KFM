@@ -21,7 +21,7 @@ import {
   sortRentabiliteSummaries,
   type Sector,
 } from "@/lib/rentabilite";
-import { dispatchEcart } from "@/lib/entries";
+import { dispatchEcart, dispatchEcartLivraisons, dispatchEcartEnlevements } from "@/lib/entries";
 import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
@@ -80,7 +80,9 @@ function DriverDetail({ entries, sectorsById }: { entries: DailyEntry[]; sectors
       <div className="flex flex-col gap-2 md:hidden">
         {sorted.map((entry) => {
           const row = rentabiliteEntryRow(entry, sectorsById);
-          const ecart = dispatchEcart(entry);
+          const ecartLivraisons = dispatchEcartLivraisons(entry);
+          const ecartEnlevements = dispatchEcartEnlevements(entry);
+          const ecartCombine = ecartLivraisons === null && ecartEnlevements === null ? dispatchEcart(entry) : null;
           return (
             <div key={entry.id} className="flex flex-col gap-1 rounded-md border border-border bg-background px-3 py-2 text-sm">
               <div className="flex items-center justify-between gap-2">
@@ -93,7 +95,13 @@ function DriverDetail({ entries, sectorsById }: { entries: DailyEntry[]; sectors
                       {PAYMENT_TYPE_LABELS[row.paymentType]}
                     </Badge>
                   )}
-                  {ecart !== null && <DispatchEcartBadge ecart={ecart} />}
+                  {ecartCombine !== null && <DispatchEcartBadge ecart={ecartCombine} />}
+                  {ecartLivraisons !== null && (
+                    <DispatchEcartBadge ecart={ecartLivraisons} label="Écart livr." detailLabel="Écart livraisons avec le dispatch" />
+                  )}
+                  {ecartEnlevements !== null && (
+                    <DispatchEcartBadge ecart={ecartEnlevements} label="Écart enl." detailLabel="Écart enlèvements avec le dispatch" />
+                  )}
                 </div>
               </div>
               {row.objectif !== null && (

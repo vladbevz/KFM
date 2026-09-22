@@ -11,7 +11,7 @@ import { RentabiliteEntryRow } from "@/components/RentabiliteEntryRow";
 import { DispatchEcartBadge } from "@/components/DispatchEcartBadge";
 import type { ExportColumn, ExportRow } from "@/lib/export";
 import { PAYMENT_TYPE_LABELS, rentabiliteEntryRow, sortDayDrivers, type Sector } from "@/lib/rentabilite";
-import { dispatchEcart } from "@/lib/entries";
+import { dispatchEcart, dispatchEcartLivraisons, dispatchEcartEnlevements } from "@/lib/entries";
 import type { Database } from "@/types/database";
 
 // Exportées pour que la page compose un unique bouton "Exporter" dans son
@@ -181,7 +181,9 @@ export function RentabiliteDayTable({
           return driverEntries.map((entry) => {
             const row = rentabiliteEntryRow(entry, sectorsById);
             const status = statusLabel(row.statusKind);
-            const ecart = dispatchEcart(entry);
+            const ecartLivraisons = dispatchEcartLivraisons(entry);
+            const ecartEnlevements = dispatchEcartEnlevements(entry);
+            const ecartCombine = ecartLivraisons === null && ecartEnlevements === null ? dispatchEcart(entry) : null;
             return (
               <div
                 key={entry.id}
@@ -191,7 +193,13 @@ export function RentabiliteDayTable({
                   <p className="font-medium text-foreground">{driver.full_name}</p>
                   <div className="flex flex-wrap items-center justify-end gap-1.5">
                     <Badge variant={status.variant}>{status.text}</Badge>
-                    {ecart !== null && <DispatchEcartBadge ecart={ecart} />}
+                    {ecartCombine !== null && <DispatchEcartBadge ecart={ecartCombine} />}
+                    {ecartLivraisons !== null && (
+                      <DispatchEcartBadge ecart={ecartLivraisons} label="Écart livr." detailLabel="Écart livraisons avec le dispatch" />
+                    )}
+                    {ecartEnlevements !== null && (
+                      <DispatchEcartBadge ecart={ecartEnlevements} label="Écart enl." detailLabel="Écart enlèvements avec le dispatch" />
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-foreground/70">

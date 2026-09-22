@@ -67,3 +67,20 @@ export function dispatchEcart(entry: DailyEntry): number | null {
   const ecart = entryTotal(entry) - entry.dispatch_declared_total;
   return ecart === 0 ? null : ecart;
 }
+
+// Écarts séparés livraisons/enlèvements (migration 021) — même principe que
+// dispatchEcart ci-dessus, mais chacun comparé à son propre champ déclaré
+// plutôt qu'à un total combiné. null pour une tournée démarrée avant la
+// séparation (dispatch_declared_livraisons/enlevements jamais renseignés) :
+// dispatchEcart (combiné) reste le repli d'affichage pour ces entrées-là.
+export function dispatchEcartLivraisons(entry: DailyEntry): number | null {
+  if (entry.status !== "completed" || entry.dispatch_declared_livraisons === null) return null;
+  const ecart = entryPoses(entry) - entry.dispatch_declared_livraisons;
+  return ecart === 0 ? null : ecart;
+}
+
+export function dispatchEcartEnlevements(entry: DailyEntry): number | null {
+  if (entry.status !== "completed" || entry.dispatch_declared_enlevements === null) return null;
+  const ecart = entryEnlevements(entry) - entry.dispatch_declared_enlevements;
+  return ecart === 0 ? null : ecart;
+}

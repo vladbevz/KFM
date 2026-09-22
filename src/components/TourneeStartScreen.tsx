@@ -27,7 +27,8 @@ export function TourneeStartScreen({
   const defaultPlate = vehicles.find((v) => v.id === defaultVehicleId)?.plate ?? "";
   const [vehicleRegistration, setVehicleRegistration] = useState(defaultPlate);
   const [kmDepart, setKmDepart] = useState("");
-  const [dispatchDeclaredTotal, setDispatchDeclaredTotal] = useState("");
+  const [dispatchDeclaredLivraisons, setDispatchDeclaredLivraisons] = useState("");
+  const [dispatchDeclaredEnlevements, setDispatchDeclaredEnlevements] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -39,7 +40,8 @@ export function TourneeStartScreen({
         sectorId,
         Number(kmDepart),
         vehicleRegistration,
-        Number(dispatchDeclaredTotal),
+        Number(dispatchDeclaredLivraisons),
+        Number(dispatchDeclaredEnlevements),
       );
       if (result.error) setError(result.error);
       else if (result.entry) onStarted(result.entry);
@@ -49,12 +51,12 @@ export function TourneeStartScreen({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col items-center gap-7 px-6 py-10 text-center"
+      className="flex flex-col items-center gap-5 px-6 py-6 text-center"
     >
       <h1 className="text-2xl font-semibold text-foreground">Bonjour, {firstName}</h1>
 
-      <div className="flex w-full max-w-xs flex-col gap-5 text-left">
-        <div className="flex flex-col gap-1.5">
+      <div className="flex w-full max-w-xs flex-col gap-4 text-left">
+        <div className="flex flex-col gap-1">
           <label htmlFor="sector_id" className="text-base text-foreground/70">
             Tournée
           </label>
@@ -63,7 +65,7 @@ export function TourneeStartScreen({
             required
             value={sectorId}
             onChange={(e) => setSectorId(e.target.value)}
-            className="rounded-md border border-border bg-background px-4 py-4 text-base text-foreground outline-none focus:border-foreground"
+            className="rounded-md border border-border bg-background px-4 py-3.5 text-base text-foreground outline-none focus:border-foreground"
           >
             <option value="">Sélectionner...</option>
             {sectors.map((s) => (
@@ -74,7 +76,7 @@ export function TourneeStartScreen({
           </select>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1">
           <label htmlFor="vehicle_registration" className="text-base text-foreground/70">
             Immatriculation du véhicule
           </label>
@@ -83,7 +85,7 @@ export function TourneeStartScreen({
             required
             value={vehicleRegistration}
             onChange={(e) => setVehicleRegistration(e.target.value)}
-            className="rounded-md border border-border bg-background px-4 py-4 text-base text-foreground outline-none focus:border-foreground"
+            className="rounded-md border border-border bg-background px-4 py-3.5 text-base text-foreground outline-none focus:border-foreground"
           >
             <option value="">Sélectionner...</option>
             {vehicles.map((v) => (
@@ -95,7 +97,7 @@ export function TourneeStartScreen({
           </select>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1">
           <label htmlFor="km_depart" className="text-base text-foreground/70">
             Km au compteur
           </label>
@@ -107,35 +109,51 @@ export function TourneeStartScreen({
             required
             value={kmDepart}
             onChange={(e) => setKmDepart(e.target.value)}
-            className="rounded-md border border-border bg-background px-4 py-4 text-base text-foreground tabular-nums outline-none focus:border-foreground"
+            className="rounded-md border border-border bg-background px-4 py-3.5 text-base text-foreground tabular-nums outline-none focus:border-foreground"
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="dispatch_declared_total" className="text-base text-foreground/70">
-            Nombre de poses annoncées par le dispatch
-          </label>
-          <input
-            id="dispatch_declared_total"
-            type="number"
-            inputMode="numeric"
-            min={0}
-            required
-            value={dispatchDeclaredTotal}
-            onChange={(e) => setDispatchDeclaredTotal(e.target.value)}
-            className="rounded-md border border-border bg-background px-4 py-4 text-base text-foreground tabular-nums outline-none focus:border-foreground"
-          />
-          <p className="text-sm text-foreground/50">
-            Poses + enlèvements donnés par le dispatch pour cette tournée. Ce chiffre sera comparé
-            à ton détail en fin de tournée.
-          </p>
+        {/* Annoncé par le dispatch, livraisons et enlèvements séparément
+            (migration 021) — comparé à ton détail en fin de tournée, deux
+            indicateurs distincts (cf. TourneeEndForm). */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="dispatch_declared_livraisons" className="text-sm text-foreground/70">
+              Lvr. annoncées
+            </label>
+            <input
+              id="dispatch_declared_livraisons"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              required
+              value={dispatchDeclaredLivraisons}
+              onChange={(e) => setDispatchDeclaredLivraisons(e.target.value)}
+              className="rounded-md border border-border bg-background px-4 py-3.5 text-base text-foreground tabular-nums outline-none focus:border-foreground"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="dispatch_declared_enlevements" className="text-sm text-foreground/70">
+              Enl. annoncés
+            </label>
+            <input
+              id="dispatch_declared_enlevements"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              required
+              value={dispatchDeclaredEnlevements}
+              onChange={(e) => setDispatchDeclaredEnlevements(e.target.value)}
+              className="rounded-md border border-border bg-background px-4 py-3.5 text-base text-foreground tabular-nums outline-none focus:border-foreground"
+            />
+          </div>
         </div>
       </div>
 
       <button
         type="submit"
         disabled={pending}
-        className="w-full max-w-xs rounded-full bg-km px-6 py-4 text-xl font-semibold text-accent-ink shadow-accent disabled:opacity-60"
+        className="w-full max-w-xs rounded-full bg-km px-6 py-3.5 text-xl font-semibold text-accent-ink shadow-accent disabled:opacity-60"
       >
         {pending ? "Démarrage..." : "Démarrer la tournée"}
       </button>

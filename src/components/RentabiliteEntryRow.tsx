@@ -3,7 +3,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { ProfitabilityBadges } from "@/components/ProfitabilityBadge";
 import { DispatchEcartBadge } from "@/components/DispatchEcartBadge";
 import { PAYMENT_TYPE_LABELS, rentabiliteEntryRow, type Sector } from "@/lib/rentabilite";
-import { dispatchEcart } from "@/lib/entries";
+import { dispatchEcart, dispatchEcartLivraisons, dispatchEcartEnlevements } from "@/lib/entries";
 import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
@@ -52,7 +52,12 @@ export function RentabiliteEntryRow({
   repeated?: boolean;
 }) {
   const row = rentabiliteEntryRow(entry, sectorsById);
-  const ecart = dispatchEcart(entry);
+  // Écarts séparés livraisons/enlèvements (migration 021), repli sur
+  // l'écart combiné pour une tournée démarrée avant la séparation — même
+  // logique que EntryCard.tsx côté chauffeur.
+  const ecartLivraisons = dispatchEcartLivraisons(entry);
+  const ecartEnlevements = dispatchEcartEnlevements(entry);
+  const ecartCombine = ecartLivraisons === null && ecartEnlevements === null ? dispatchEcart(entry) : null;
 
   return (
     <TableRow>
@@ -77,7 +82,13 @@ export function RentabiliteEntryRow({
       <TableCell>
         <div className="flex flex-wrap items-center gap-1.5">
           {statusBadge(row)}
-          {ecart !== null && <DispatchEcartBadge ecart={ecart} />}
+          {ecartCombine !== null && <DispatchEcartBadge ecart={ecartCombine} />}
+          {ecartLivraisons !== null && (
+            <DispatchEcartBadge ecart={ecartLivraisons} label="Écart livr." detailLabel="Écart livraisons avec le dispatch" />
+          )}
+          {ecartEnlevements !== null && (
+            <DispatchEcartBadge ecart={ecartEnlevements} label="Écart enl." detailLabel="Écart enlèvements avec le dispatch" />
+          )}
         </div>
       </TableCell>
     </TableRow>

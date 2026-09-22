@@ -34,7 +34,8 @@ export async function startTournee(
   sectorId: string,
   kmDepart: number,
   vehicleRegistration: string,
-  dispatchDeclaredTotal: number,
+  dispatchDeclaredLivraisons: number,
+  dispatchDeclaredEnlevements: number,
 ): Promise<DailyEntryFormState> {
   const supabase = await createClient();
 
@@ -50,8 +51,11 @@ export async function startTournee(
   }
   const immat = vehicleRegistration.trim();
   if (!immat) return { error: "L'immatriculation du véhicule est obligatoire." };
-  if (!Number.isFinite(dispatchDeclaredTotal) || dispatchDeclaredTotal < 0) {
-    return { error: "Le nombre de poses annoncées par le dispatch est obligatoire." };
+  if (!Number.isFinite(dispatchDeclaredLivraisons) || dispatchDeclaredLivraisons < 0) {
+    return { error: "Le nombre de livraisons annoncées par le dispatch est obligatoire." };
+  }
+  if (!Number.isFinite(dispatchDeclaredEnlevements) || dispatchDeclaredEnlevements < 0) {
+    return { error: "Le nombre d'enlèvements annoncés par le dispatch est obligatoire." };
   }
 
   const today = new Date().toISOString().slice(0, 10);
@@ -64,9 +68,13 @@ export async function startTournee(
     sector_id: sectorId,
     km_depart: Math.trunc(kmDepart),
     vehicle_registration: immat,
-    // Module B (anti-triche) : verrouillé dès la saisie, comparé au détail
-    // saisi en fin de tournée dans completeTournee.
-    dispatch_declared_total: Math.trunc(dispatchDeclaredTotal),
+    // Module B (anti-triche) : livraisons et enlèvements annoncés
+    // séparément (migration 021), verrouillés dès la saisie, comparés
+    // chacun à son propre détail en fin de tournée dans completeTournee.
+    // dispatch_declared_total n'est plus écrit pour les nouvelles tournées
+    // (conservé en base pour l'historique).
+    dispatch_declared_livraisons: Math.trunc(dispatchDeclaredLivraisons),
+    dispatch_declared_enlevements: Math.trunc(dispatchDeclaredEnlevements),
   };
 
   const { data, error } = await supabase
@@ -177,10 +185,11 @@ export async function completeTournee(
   }
 
   // Le dispatch peut légitimement ajouter une pose en cours de tournée : un
-  // écart avec dispatch_declared_total (saisi au démarrage, cf. startTournee)
-  // n'est plus bloquant ici (cf. v47), seulement affiché comme signal de
-  // transparence côté UI (dispatchEcart, lib/entries.ts) — jamais de
-  // conséquence sur la clôture ni sur les calculs de rentabilité.
+  // écart avec dispatch_declared_livraisons/enlevements (saisis séparément
+  // au démarrage, cf. startTournee) n'est plus bloquant ici (cf. v47),
+  // seulement affiché comme signal de transparence côté UI
+  // (dispatchEcartLivraisons/dispatchEcartEnlevements, lib/entries.ts) —
+  // jamais de conséquence sur la clôture ni sur les calculs de rentabilité.
 
   const { data, error } = await supabase
     .from("daily_entries")

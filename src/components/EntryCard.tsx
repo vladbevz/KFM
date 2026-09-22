@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { entryEnlevements, entryKm, entryPosesBreakdown } from "@/lib/stats";
-import { dispatchEcart } from "@/lib/entries";
+import { dispatchEcart, dispatchEcartLivraisons, dispatchEcartEnlevements } from "@/lib/entries";
 import { entryProfitability, resolveEntrySector } from "@/lib/rentabilite";
 import { ProfitabilityBadges } from "@/components/ProfitabilityBadge";
 import { DispatchEcartBadge } from "@/components/DispatchEcartBadge";
@@ -106,10 +106,15 @@ export function EntryCard({
     : entry.apres_midi_tournee_numero;
 
   const poses = entryPosesBreakdown(entry);
-  const ecart = dispatchEcart(entry);
+  // Écarts séparés livraisons/enlèvements (migration 021) ; repli sur
+  // l'écart combiné pour une tournée démarrée avant la séparation (les
+  // deux champs déclarés séparément sont alors toujours null).
+  const ecartLivraisons = dispatchEcartLivraisons(entry);
+  const ecartEnlevements = dispatchEcartEnlevements(entry);
+  const ecartCombine = ecartLivraisons === null && ecartEnlevements === null ? dispatchEcart(entry) : null;
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface shadow-card p-5">
+    <div className="flex flex-col gap-2.5 rounded-2xl border border-border bg-surface shadow-card p-4">
       <div className="flex items-start justify-between gap-2">
         <p className="text-base font-medium capitalize text-foreground">
           {formatDate(entry.entry_date)}
@@ -131,7 +136,21 @@ export function EntryCard({
 
       <div className="flex flex-wrap items-center gap-2">
         <ProfitabilityBadges status={profitability} />
-        {ecart !== null && <DispatchEcartBadge ecart={ecart} />}
+        {ecartCombine !== null && <DispatchEcartBadge ecart={ecartCombine} />}
+        {ecartLivraisons !== null && (
+          <DispatchEcartBadge
+            ecart={ecartLivraisons}
+            label="Écart livraisons"
+            detailLabel="Écart livraisons avec le dispatch"
+          />
+        )}
+        {ecartEnlevements !== null && (
+          <DispatchEcartBadge
+            ecart={ecartEnlevements}
+            label="Écart enlèvements"
+            detailLabel="Écart enlèvements avec le dispatch"
+          />
+        )}
       </div>
 
       {isNewFlow ? (

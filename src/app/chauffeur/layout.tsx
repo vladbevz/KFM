@@ -28,7 +28,7 @@ export default async function ChauffeurLayout({
   return (
     <div className="min-h-screen">
       <ChauffeurAccountButton fullName={profile.full_name} />
-      <main className="px-4 py-6 pb-32">{children}</main>
+      <main className="px-4 py-4 pb-32">{children}</main>
       <ChauffeurNav />
     </div>
   );

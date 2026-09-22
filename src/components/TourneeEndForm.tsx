@@ -100,9 +100,17 @@ export function TourneeEndForm({
   );
   const [enlevement, setEnlevement] = useState(mode === "edit" ? String(entry.poses_enlevement ?? "") : "");
 
-  const detailTotal = intOrZero(delivered) + intOrZero(damaged) + intOrZero(notDelivered) + intOrZero(enlevement);
-  const declaredTotal = entry.dispatch_declared_total;
-  const hasMismatch = mode === "complete" && declaredTotal !== null && detailTotal !== declaredTotal;
+  // Livraisons et enlèvements comparés séparément à leur propre déclaration
+  // dispatch (migration 021) — deux indicateurs distincts plutôt qu'un seul
+  // écart combiné, pour ne pas masquer lequel des deux diverge.
+  const detailLivraisons = intOrZero(delivered) + intOrZero(damaged) + intOrZero(notDelivered);
+  const detailEnlevements = intOrZero(enlevement);
+  const declaredLivraisons = entry.dispatch_declared_livraisons;
+  const declaredEnlevements = entry.dispatch_declared_enlevements;
+  const hasMismatchLivraisons =
+    mode === "complete" && declaredLivraisons !== null && detailLivraisons !== declaredLivraisons;
+  const hasMismatchEnlevements =
+    mode === "complete" && declaredEnlevements !== null && detailEnlevements !== declaredEnlevements;
 
   useEffect(() => {
     if (state.entry) {
@@ -113,10 +121,10 @@ export function TourneeEndForm({
   }, [state]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-7">
+    <form action={formAction} className="flex flex-col gap-5">
       <input type="hidden" name="entry_id" value={entry.id} />
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1">
         <label htmlFor="tournee_type" className="text-base text-foreground/70">
           Type
         </label>
@@ -125,7 +133,7 @@ export function TourneeEndForm({
           name="tournee_type"
           required
           defaultValue={entry.tournee_type ?? "journee"}
-          className="rounded-md border border-border bg-background px-4 py-4 text-base text-foreground outline-none focus:border-foreground"
+          className="rounded-md border border-border bg-background px-4 py-3.5 text-base text-foreground outline-none focus:border-foreground"
         >
           {TOURNEE_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
@@ -135,8 +143,8 @@ export function TourneeEndForm({
         </select>
       </div>
 
-      <div className="rounded-lg border border-border bg-surface p-4">
-        <h2 className="mb-3 text-sm font-semibold text-foreground/80">Kilométrage</h2>
+      <div className="rounded-lg border border-border bg-surface p-3.5">
+        <h2 className="mb-2.5 text-sm font-semibold text-foreground/80">Kilométrage</h2>
         <div className={mode === "edit" ? "grid grid-cols-2 gap-3" : undefined}>
           {mode === "edit" && (
             <Field
@@ -157,12 +165,12 @@ export function TourneeEndForm({
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-surface p-4">
-        <div className="mb-3 flex items-baseline justify-between gap-2">
+      <div className="rounded-lg border border-border bg-surface p-3.5">
+        <div className="mb-2.5 flex items-baseline justify-between gap-2">
           <h2 className="text-sm font-semibold text-foreground/80">Poses</h2>
-          {mode === "complete" && declaredTotal !== null && (
+          {mode === "complete" && declaredLivraisons !== null && (
             <p className="text-sm tabular-nums text-foreground/60">
-              Annoncé par le dispatch : <span className="font-medium">{declaredTotal}</span>
+              Annoncé : <span className="font-medium">{declaredLivraisons}</span>
             </p>
           )}
         </div>
@@ -214,9 +222,16 @@ export function TourneeEndForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="poses_enlevement" className="text-base text-foreground/70">
-            Enlèvements
-          </label>
+          <div className="flex items-baseline justify-between gap-2">
+            <label htmlFor="poses_enlevement" className="text-base text-foreground/70">
+              Enlèvements
+            </label>
+            {mode === "complete" && declaredEnlevements !== null && (
+              <span className="text-xs tabular-nums text-foreground/60">
+                Annoncé : <span className="font-medium">{declaredEnlevements}</span>
+              </span>
+            )}
+          </div>
           <input
             id="poses_enlevement"
             name="poses_enlevement"
@@ -234,11 +249,21 @@ export function TourneeEndForm({
         />
       </div>
 
-      {hasMismatch && (
-        <p className="rounded-md border border-[#F0D9A8] bg-[#FBF0DD] px-4 py-3 text-sm text-[#8A5C18]">
-          Le détail ({detailTotal}) ne correspond pas au total annoncé au départ ({declaredTotal}). Ce
-          n&apos;est pas bloquant — vérifiez votre saisie si c&apos;est une erreur, sinon continuez.
-        </p>
+      {(hasMismatchLivraisons || hasMismatchEnlevements) && (
+        <div className="flex flex-col gap-2">
+          {hasMismatchLivraisons && (
+            <p className="rounded-md border border-[#F0D9A8] bg-[#FBF0DD] px-4 py-3 text-sm text-[#8A5C18]">
+              Livraisons : détail ({detailLivraisons}) ≠ annoncé ({declaredLivraisons}). Pas bloquant —
+              vérifiez si c&apos;est une erreur, sinon continuez.
+            </p>
+          )}
+          {hasMismatchEnlevements && (
+            <p className="rounded-md border border-[#F0D9A8] bg-[#FBF0DD] px-4 py-3 text-sm text-[#8A5C18]">
+              Enlèvements : détail ({detailEnlevements}) ≠ annoncé ({declaredEnlevements}). Pas bloquant —
+              vérifiez si c&apos;est une erreur, sinon continuez.
+            </p>
+          )}
+        </div>
       )}
 
       <div className="flex flex-col gap-1.5">
@@ -248,7 +273,7 @@ export function TourneeEndForm({
         <textarea
           id="anomalie_tournee"
           name="anomalie_tournee"
-          rows={3}
+          rows={2}
           defaultValue={(mode === "edit" ? entry.anomalie_tournee : undefined) ?? ""}
           className="rounded-md border border-border bg-background px-4 py-3 text-base text-foreground outline-none focus:border-foreground"
         />
@@ -261,7 +286,7 @@ export function TourneeEndForm({
         <textarea
           id="anomalie_vehicule"
           name="anomalie_vehicule"
-          rows={3}
+          rows={2}
           defaultValue={(mode === "edit" ? entry.anomalie_vehicule : undefined) ?? ""}
           className="rounded-md border border-border bg-background px-4 py-3 text-base text-foreground outline-none focus:border-foreground"
         />

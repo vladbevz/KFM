@@ -7,8 +7,8 @@ function formatSigned(n: number): string {
 function ForfaitNote({ count }: { count: number }) {
   if (count === 0) return null;
   return (
-    <p className="text-center text-xs text-foreground-muted">
-      + {count} tournée{count > 1 ? "s" : ""} forfait ce mois-ci — pas d&apos;objectif chiffré pour ce modèle.
+    <p className="text-center text-xs tabular-nums text-foreground-muted">
+      + {count} forfait{count > 1 ? "s" : ""}
     </p>
   );
 }
@@ -56,10 +56,8 @@ export function MonthlyObjectiveCard({ summary }: { summary: MonthlyObjectiveSum
           </div>
 
           {summary.ecartProjete !== null && (
-            <p className="text-center text-xs text-foreground-muted">
-              Tendance fin de mois (indicative, non garantie) : réalisé projeté{" "}
-              <span className="font-medium">{summary.realiseProjete}</span> pour un objectif projeté{" "}
-              <span className="font-medium">{summary.objectifProjete}</span> — écart{" "}
+            <p className="text-center text-xs tabular-nums text-foreground-muted">
+              Tendance : {summary.realiseProjete} / {summary.objectifProjete} · écart{" "}
               <span className={ecartColor}>{formatSigned(summary.ecartProjete)}</span>
             </p>
           )}
