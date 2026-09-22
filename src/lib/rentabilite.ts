@@ -1,5 +1,5 @@
 import type { Database, PaymentType } from "@/types/database";
-import { entryTotal } from "@/lib/entries";
+import { entryTotal, entryPoses, entryEnlevements } from "@/lib/entries";
 import type { ExportColumn, ExportRow } from "@/lib/export";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
@@ -46,6 +46,55 @@ export function entryProfitability(entry: DailyEntry, sector: Sector | null): Pr
   const actual = entryTotal(entry);
   const threshold = sector.rentability_target ?? 0;
   return { kind: "a_la_pose", check: { actual, threshold, met: actual >= threshold } };
+}
+
+// Objectif/réalisé livraisons et enlèvements calculés séparément — utilisé
+// par les vues détail (Statistiques, Rentabilité) qui doivent montrer les
+// deux quantités distinctement plutôt qu'un seul total combiné (cf.
+// entryProfitability, qui reste le calcul combiné utilisé par les tableaux
+// existants). *Met est null quand aucun objectif n'est configuré pour cette
+// quantité (target_enlevements notamment, vide tant que le patron ne l'a
+// pas renseigné dans "Gérer les tournées") — un objectif non configuré
+// n'est jamais compté comme "non atteint".
+export interface SplitProfitability {
+  livraisonsRealise: number;
+  livraisonsObjectif: number | null;
+  livraisonsMet: boolean | null;
+  enlevementsRealise: number;
+  enlevementsObjectif: number | null;
+  enlevementsMet: boolean | null;
+}
+
+export function entrySplitProfitability(entry: DailyEntry, sector: Sector | null): SplitProfitability {
+  const livraisonsRealise = entryPoses(entry);
+  const enlevementsRealise = entryEnlevements(entry);
+
+  if (!sector || sector.payment_type === "forfait") {
+    return {
+      livraisonsRealise,
+      livraisonsObjectif: null,
+      livraisonsMet: null,
+      enlevementsRealise,
+      enlevementsObjectif: null,
+      enlevementsMet: null,
+    };
+  }
+
+  // target_livraisons prend le relais de rentability_target une fois
+  // renseigné (migration 021) ; repli sur rentability_target pour un
+  // secteur qui n'aurait pas encore été migré (ne devrait plus arriver en
+  // pratique, la migration backfill tous les secteurs existants).
+  const livraisonsObjectif = sector.target_livraisons ?? sector.rentability_target ?? null;
+  const enlevementsObjectif = sector.target_enlevements ?? null;
+
+  return {
+    livraisonsRealise,
+    livraisonsObjectif,
+    livraisonsMet: livraisonsObjectif === null ? null : livraisonsRealise >= livraisonsObjectif,
+    enlevementsRealise,
+    enlevementsObjectif,
+    enlevementsMet: enlevementsObjectif === null ? null : enlevementsRealise >= enlevementsObjectif,
+  };
 }
 
 export interface RentabiliteEntryRow {

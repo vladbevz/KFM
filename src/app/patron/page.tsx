@@ -70,15 +70,29 @@ export default async function PatronHomePage() {
   const { data: todaySnapshots } = todayEntryIds.length
     ? await supabase
         .from("daily_entry_price_snapshots")
-        .select("entry_id, price_per_pose, forfait_amount")
+        .select("entry_id, price_per_pose, forfait_amount, price_per_enlevement")
         .in("entry_id", todayEntryIds)
-        .returns<{ entry_id: string; price_per_pose: number | null; forfait_amount: number | null }[]>()
-    : { data: [] as { entry_id: string; price_per_pose: number | null; forfait_amount: number | null }[] };
+        .returns<
+          { entry_id: string; price_per_pose: number | null; forfait_amount: number | null; price_per_enlevement: number | null }[]
+        >()
+    : {
+        data: [] as {
+          entry_id: string;
+          price_per_pose: number | null;
+          forfait_amount: number | null;
+          price_per_enlevement: number | null;
+        }[],
+      };
   const todayPriceSnapshotByEntryId = new Map(
     (todaySnapshots ?? []).filter((s) => s.price_per_pose !== null).map((s) => [s.entry_id, s.price_per_pose!]),
   );
   const todayForfaitSnapshotByEntryId = new Map(
     (todaySnapshots ?? []).filter((s) => s.forfait_amount !== null).map((s) => [s.entry_id, s.forfait_amount!]),
+  );
+  const todayEnlevementPriceSnapshotByEntryId = new Map(
+    (todaySnapshots ?? [])
+      .filter((s) => s.price_per_enlevement !== null)
+      .map((s) => [s.entry_id, s.price_per_enlevement!]),
   );
   const todayGeodisRows = buildGeodisRows(
     completedToday ?? [],
@@ -86,6 +100,7 @@ export default async function PatronHomePage() {
     todayPriceSnapshotByEntryId,
     todayForfaitSnapshotByEntryId,
     new Map(),
+    todayEnlevementPriceSnapshotByEntryId,
   );
   const revenuReelDuJour = todayGeodisRows.reduce((sum, r) => sum + (r.revenuReel ?? 0), 0);
   const ecartDuJour = todayGeodisRows.reduce((sum, r) => sum + (r.ecartEuros ?? 0), 0);

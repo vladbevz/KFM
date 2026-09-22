@@ -226,14 +226,23 @@ export async function completeTournee(
     if (sector?.payment_type === "a_la_pose") {
       const { data: price } = await admin
         .from("sector_prices")
-        .select("price_per_pose")
+        .select("price_per_pose, price_per_enlevement")
         .eq("sector_id", existing.sector_id)
-        .maybeSingle<{ price_per_pose: number | null }>();
+        .maybeSingle<{ price_per_pose: number | null; price_per_enlevement: number | null }>();
 
       if (price?.price_per_pose !== null && price?.price_per_pose !== undefined) {
-        await admin
-          .from("daily_entry_price_snapshots")
-          .upsert({ entry_id: entryId, price_per_pose: price.price_per_pose }, { onConflict: "entry_id" });
+        await admin.from("daily_entry_price_snapshots").upsert(
+          {
+            entry_id: entryId,
+            price_per_pose: price.price_per_pose,
+            // Tarif enlèvements distinct (migration 021) : figé seulement
+            // s'il a été renseigné dans "Gérer les tournées" — sinon reste
+            // null, et le calcul de revenu (lib/geodis.ts) replie sur
+            // price_per_pose comme avant la séparation.
+            price_per_enlevement: price.price_per_enlevement,
+          },
+          { onConflict: "entry_id" },
+        );
       }
     } else if (sector?.payment_type === "forfait") {
       const { data: forfait } = await admin

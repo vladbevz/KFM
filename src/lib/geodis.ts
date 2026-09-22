@@ -1,6 +1,6 @@
 import type { Database } from "@/types/database";
-import { resolveEntrySector, sectorThreshold, type Sector } from "@/lib/rentabilite";
-import { entryTotal } from "@/lib/entries";
+import { resolveEntrySector, type Sector } from "@/lib/rentabilite";
+import { entryPoses, entryEnlevements } from "@/lib/entries";
 import type { ExportColumn, ExportRow } from "@/lib/export";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
@@ -19,11 +19,19 @@ export interface GeodisEntryRow {
   sectorId: string;
   sectorCode: string;
   type: GeodisRowType;
-  // Poses — à la pose uniquement, null pour une ligne forfait (le concept
-  // n'existe pas pour ce modèle de paiement).
+  // Poses — combiné livraisons+enlèvements, à la pose uniquement, null pour
+  // une ligne forfait. Conservé pour les vues qui affichent encore un total
+  // unique (GeodisSectorTable) ; voir les champs *Livraisons/*Enlevements
+  // ci-dessous pour le détail séparé (vue détail tournée, Partie 4).
   objectif: number | null;
   realise: number | null;
   pricePerPose: number | null;
+  // Détail livraisons/enlèvements séparé.
+  objectifLivraisons: number | null;
+  realiseLivraisons: number | null;
+  objectifEnlevements: number | null;
+  realiseEnlevements: number | null;
+  pricePerEnlevement: number | null;
   // Revenus en euros — présents pour les deux modèles (null seulement si le
   // prix/montant n'a pas été renseigné au moment de la clôture : affiché
   // "—", jamais 0€, cf. demande explicite).
@@ -38,12 +46,22 @@ export interface GeodisEntryRow {
 // jour déjà clos (cf. demande explicite). Une tournée à la pose sans prix
 // figé n'apparaît pas ici (comportement inchangé) ; une tournée forfait sans
 // montant figé apparaît quand même, avec les revenus à null.
+//
+// Tarif enlèvements (price_per_enlevement, migration 021) : replie sur
+// pricePerPose tant qu'il n'est pas figé pour cette tournée (snapshot
+// historique antérieur à la migration, ou secteur pas encore configuré dans
+// "Gérer les tournées") — reproduit exactement l'ancien calcul combiné
+// (poses+enlèvements) × pricePerPose, aucune régression silencieuse du
+// revenu déjà affiché tant que le patron n'a pas renseigné de tarif
+// enlèvements distinct. Même repli pour objectifEnlevements (0 tant
+// qu'aucun target_enlevements n'est configuré).
 export function geodisEntryRow(
   entry: DailyEntry,
   sectorsById: Map<string, Sector>,
   priceSnapshotByEntryId: Map<string, number>,
   forfaitSnapshotByEntryId: Map<string, number>,
   driverNameById: Map<string, string>,
+  enlevementPriceSnapshotByEntryId: Map<string, number>,
 ): GeodisEntryRow | null {
   if (entry.status !== "completed") return null;
   const sector = resolveEntrySector(entry, sectorsById);
@@ -63,20 +81,28 @@ export function geodisEntryRow(
       objectif: null,
       realise: null,
       pricePerPose: null,
+      objectifLivraisons: null,
+      realiseLivraisons: null,
+      objectifEnlevements: null,
+      realiseEnlevements: null,
+      pricePerEnlevement: null,
       revenuTheorique: forfaitAmount,
       revenuReel: forfaitAmount,
       ecartEuros: forfaitAmount !== null ? 0 : null,
     };
   }
 
-  const objectif = sectorThreshold(sector);
-  if (objectif === null) return null;
   const pricePerPose = priceSnapshotByEntryId.get(entry.id);
   if (pricePerPose === undefined) return null;
+  const pricePerEnlevement = enlevementPriceSnapshotByEntryId.get(entry.id) ?? pricePerPose;
 
-  const realise = entryTotal(entry);
-  const revenuTheorique = objectif * pricePerPose;
-  const revenuReel = realise * pricePerPose;
+  const objectifLivraisons = sector.target_livraisons ?? sector.rentability_target ?? 0;
+  const objectifEnlevements = sector.target_enlevements ?? 0;
+  const realiseLivraisons = entryPoses(entry);
+  const realiseEnlevements = entryEnlevements(entry);
+
+  const revenuTheorique = objectifLivraisons * pricePerPose + objectifEnlevements * pricePerEnlevement;
+  const revenuReel = realiseLivraisons * pricePerPose + realiseEnlevements * pricePerEnlevement;
 
   return {
     entryId: entry.id,
@@ -85,9 +111,14 @@ export function geodisEntryRow(
     sectorId: sector.id,
     sectorCode: sector.code,
     type: "a_la_pose",
-    objectif,
-    realise,
+    objectif: objectifLivraisons + objectifEnlevements,
+    realise: realiseLivraisons + realiseEnlevements,
     pricePerPose,
+    objectifLivraisons,
+    realiseLivraisons,
+    objectifEnlevements: sector.target_enlevements ?? null,
+    realiseEnlevements,
+    pricePerEnlevement,
     revenuTheorique,
     revenuReel,
     ecartEuros: revenuReel - revenuTheorique,
@@ -100,10 +131,18 @@ export function buildGeodisRows(
   priceSnapshotByEntryId: Map<string, number>,
   forfaitSnapshotByEntryId: Map<string, number>,
   driverNameById: Map<string, string>,
+  enlevementPriceSnapshotByEntryId: Map<string, number>,
 ): GeodisEntryRow[] {
   const rows: GeodisEntryRow[] = [];
   for (const entry of entries) {
-    const row = geodisEntryRow(entry, sectorsById, priceSnapshotByEntryId, forfaitSnapshotByEntryId, driverNameById);
+    const row = geodisEntryRow(
+      entry,
+      sectorsById,
+      priceSnapshotByEntryId,
+      forfaitSnapshotByEntryId,
+      driverNameById,
+      enlevementPriceSnapshotByEntryId,
+    );
     if (row) rows.push(row);
   }
   return rows.sort((a, b) => a.date.localeCompare(b.date) || a.sectorCode.localeCompare(b.sectorCode));

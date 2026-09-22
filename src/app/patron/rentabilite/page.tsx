@@ -87,9 +87,11 @@ export default async function RentabilitePage({
     Array.from({ length: Math.ceil(entryIds.length / SNAPSHOT_CHUNK_SIZE) }, (_, i) =>
       supabase
         .from("daily_entry_price_snapshots")
-        .select("entry_id, price_per_pose, forfait_amount")
+        .select("entry_id, price_per_pose, forfait_amount, price_per_enlevement")
         .in("entry_id", entryIds.slice(i * SNAPSHOT_CHUNK_SIZE, (i + 1) * SNAPSHOT_CHUNK_SIZE))
-        .returns<{ entry_id: string; price_per_pose: number | null; forfait_amount: number | null }[]>(),
+        .returns<
+          { entry_id: string; price_per_pose: number | null; forfait_amount: number | null; price_per_enlevement: number | null }[]
+        >(),
     ),
   );
   const snapshots = snapshotChunks.flatMap((chunk) => chunk.data ?? []);
@@ -99,6 +101,9 @@ export default async function RentabilitePage({
   const forfaitSnapshotByEntryId = new Map(
     snapshots.filter((s) => s.forfait_amount !== null).map((s) => [s.entry_id, s.forfait_amount!]),
   );
+  const enlevementPriceSnapshotByEntryId = new Map(
+    snapshots.filter((s) => s.price_per_enlevement !== null).map((s) => [s.entry_id, s.price_per_enlevement!]),
+  );
 
   const geodisRows = buildGeodisRows(
     completedEntries,
@@ -106,6 +111,7 @@ export default async function RentabilitePage({
     priceSnapshotByEntryId,
     forfaitSnapshotByEntryId,
     driverNameById,
+    enlevementPriceSnapshotByEntryId,
   );
   const revenuTheoriqueTotal = geodisRows.reduce((sum, r) => sum + (r.revenuTheorique ?? 0), 0);
   const revenuReelTotal = geodisRows.reduce((sum, r) => sum + (r.revenuReel ?? 0), 0);

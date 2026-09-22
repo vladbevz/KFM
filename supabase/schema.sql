@@ -60,6 +60,13 @@ create table if not exists public.sectors (
   code text not null unique,
   payment_type public.payment_type not null default 'a_la_pose',
   rentability_target integer,
+  -- Objectifs livraisons/enlèvements séparés : rentability_target devient
+  -- l'objectif livraisons (target_livraisons) une fois renseigné ; les deux
+  -- coexistent, target_enlevements reste null tant qu'aucun seuil séparé
+  -- n'est configuré (aucun comportement de seuil sur les enlèvements dans
+  -- ce cas — cf. lib/rentabilite.ts).
+  target_livraisons integer,
+  target_enlevements integer,
   created_at timestamptz not null default now()
 );
 
@@ -116,8 +123,12 @@ create table if not exists public.daily_entries (
 
   -- Module B (anti-triche) : poses+enlèvements annoncées par le dispatch au
   -- démarrage, verrouillé ensuite ; comparé au détail saisi en fin de
-  -- tournée pour bloquer une incohérence.
+  -- tournée pour bloquer une incohérence. dispatch_declared_total ne
+  -- reçoit plus de nouvelles valeurs depuis la séparation
+  -- livraisons/enlèvements (conservé pour l'historique déjà saisi).
   dispatch_declared_total integer,
+  dispatch_declared_livraisons integer,
+  dispatch_declared_enlevements integer,
 
   -- Colonnes historiques (modèle "une ligne = un jour", plus utilisées par
   -- le formulaire actuel — conservées pour l'historique déjà affiché).
@@ -548,6 +559,10 @@ create policy "driver_documents_files_boss_update"
 create table if not exists public.sector_prices (
   sector_id uuid primary key references public.sectors (id) on delete cascade,
   price_per_pose numeric,
+  -- Tarif enlèvements distinct, même isolation RLS que price_per_pose
+  -- (qui devient le tarif livraisons) — cf. lib/geodis.ts pour le calcul
+  -- de repli quand ce champ n'est pas encore renseigné.
+  price_per_enlevement numeric,
   updated_at timestamptz not null default now()
 );
 
@@ -582,6 +597,11 @@ create table if not exists public.daily_entry_price_snapshots (
   entry_id uuid primary key references public.daily_entries (id) on delete cascade,
   price_per_pose numeric,
   forfait_amount numeric,
+  -- Prix enlèvement figé au même moment que price_per_pose/forfait_amount,
+  -- même garantie de non-recalcul rétroactif. Absent (null) sur tout
+  -- l'historique antérieur à la séparation livraisons/enlèvements — repli
+  -- vers price_per_pose au calcul (cf. lib/geodis.ts).
+  price_per_enlevement numeric,
   created_at timestamptz not null default now(),
   constraint daily_entry_price_snapshots_one_value check (
     (price_per_pose is not null and forfait_amount is null)
