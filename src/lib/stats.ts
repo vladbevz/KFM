@@ -71,29 +71,6 @@ export function getPeriodRange(
   return { from: toISODate(from), to };
 }
 
-// Période précédente de même durée (ex. semaine actuelle vs semaine
-// précédente), pour le calcul de tendance du tableau comparatif. Reste
-// entièrement en UTC (Date.UTC + diff en millisecondes) pour ne jamais
-// passer par une conversion de fuseau local — même précédent que le
-// correctif de shiftDate (RentabiliteDateControl), qui perdait/gagnait un
-// jour avec un offset local positif.
-export function getPreviousPeriodRange(from: string, to: string): { from: string; to: string } {
-  const [fy, fm, fd] = from.split("-").map(Number);
-  const [ty, tm, td] = to.split("-").map(Number);
-  const fromUTC = Date.UTC(fy, fm - 1, fd);
-  const toUTC = Date.UTC(ty, tm - 1, td);
-  const dayMs = 24 * 60 * 60 * 1000;
-  const days = Math.round((toUTC - fromUTC) / dayMs) + 1;
-
-  const prevToUTC = fromUTC - dayMs;
-  const prevFromUTC = prevToUTC - (days - 1) * dayMs;
-
-  return {
-    from: new Date(prevFromUTC).toISOString().slice(0, 10),
-    to: new Date(prevToUTC).toISOString().slice(0, 10),
-  };
-}
-
 export interface DateMetrics {
   date: string;
   km: number;
@@ -313,23 +290,22 @@ export interface DriverStatsRow {
   driverId: string;
   fullName: string;
   totalKm: number;
-  avgKmPerDay: number | null;
   totalPoses: number;
-  avgPosesPerDay: number | null;
   totalEnlevements: number;
-  avgTotalPerDay: number | null;
   totalLiters: number;
-  totalIncidents: number;
+  // Avaries et non livrées séparées (migration 021 — cohérent avec la
+  // séparation livraisons/enlèvements) plutôt qu'un total "incidents"
+  // combiné : les deux causes appellent des actions différentes (avarie =
+  // manutention/véhicule, non livrée = client/adresse).
+  totalDamaged: number;
+  totalNotDelivered: number;
   seuilsAtteints: number;
   seuilsNonAtteints: number;
-  tauxReussite: number | null;
   joursTravailles: number;
 }
 
-// Tableau comparatif enrichi (Statistiques -> Tableau). Seules les entrées
-// terminées comptent pour les moyennes par jour travaillé (règle explicite :
-// pas de dilution par les jours calendaires non travaillés). Tous les
-// chauffeurs actifs apparaissent, même sans activité — même précédent que
+// Tableau comparatif (Statistiques -> Tableau). Tous les chauffeurs actifs
+// apparaissent, même sans activité — même précédent que
 // aggregateByDriver/aggregateRentabiliteByDriver.
 export function aggregateDriverStats(
   entries: DailyEntry[],
@@ -344,7 +320,8 @@ export function aggregateDriverStats(
       totalKm: number;
       totalPoses: number;
       totalEnlevements: number;
-      totalIncidents: number;
+      totalDamaged: number;
+      totalNotDelivered: number;
       seuilsAtteints: number;
       seuilsNonAtteints: number;
     }
@@ -355,7 +332,8 @@ export function aggregateDriverStats(
       totalKm: 0,
       totalPoses: 0,
       totalEnlevements: 0,
-      totalIncidents: 0,
+      totalDamaged: 0,
+      totalNotDelivered: 0,
       seuilsAtteints: 0,
       seuilsNonAtteints: 0,
     });
@@ -372,7 +350,8 @@ export function aggregateDriverStats(
     acc.totalEnlevements += entryEnlevements(entry);
 
     const breakdown = entryPosesBreakdown(entry);
-    acc.totalIncidents += breakdown.damaged + breakdown.notDelivered;
+    acc.totalDamaged += breakdown.damaged;
+    acc.totalNotDelivered += breakdown.notDelivered;
 
     const sector = resolveEntrySector(entry, sectorsById);
     const status = entryProfitability(entry, sector);
@@ -384,25 +363,19 @@ export function aggregateDriverStats(
 
   return drivers.map((driver) => {
     const acc = byDriver.get(driver.id)!;
-    const joursTravailles = acc.dates.size;
-    const seuilsTotal = acc.seuilsAtteints + acc.seuilsNonAtteints;
 
     return {
       driverId: driver.id,
       fullName: driver.full_name,
       totalKm: acc.totalKm,
-      avgKmPerDay: joursTravailles > 0 ? acc.totalKm / joursTravailles : null,
       totalPoses: acc.totalPoses,
-      avgPosesPerDay: joursTravailles > 0 ? acc.totalPoses / joursTravailles : null,
       totalEnlevements: acc.totalEnlevements,
-      avgTotalPerDay:
-        joursTravailles > 0 ? (acc.totalPoses + acc.totalEnlevements) / joursTravailles : null,
       totalLiters: litersByDriver.get(driver.id) ?? 0,
-      totalIncidents: acc.totalIncidents,
+      totalDamaged: acc.totalDamaged,
+      totalNotDelivered: acc.totalNotDelivered,
       seuilsAtteints: acc.seuilsAtteints,
       seuilsNonAtteints: acc.seuilsNonAtteints,
-      tauxReussite: seuilsTotal > 0 ? (acc.seuilsAtteints / seuilsTotal) * 100 : null,
-      joursTravailles,
+      joursTravailles: acc.dates.size,
     };
   });
 }

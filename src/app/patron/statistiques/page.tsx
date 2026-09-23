@@ -6,7 +6,6 @@ import { KpiCard } from "@/components/KpiCard";
 import {
   aggregateDriverStats,
   getPeriodRange,
-  getPreviousPeriodRange,
   sumLitersByDriver,
   formatPeriodLabel,
   entryKm,
@@ -27,13 +26,16 @@ export default async function PatronStatistiquesPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const params = await searchParams;
-  const view = params.view === "tableau" ? "tableau" : "graphique";
-  // "7 jours" par défaut plutôt que "Aujourd'hui" : sur un seul jour, le
-  // graphique se réduit à une barre unique — peu informatif en première vue.
+  // "Tableau" par défaut plutôt que "Graphique" : c'est la vue comparative
+  // entre chauffeurs, la plus consultée — le graphique reste à un clic.
+  const view = params.view === "graphique" ? "graphique" : "tableau";
+  // "Aujourd'hui" par défaut : avec le tableau en vue par défaut (une ligne
+  // par chauffeur, pas une barre unique), une période courte redevient la
+  // plus utile en première vue.
   const period = (
-    ["today", "7", "30", "90", "custom"].includes(params.period ?? "")
-      ? params.period
-      : "7"
+    ["today", "7", "30", "90", "custom"].includes(params.period ?? "today")
+      ? (params.period ?? "today")
+      : "today"
   ) as PeriodKey;
   const metric = (["km", "poses", "enlevements"].includes(params.metric ?? "")
     ? params.metric
@@ -56,49 +58,58 @@ export default async function PatronStatistiquesPage({
     entriesQuery = entriesQuery.eq("driver_id", selectedDriverId);
   }
 
-  // Requêtes indépendantes : exécutées en parallèle plutôt qu'en séquence
-  // pour éviter d'additionner deux allers-retours réseau vers Supabase.
-  // Uniquement en vue Tableau : période précédente + pleins, pour les
-  // moyennes/tendance du tableau comparatif. Le graphique n'en a pas besoin.
-  const prevRange = view === "tableau" ? getPreviousPeriodRange(from, to) : null;
-
-  const [{ data: drivers }, { data: entries }, { data: sectors }, prevEntriesResult, fuelLogsResult, prevFuelLogsResult] =
-    await Promise.all([
-      supabase
-        .from("profiles")
-        .select("id, full_name")
-        .eq("role", "driver")
-        .order("full_name")
-        .returns<{ id: string; full_name: string }[]>(),
-      entriesQuery.returns<DailyEntry[]>(),
-      supabase.from("sectors").select("*").returns<Sector[]>(),
-      prevRange
-        ? supabase
-            .from("daily_entries")
-            .select("*")
-            .gte("entry_date", prevRange.from)
-            .lte("entry_date", prevRange.to)
-            .returns<DailyEntry[]>()
-        : Promise.resolve({ data: null }),
-      view === "tableau"
-        ? supabase
-            .from("fuel_logs")
-            .select("driver_id, liters")
-            .gte("filled_at", from)
-            .lte("filled_at", to)
-            .returns<Pick<FuelLog, "driver_id" | "liters">[]>()
-        : Promise.resolve({ data: null }),
-      prevRange
-        ? supabase
-            .from("fuel_logs")
-            .select("driver_id, liters")
-            .gte("filled_at", prevRange.from)
-            .lte("filled_at", prevRange.to)
-            .returns<Pick<FuelLog, "driver_id" | "liters">[]>()
-        : Promise.resolve({ data: null }),
-    ]);
+  const [{ data: drivers }, { data: entries }, { data: sectors }, fuelLogsResult] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, full_name")
+      .eq("role", "driver")
+      .order("full_name")
+      .returns<{ id: string; full_name: string }[]>(),
+    entriesQuery.returns<DailyEntry[]>(),
+    supabase.from("sectors").select("*").returns<Sector[]>(),
+    view === "tableau"
+      ? supabase
+          .from("fuel_logs")
+          .select("driver_id, liters")
+          .gte("filled_at", from)
+          .lte("filled_at", to)
+          .returns<Pick<FuelLog, "driver_id" | "liters">[]>()
+      : Promise.resolve({ data: null }),
+  ]);
   const sectorsById = new Map((sectors ?? []).map((s) => [s.id, s]));
   const periodLabel = formatPeriodLabel(period, from, to);
+
+  // Prix figés par tournée (revenu théorique/réel du détail au clic, vue
+  // Tableau uniquement) — même chunking que Rentabilité/Accueil, la requête
+  // .in() dépasse la longueur acceptée par PostgREST au-delà de ~200 ids.
+  let priceSnapshotByEntryId = new Map<string, number>();
+  let forfaitSnapshotByEntryId = new Map<string, number>();
+  let enlevementPriceSnapshotByEntryId = new Map<string, number>();
+  if (view === "tableau") {
+    const entryIds = (entries ?? []).filter((e) => e.status === "completed").map((e) => e.id);
+    const SNAPSHOT_CHUNK_SIZE = 200;
+    const snapshotChunks = await Promise.all(
+      Array.from({ length: Math.ceil(entryIds.length / SNAPSHOT_CHUNK_SIZE) }, (_, i) =>
+        supabase
+          .from("daily_entry_price_snapshots")
+          .select("entry_id, price_per_pose, forfait_amount, price_per_enlevement")
+          .in("entry_id", entryIds.slice(i * SNAPSHOT_CHUNK_SIZE, (i + 1) * SNAPSHOT_CHUNK_SIZE))
+          .returns<
+            { entry_id: string; price_per_pose: number | null; forfait_amount: number | null; price_per_enlevement: number | null }[]
+          >(),
+      ),
+    );
+    const snapshots = snapshotChunks.flatMap((chunk) => chunk.data ?? []);
+    priceSnapshotByEntryId = new Map(
+      snapshots.filter((s) => s.price_per_pose !== null).map((s) => [s.entry_id, s.price_per_pose!]),
+    );
+    forfaitSnapshotByEntryId = new Map(
+      snapshots.filter((s) => s.forfait_amount !== null).map((s) => [s.entry_id, s.forfait_amount!]),
+    );
+    enlevementPriceSnapshotByEntryId = new Map(
+      snapshots.filter((s) => s.price_per_enlevement !== null).map((s) => [s.entry_id, s.price_per_enlevement!]),
+    );
+  }
 
   // Rangée de totaux, visible dans les deux vues : comble l'espace vide
   // sous un graphique à une seule métrique et donne un chiffre scannable
@@ -150,13 +161,12 @@ export default async function PatronStatistiquesPage({
             sectorsById,
             sumLitersByDriver(fuelLogsResult.data ?? []),
           )}
-          prevData={aggregateDriverStats(
-            prevEntriesResult.data ?? [],
-            drivers ?? [],
-            sectorsById,
-            sumLitersByDriver(prevFuelLogsResult.data ?? []),
-          )}
           periodLabel={periodLabel}
+          entries={entries ?? []}
+          sectorsById={sectorsById}
+          priceSnapshotByEntryId={priceSnapshotByEntryId}
+          forfaitSnapshotByEntryId={forfaitSnapshotByEntryId}
+          enlevementPriceSnapshotByEntryId={enlevementPriceSnapshotByEntryId}
         />
       )}
     </div>

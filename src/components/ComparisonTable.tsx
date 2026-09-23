@@ -1,89 +1,63 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowDownAZ, ArrowUpAZ, ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { Fragment, useMemo, useState } from "react";
+import { ArrowDownAZ, ArrowUpAZ, ChevronDown } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ExpandableCard } from "@/components/ExpandableCard";
 import { ExportButton } from "@/components/ExportButton";
 import { slugifyFilename, type ExportColumn, type ExportRow } from "@/lib/export";
-import type { DriverStatsRow } from "@/lib/stats";
+import { entryPosesBreakdown, entryEnlevements, entryKm, type DriverStatsRow } from "@/lib/stats";
+import { PAYMENT_TYPE_LABELS, resolveEntrySector, type Sector } from "@/lib/rentabilite";
+import { geodisEntryRow, formatEuros } from "@/lib/geodis";
+import type { Database } from "@/types/database";
+
+type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
 
 type SortKey = Exclude<keyof DriverStatsRow, "driverId" | "joursTravailles">;
 
 interface ColumnDef {
   key: SortKey;
   label: string;
-  numeric: boolean;
   defaultDir: "asc" | "desc";
-  decimals: number;
-  suffix?: string;
 }
 
-// defaultDir détermine à la fois le sens du premier clic ET, combiné à la
-// mise en avant positionnelle (première/dernière ligne), garantit que le
-// vert tombe toujours sur la vraie meilleure valeur : "asc" pour les
-// colonnes où une valeur basse est bonne (incidents, tournées non
-// réussies), "desc" pour toutes les autres.
+// defaultDir détermine le sens du premier clic sur l'en-tête : "asc" pour
+// les colonnes où une valeur basse est bonne (avaries, non livrées,
+// tournées non réussies), "desc" pour toutes les autres.
 const COLUMNS: ColumnDef[] = [
-  { key: "fullName", label: "Chauffeur", numeric: false, defaultDir: "asc", decimals: 0 },
-  { key: "totalKm", label: "Km", numeric: true, defaultDir: "desc", decimals: 0 },
-  { key: "avgKmPerDay", label: "Moy. km/jour", numeric: true, defaultDir: "desc", decimals: 1 },
-  { key: "totalPoses", label: "Poses", numeric: true, defaultDir: "desc", decimals: 0 },
-  { key: "avgPosesPerDay", label: "Moy. poses/jour", numeric: true, defaultDir: "desc", decimals: 1 },
-  { key: "totalEnlevements", label: "Enlèvements", numeric: true, defaultDir: "desc", decimals: 0 },
-  { key: "avgTotalPerDay", label: "Moy. poses+enl./jour", numeric: true, defaultDir: "desc", decimals: 1 },
-  { key: "totalLiters", label: "Litres", numeric: true, defaultDir: "desc", decimals: 1, suffix: " L" },
-  { key: "totalIncidents", label: "Avaries + Non livrées", numeric: true, defaultDir: "asc", decimals: 0 },
-  { key: "seuilsAtteints", label: "Tournées réussies", numeric: true, defaultDir: "desc", decimals: 0 },
-  { key: "seuilsNonAtteints", label: "Tournées non réussies", numeric: true, defaultDir: "asc", decimals: 0 },
-  { key: "tauxReussite", label: "Rentabilité", numeric: true, defaultDir: "desc", decimals: 0, suffix: "%" },
+  { key: "fullName", label: "Chauffeur", defaultDir: "asc" },
+  { key: "totalKm", label: "Km", defaultDir: "desc" },
+  { key: "totalPoses", label: "Poses", defaultDir: "desc" },
+  { key: "totalEnlevements", label: "Enlèvements", defaultDir: "desc" },
+  { key: "totalLiters", label: "Litres", defaultDir: "desc" },
+  { key: "totalDamaged", label: "Avaries", defaultDir: "asc" },
+  { key: "totalNotDelivered", label: "Non livrées", defaultDir: "asc" },
+  { key: "seuilsAtteints", label: "Tournées réussies", defaultDir: "desc" },
+  { key: "seuilsNonAtteints", label: "Tournées non réussies", defaultDir: "asc" },
 ];
 
-const MOBILE_PRIMARY_KEYS: SortKey[] = ["totalKm", "tauxReussite", "avgTotalPerDay"];
+const MOBILE_PRIMARY_KEYS: SortKey[] = ["totalKm", "totalPoses", "totalEnlevements"];
 
 function formatValue(row: DriverStatsRow, col: ColumnDef): string {
   if (col.key === "fullName") return row.fullName;
-  const value = row[col.key] as number | null;
-  if (value === null) return "—";
-  return `${value.toFixed(col.decimals)}${col.suffix ?? ""}`;
+  const value = row[col.key] as number;
+  return col.key === "totalLiters" ? `${value.toFixed(1)} L` : String(value);
 }
 
 function sortValue(row: DriverStatsRow, key: SortKey): number | string {
   if (key === "fullName") return row.fullName;
-  return (row[key] as number | null) ?? -1;
-}
-
-type Trend = "up" | "down" | "flat" | "none";
-
-function getTrend(row: DriverStatsRow, prevRow: DriverStatsRow | undefined, col: ColumnDef): Trend {
-  if (col.key === "fullName") return "none";
-  const curr = Number(((row[col.key] as number | null) ?? 0).toFixed(col.decimals));
-  const prev = Number(((prevRow?.[col.key] as number | null) ?? 0).toFixed(col.decimals));
-  if (curr > prev) return "up";
-  if (curr < prev) return "down";
-  return "flat";
-}
-
-// Symboles ASCII plutôt que les flèches Unicode utilisées à l'écran : la
-// police standard de jsPDF (WinAnsi) n'a pas ces glyphes et les affichait
-// comme "!" dans le PDF exporté.
-function trendLabel(trend: Trend): string {
-  if (trend === "up") return "+";
-  if (trend === "down") return "-";
-  if (trend === "flat") return "=";
-  return "—";
-}
-
-function TrendIcon({ trend }: { trend: Trend }) {
-  if (trend === "none") return <span className="text-foreground-muted">—</span>;
-  if (trend === "up") return <ArrowUp className="h-4 w-4 text-enlevements" strokeWidth={1.8} />;
-  if (trend === "down") return <ArrowDown className="h-4 w-4 text-destructive" strokeWidth={1.8} />;
-  return <Minus className="h-4 w-4 text-foreground-muted" strokeWidth={1.8} />;
+  return row[key] as number;
 }
 
 // Ligne agrégée flotte entière, recalculée depuis les totaux bruts (pas la
-// moyenne des moyennes déjà affichées) — même principe que
-// computeRentabiliteKpis : somme/somme, pas moyenne de pourcentages.
+// moyenne des moyennes) — même principe que computeRentabiliteKpis.
 function summarizeRows(rows: DriverStatsRow[]): DriverStatsRow {
   const totals = rows.reduce(
     (acc, r) => ({
@@ -91,7 +65,8 @@ function summarizeRows(rows: DriverStatsRow[]): DriverStatsRow {
       totalPoses: acc.totalPoses + r.totalPoses,
       totalEnlevements: acc.totalEnlevements + r.totalEnlevements,
       totalLiters: acc.totalLiters + r.totalLiters,
-      totalIncidents: acc.totalIncidents + r.totalIncidents,
+      totalDamaged: acc.totalDamaged + r.totalDamaged,
+      totalNotDelivered: acc.totalNotDelivered + r.totalNotDelivered,
       seuilsAtteints: acc.seuilsAtteints + r.seuilsAtteints,
       seuilsNonAtteints: acc.seuilsNonAtteints + r.seuilsNonAtteints,
       joursTravailles: acc.joursTravailles + r.joursTravailles,
@@ -101,56 +76,120 @@ function summarizeRows(rows: DriverStatsRow[]): DriverStatsRow {
       totalPoses: 0,
       totalEnlevements: 0,
       totalLiters: 0,
-      totalIncidents: 0,
+      totalDamaged: 0,
+      totalNotDelivered: 0,
       seuilsAtteints: 0,
       seuilsNonAtteints: 0,
       joursTravailles: 0,
     },
   );
-  const seuilsTotal = totals.seuilsAtteints + totals.seuilsNonAtteints;
 
   return {
     driverId: "__summary__",
-    fullName: "Total / moyenne flotte",
-    totalKm: totals.totalKm,
-    avgKmPerDay: totals.joursTravailles > 0 ? totals.totalKm / totals.joursTravailles : null,
-    totalPoses: totals.totalPoses,
-    avgPosesPerDay: totals.joursTravailles > 0 ? totals.totalPoses / totals.joursTravailles : null,
-    totalEnlevements: totals.totalEnlevements,
-    avgTotalPerDay:
-      totals.joursTravailles > 0
-        ? (totals.totalPoses + totals.totalEnlevements) / totals.joursTravailles
-        : null,
-    totalLiters: totals.totalLiters,
-    totalIncidents: totals.totalIncidents,
-    seuilsAtteints: totals.seuilsAtteints,
-    seuilsNonAtteints: totals.seuilsNonAtteints,
-    tauxReussite: seuilsTotal > 0 ? (totals.seuilsAtteints / seuilsTotal) * 100 : null,
-    joursTravailles: totals.joursTravailles,
+    fullName: "Total flotte",
+    ...totals,
   };
+}
+
+function formatDate(iso: string): string {
+  return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(
+    new Date(`${iso}T00:00:00`),
+  );
+}
+
+// Détail d'une tournée précise (une ligne = une entrée), affiché au clic sur
+// un chauffeur — chauffeur, tournée, livraisons/avaries/non livrées et
+// enlèvements séparément, km, et revenu théorique/réel quand un tarif est
+// figé pour cette tournée (cf. lib/geodis.ts, migration 021).
+function TourneeDetailRow({
+  entry,
+  sectorsById,
+  priceSnapshotByEntryId,
+  forfaitSnapshotByEntryId,
+  enlevementPriceSnapshotByEntryId,
+}: {
+  entry: DailyEntry;
+  sectorsById: Map<string, Sector>;
+  priceSnapshotByEntryId: Map<string, number>;
+  forfaitSnapshotByEntryId: Map<string, number>;
+  enlevementPriceSnapshotByEntryId: Map<string, number>;
+}) {
+  const sector = resolveEntrySector(entry, sectorsById);
+  const poses = entryPosesBreakdown(entry);
+  const geodis =
+    entry.status === "completed"
+      ? geodisEntryRow(
+          entry,
+          sectorsById,
+          priceSnapshotByEntryId,
+          forfaitSnapshotByEntryId,
+          new Map(),
+          enlevementPriceSnapshotByEntryId,
+        )
+      : null;
+
+  return (
+    <div className="flex flex-col gap-1 rounded-md border border-border bg-background px-3 py-2 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-medium tabular-nums text-foreground">
+          {formatDate(entry.entry_date)} · {sector?.code ?? "—"}
+          {sector && (
+            <span className="ml-1.5 text-xs font-normal text-foreground-muted">
+              {PAYMENT_TYPE_LABELS[sector.payment_type]}
+            </span>
+          )}
+        </span>
+        {geodis && (geodis.revenuReel !== null || geodis.revenuTheorique !== null) && (
+          <span className="text-xs tabular-nums text-foreground-muted">
+            Théorique : {geodis.revenuTheorique !== null ? formatEuros(geodis.revenuTheorique) : "—"} · Réel :{" "}
+            {geodis.revenuReel !== null ? formatEuros(geodis.revenuReel) : "—"}
+          </span>
+        )}
+      </div>
+      <p className="tabular-nums text-foreground-muted">
+        Livrées : {poses.delivered} · Avaries : {poses.damaged} · Non livrées : {poses.notDelivered} · Enlèvements :{" "}
+        {entryEnlevements(entry)} · {entryKm(entry)} km
+      </p>
+    </div>
+  );
 }
 
 export function ComparisonTable({
   data,
-  prevData,
   periodLabel,
+  entries,
+  sectorsById,
+  priceSnapshotByEntryId,
+  forfaitSnapshotByEntryId,
+  enlevementPriceSnapshotByEntryId,
 }: {
   data: DriverStatsRow[];
-  prevData: DriverStatsRow[];
   periodLabel: string;
+  entries: DailyEntry[];
+  sectorsById: Map<string, Sector>;
+  priceSnapshotByEntryId: Map<string, number>;
+  forfaitSnapshotByEntryId: Map<string, number>;
+  enlevementPriceSnapshotByEntryId: Map<string, number>;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
   const [sortKey, setSortKey] = useState<SortKey>("totalKm");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const [expandedDriverId, setExpandedDriverId] = useState<string | null>(null);
 
   const activeColumn = COLUMNS.find((c) => c.key === sortKey)!;
-  const prevByDriverId = useMemo(() => new Map(prevData.map((r) => [r.driverId, r])), [prevData]);
   const summaryRow = useMemo(() => summarizeRows(data), [data]);
-  const summaryPrevRow = useMemo(() => summarizeRows(prevData), [prevData]);
+
+  const entriesByDriver = useMemo(() => {
+    const map = new Map<string, DailyEntry[]>();
+    for (const entry of entries) {
+      if (entry.status !== "completed") continue;
+      const list = map.get(entry.driver_id) ?? [];
+      list.push(entry);
+      map.set(entry.driver_id, list);
+    }
+    for (const list of map.values()) list.sort((a, b) => a.entry_date.localeCompare(b.entry_date));
+    return map;
+  }, [entries]);
 
   const sorted = useMemo(() => {
     const copy = [...data];
@@ -172,11 +211,8 @@ export function ComparisonTable({
     }
   }
 
-  function goToDriverDetail(driverId: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("view", "graphique");
-    params.set("driver", driverId);
-    router.push(`${pathname}?${params.toString()}`);
+  function toggleExpand(driverId: string) {
+    setExpandedDriverId((current) => (current === driverId ? null : driverId));
   }
 
   if (data.length === 0) {
@@ -189,20 +225,37 @@ export function ComparisonTable({
 
   const highlightEnabled = sortKey !== "fullName" && sorted.length > 1;
 
-  // Export : respecte le tri courant et inclut la ligne de synthèse en
-  // premier — ce qui est affiché à l'écran est ce qui s'exporte.
-  const exportColumns: ExportColumn[] = [
-    ...COLUMNS.map((c) => ({ key: c.key, label: c.label, numeric: c.numeric })),
-    { key: "trend", label: `Tendance (${activeColumn.label})`, numeric: false },
-  ];
-  const toExportRow = (row: DriverStatsRow, prevRow: DriverStatsRow | undefined): ExportRow => ({
-    ...Object.fromEntries(COLUMNS.map((c) => [c.key, formatValue(row, c)])),
-    trend: trendLabel(getTrend(row, prevRow, activeColumn)),
-  });
-  const exportRows: ExportRow[] = [
-    toExportRow(summaryRow, summaryPrevRow),
-    ...sorted.map((row) => toExportRow(row, prevByDriverId.get(row.driverId))),
-  ];
+  // Export : respecte le tri courant, synthèse flotte incluse en dernière
+  // ligne (comme à l'écran).
+  const exportColumns: ExportColumn[] = COLUMNS.map((c) => ({
+    key: c.key,
+    label: c.label,
+    numeric: c.key !== "fullName",
+  }));
+  const toExportRow = (row: DriverStatsRow): ExportRow =>
+    Object.fromEntries(COLUMNS.map((c) => [c.key, formatValue(row, c)]));
+  const exportRows: ExportRow[] = [...sorted.map(toExportRow), toExportRow(summaryRow)];
+
+  function detailFor(driverId: string) {
+    const driverEntries = entriesByDriver.get(driverId) ?? [];
+    if (driverEntries.length === 0) {
+      return <p className="py-2 text-sm text-foreground-muted">Aucune tournée sur cette période.</p>;
+    }
+    return (
+      <div className="flex flex-col gap-2">
+        {driverEntries.map((entry) => (
+          <TourneeDetailRow
+            key={entry.id}
+            entry={entry}
+            sectorsById={sectorsById}
+            priceSnapshotByEntryId={priceSnapshotByEntryId}
+            forfaitSnapshotByEntryId={forfaitSnapshotByEntryId}
+            enlevementPriceSnapshotByEntryId={enlevementPriceSnapshotByEntryId}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -216,90 +269,82 @@ export function ComparisonTable({
         />
       </div>
 
-      {/* Desktop/tablette : tableau inchangé dans son mécanisme, colonnes
-          étendues + ligne de synthèse + tendance + mise en avant. */}
-      <div className="hidden overflow-x-auto rounded-lg border border-border md:block">
-        <table className="w-full min-w-[950px] border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-border bg-surface">
+      {/* Desktop/tablette : cliquer une ligne déplie le détail tournée par
+          tournée (livraisons/avaries/non livrées/enlèvements/km/revenu),
+          plutôt que de rediriger vers le graphique. Synthèse flotte en
+          dernière ligne. */}
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
               {COLUMNS.map((col) => (
-                <th
+                <TableHead
                   key={col.key}
                   onClick={() => toggleSort(col.key)}
-                  className={`max-w-[110px] cursor-pointer select-none px-3 py-2 align-bottom font-medium leading-tight text-foreground/70 hover:text-foreground ${
-                    col.numeric ? "text-right" : "text-left"
-                  }`}
+                  className={`cursor-pointer select-none hover:text-foreground ${col.key !== "fullName" ? "text-right" : ""}`}
                 >
                   {col.label}
                   {sortKey === col.key && (
                     <span className="ml-1 text-foreground">{sortDir === "asc" ? "▲" : "▼"}</span>
                   )}
-                </th>
+                </TableHead>
               ))}
-              <th className="max-w-[80px] px-3 py-2 align-bottom text-left font-medium leading-tight text-foreground/70">
-                Tendance
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-b border-border bg-surface font-semibold">
-              {COLUMNS.map((col) => (
-                <td
-                  key={col.key}
-                  className={`whitespace-nowrap px-3 py-2 tabular-nums text-foreground ${col.numeric ? "text-right" : "text-left"}`}
-                >
-                  {formatValue(summaryRow, col)}
-                </td>
-              ))}
-              <td className="px-3 py-2">
-                <TrendIcon trend={getTrend(summaryRow, summaryPrevRow, activeColumn)} />
-              </td>
-            </tr>
-
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {sorted.map((row, index) => {
               const isBest = highlightEnabled && index === 0;
               const isWorst = highlightEnabled && index === sorted.length - 1;
+              const isOpen = expandedDriverId === row.driverId;
               return (
-                <tr
-                  key={row.driverId}
-                  onClick={() => goToDriverDetail(row.driverId)}
-                  className={`cursor-pointer border-b border-border last:border-0 hover:bg-accent/50 ${
-                    isBest ? "border-l-2 border-l-enlevements" : ""
-                  } ${isWorst ? "border-l-2 border-l-destructive" : ""}`}
-                >
-                  {COLUMNS.map((col) => (
-                    <td
-                      key={col.key}
-                      className={`whitespace-nowrap px-3 py-2 tabular-nums text-foreground ${col.numeric ? "text-right" : "text-left font-medium"}`}
-                    >
-                      {formatValue(row, col)}
-                    </td>
-                  ))}
-                  <td className="px-3 py-2">
-                    <TrendIcon trend={getTrend(row, prevByDriverId.get(row.driverId), activeColumn)} />
-                  </td>
-                </tr>
+                <Fragment key={row.driverId}>
+                  <TableRow
+                    onClick={() => toggleExpand(row.driverId)}
+                    className={`cursor-pointer ${isBest ? "border-l-2 border-l-enlevements" : ""} ${isWorst ? "border-l-2 border-l-destructive" : ""}`}
+                  >
+                    {COLUMNS.map((col) => (
+                      <TableCell
+                        key={col.key}
+                        className={`whitespace-nowrap tabular-nums ${col.key !== "fullName" ? "text-right" : "font-medium"}`}
+                      >
+                        {col.key === "fullName" && (
+                          <ChevronDown
+                            className={`mr-1.5 inline h-3.5 w-3.5 shrink-0 text-foreground-muted transition-transform ${isOpen ? "rotate-180" : ""}`}
+                            strokeWidth={1.8}
+                          />
+                        )}
+                        {formatValue(row, col)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                  {isOpen && (
+                    <TableRow>
+                      <TableCell colSpan={COLUMNS.length} className="bg-background p-0">
+                        <div className="p-3">{detailFor(row.driverId)}</div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </Fragment>
               );
             })}
-          </tbody>
-        </table>
+
+            <TableRow className="bg-surface font-semibold">
+              {COLUMNS.map((col) => (
+                <TableCell
+                  key={col.key}
+                  className={`whitespace-nowrap tabular-nums ${col.key !== "fullName" ? "text-right" : ""}`}
+                >
+                  {formatValue(summaryRow, col)}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Mobile : cartes + bouton "Trier par" (les en-têtes cliquables ne
-          sont pas adaptés au tactile). */}
+          sont pas adaptés au tactile). Synthèse flotte en dernière carte. */}
       <div className="flex flex-col gap-2 md:hidden">
-        <div className="flex flex-col gap-1 rounded-2xl bg-accent p-4">
-          <p className="text-sm font-semibold text-foreground">Total / moyenne flotte</p>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm tabular-nums text-foreground/80">
-            {COLUMNS.filter((c) => c.numeric).map((col) => (
-              <span key={col.key}>
-                <span className="text-foreground-muted">{col.label} : </span>
-                {formatValue(summaryRow, col)}
-              </span>
-            ))}
-          </div>
-        </div>
-
         <div className="relative">
           <button
             type="button"
@@ -347,7 +392,7 @@ export function ComparisonTable({
         {sorted.map((row, index) => {
           const isBest = highlightEnabled && index === 0;
           const isWorst = highlightEnabled && index === sorted.length - 1;
-          const otherColumns = COLUMNS.filter((c) => c.numeric && !MOBILE_PRIMARY_KEYS.includes(c.key));
+          const otherColumns = COLUMNS.filter((c) => c.key !== "fullName" && !MOBILE_PRIMARY_KEYS.includes(c.key));
 
           return (
             <div
@@ -372,30 +417,34 @@ export function ComparisonTable({
                   </div>
                 }
                 detail={
-                  <div className="flex flex-col gap-1.5 text-sm tabular-nums text-foreground/70">
-                    {otherColumns.map((col) => (
-                      <div key={col.key} className="flex items-center justify-between">
-                        <span className="text-foreground-muted">{col.label}</span>
-                        {formatValue(row, col)}
-                      </div>
-                    ))}
-                    <div className="flex items-center justify-between">
-                      <span className="text-foreground-muted">Tendance ({activeColumn.label})</span>
-                      <TrendIcon trend={getTrend(row, prevByDriverId.get(row.driverId), activeColumn)} />
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-1.5 text-sm tabular-nums text-foreground/70">
+                      {otherColumns.map((col) => (
+                        <div key={col.key} className="flex items-center justify-between">
+                          <span className="text-foreground-muted">{col.label}</span>
+                          {formatValue(row, col)}
+                        </div>
+                      ))}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => goToDriverDetail(row.driverId)}
-                      className="mt-1 text-left text-sm font-medium text-foreground underline"
-                    >
-                      Voir le détail graphique →
-                    </button>
+                    {detailFor(row.driverId)}
                   </div>
                 }
               />
             </div>
           );
         })}
+
+        <div className="flex flex-col gap-1 rounded-2xl bg-accent p-4">
+          <p className="text-sm font-semibold text-foreground">Total flotte</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm tabular-nums text-foreground/80">
+            {COLUMNS.filter((c) => c.key !== "fullName").map((col) => (
+              <span key={col.key}>
+                <span className="text-foreground-muted">{col.label} : </span>
+                {formatValue(summaryRow, col)}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
     </>
   );

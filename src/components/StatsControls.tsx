@@ -49,7 +49,7 @@ export function StatsControls({
     <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-4">
       {view && (
         <div className="flex gap-2">
-          {(["graphique", "tableau"] as const).map((v) => (
+          {(["tableau", "graphique"] as const).map((v) => (
             <button
               key={v}
               onClick={() => updateParams({ view: v })}
