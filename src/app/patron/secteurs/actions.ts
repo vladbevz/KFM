@@ -47,6 +47,12 @@ export async function saveSector(
     return { error: "L'objectif de rentabilité est obligatoire pour ce modèle." };
   }
 
+  // Objectif enlèvements séparé (migration 021) : optionnel, contrairement à
+  // l'objectif livraisons ci-dessus — tant qu'il n'est pas renseigné, aucun
+  // seuil n'est évalué sur les enlèvements (cf. entrySplitProfitability,
+  // lib/rentabilite.ts).
+  const targetEnlevements = intOrNull(formData.get("target_enlevements"));
+
   // Prix payé par Geodis par pose (Module A) : dans sector_prices, jamais
   // sur sectors — table dédiée, réservée au patron par RLS (is_boss()),
   // pour qu'un chauffeur ne puisse jamais la lire même via un futur
@@ -56,6 +62,15 @@ export async function saveSector(
   const pricePerPose = pricePerPoseStr ? Number(pricePerPoseStr) : null;
   if (pricePerPoseStr && (!Number.isFinite(pricePerPose) || pricePerPose! < 0)) {
     return { error: "Le prix par pose doit être un nombre positif." };
+  }
+
+  // Tarif enlèvements séparé (migration 021) : tant qu'il n'est pas
+  // renseigné, lib/geodis.ts replie sur price_per_pose pour ne jamais faire
+  // chuter silencieusement le revenu réel déjà affiché.
+  const pricePerEnlevementStr = (formData.get("price_per_enlevement") as string | null)?.trim();
+  const pricePerEnlevement = pricePerEnlevementStr ? Number(pricePerEnlevementStr) : null;
+  if (pricePerEnlevementStr && (!Number.isFinite(pricePerEnlevement) || pricePerEnlevement! < 0)) {
+    return { error: "Le tarif enlèvements doit être un nombre positif." };
   }
 
   // Montant forfait (Module A) : même raisonnement d'isolation que
@@ -70,6 +85,8 @@ export async function saveSector(
     code,
     payment_type: paymentType,
     rentability_target: paymentType === "a_la_pose" ? rentabilityTarget : null,
+    target_livraisons: paymentType === "a_la_pose" ? rentabilityTarget : null,
+    target_enlevements: paymentType === "a_la_pose" ? targetEnlevements : null,
   };
 
   const { data: savedSector, error } = id
@@ -81,12 +98,15 @@ export async function saveSector(
   }
 
   if (paymentType === "a_la_pose" && savedSector) {
-    const { error: priceError } = await supabase
-      .from("sector_prices")
-      .upsert(
-        { sector_id: savedSector.id, price_per_pose: pricePerPose, updated_at: new Date().toISOString() },
-        { onConflict: "sector_id" },
-      );
+    const { error: priceError } = await supabase.from("sector_prices").upsert(
+      {
+        sector_id: savedSector.id,
+        price_per_pose: pricePerPose,
+        price_per_enlevement: pricePerEnlevement,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "sector_id" },
+    );
     if (priceError) {
       return { error: priceError.message };
     }

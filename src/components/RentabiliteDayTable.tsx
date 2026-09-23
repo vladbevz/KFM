@@ -11,7 +11,7 @@ import { RentabiliteEntryRow } from "@/components/RentabiliteEntryRow";
 import { DispatchEcartBadge } from "@/components/DispatchEcartBadge";
 import type { ExportColumn, ExportRow } from "@/lib/export";
 import { PAYMENT_TYPE_LABELS, rentabiliteEntryRow, sortDayDrivers, type Sector } from "@/lib/rentabilite";
-import { dispatchEcart, dispatchEcartLivraisons, dispatchEcartEnlevements } from "@/lib/entries";
+import { dispatchEcart, dispatchEcartLivraisons, dispatchEcartEnlevements, entryPosesBreakdown, entryEnlevements } from "@/lib/entries";
 import type { Database } from "@/types/database";
 
 // Exportées pour que la page compose un unique bouton "Exporter" dans son
@@ -216,6 +216,15 @@ export function RentabiliteDayTable({
                     {row.ecart! > 0 ? `+${row.ecart}` : row.ecart}
                   </p>
                 )}
+                {(() => {
+                  const poses = entryPosesBreakdown(entry);
+                  return (
+                    <p className="text-xs tabular-nums text-foreground-muted">
+                      Livrées : {poses.delivered} · Avaries : {poses.damaged} · Non livrées :{" "}
+                      {poses.notDelivered} · Enlèvements : {entryEnlevements(entry)}
+                    </p>
+                  );
+                })()}
               </div>
             );
           });

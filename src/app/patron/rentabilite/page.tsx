@@ -36,12 +36,12 @@ export default async function RentabilitePage({
 }) {
   const params = await searchParams;
   const view = params.view === "operationnel" ? "operationnel" : "financier";
-  // "financier" par défaut sur 30 jours : "Aujourd'hui" est presque toujours
-  // vide/peu représentatif pour une vue argent (cf. décision explicite).
+  // "Aujourd'hui" par défaut (décision explicite) — cohérent avec le
+  // nouveau défaut de l'onglet Statistiques (Partie 3).
   const period = (
-    ["today", "7", "30", "90", "custom"].includes(params.period ?? "30")
-      ? (params.period ?? "30")
-      : "30"
+    ["today", "7", "30", "90", "custom"].includes(params.period ?? "today")
+      ? (params.period ?? "today")
+      : "today"
   ) as PeriodKey;
   const date = params.date ?? toISODate(new Date());
   const customFrom = params.from ?? null;

@@ -21,7 +21,7 @@ import {
   sortRentabiliteSummaries,
   type Sector,
 } from "@/lib/rentabilite";
-import { dispatchEcart, dispatchEcartLivraisons, dispatchEcartEnlevements } from "@/lib/entries";
+import { dispatchEcart, dispatchEcartLivraisons, dispatchEcartEnlevements, entryPosesBreakdown, entryEnlevements } from "@/lib/entries";
 import type { Database } from "@/types/database";
 
 type DailyEntry = Database["public"]["Tables"]["daily_entries"]["Row"];
@@ -110,6 +110,15 @@ function DriverDetail({ entries, sectorsById }: { entries: DailyEntry[]; sectors
                   {row.ecart! > 0 ? `+${row.ecart}` : row.ecart}
                 </p>
               )}
+              {(() => {
+                const poses = entryPosesBreakdown(entry);
+                return (
+                  <p className="text-xs tabular-nums text-foreground-muted">
+                    Livrées : {poses.delivered} · Avaries : {poses.damaged} · Non livrées : {poses.notDelivered} ·
+                    Enlèvements : {entryEnlevements(entry)}
+                  </p>
+                );
+              })()}
             </div>
           );
         })}

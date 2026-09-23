@@ -43,6 +43,7 @@ function SubmitButton({ isUpdate }: { isUpdate: boolean }) {
 export function SectorFormDialog({
   sector,
   currentPrice,
+  currentEnlevementPrice,
   currentForfaitAmount,
   trigger,
 }: {
@@ -50,6 +51,8 @@ export function SectorFormDialog({
   // Prix par pose actuel (Module A), vient de sector_prices — table séparée
   // réservée au patron, jamais lisible par un chauffeur (cf. RLS is_boss()).
   currentPrice?: number | null;
+  // Tarif enlèvements actuel (migration 021), même table/isolation.
+  currentEnlevementPrice?: number | null;
   // Montant forfait actuel, vient de sector_forfait_amounts — même
   // raisonnement d'isolation que currentPrice ci-dessus.
   currentForfaitAmount?: number | null;
@@ -127,7 +130,7 @@ export function SectorFormDialog({
           {paymentType === "a_la_pose" && (
             <>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="rentability_target">Objectif de rentabilité</Label>
+                <Label htmlFor="rentability_target">Objectif livraisons</Label>
                 <Input
                   id="rentability_target"
                   name="rentability_target"
@@ -139,7 +142,23 @@ export function SectorFormDialog({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="price_per_pose">Prix par pose (€)</Label>
+                <Label htmlFor="target_enlevements">Objectif enlèvements</Label>
+                <Input
+                  id="target_enlevements"
+                  name="target_enlevements"
+                  type="number"
+                  min={0}
+                  placeholder="Non renseigné"
+                  defaultValue={sector?.target_enlevements ?? ""}
+                />
+                <p className="text-xs text-foreground-muted">
+                  Optionnel — tant qu&apos;il n&apos;est pas renseigné, aucun seuil n&apos;est évalué sur
+                  les enlèvements.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="price_per_pose">Tarif livraisons (€/pose)</Label>
                 <Input
                   id="price_per_pose"
                   name="price_per_pose"
@@ -149,10 +168,23 @@ export function SectorFormDialog({
                   placeholder="Non renseigné"
                   defaultValue={currentPrice ?? ""}
                 />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="price_per_enlevement">Tarif enlèvements (€)</Label>
+                <Input
+                  id="price_per_enlevement"
+                  name="price_per_enlevement"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="Non renseigné"
+                  defaultValue={currentEnlevementPrice ?? ""}
+                />
                 <p className="text-xs text-foreground-muted">
-                  Prix payé par pose. Un changement ne s&apos;applique qu&apos;aux tournées
-                  clôturées après la modification — l&apos;historique déjà calculé n&apos;est jamais
-                  recalculé.
+                  Tant qu&apos;il n&apos;est pas renseigné, le tarif livraisons ci-dessus s&apos;applique
+                  aussi aux enlèvements. Un changement ne s&apos;applique qu&apos;aux tournées clôturées
+                  après la modification — l&apos;historique déjà calculé n&apos;est jamais recalculé.
                 </p>
               </div>
             </>

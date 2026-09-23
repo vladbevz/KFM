@@ -17,20 +17,24 @@ import type { Database } from "@/types/database";
 type Sector = Database["public"]["Tables"]["sectors"]["Row"];
 
 function thresholdsSummary(sector: Sector): string {
-  return sector.payment_type === "a_la_pose"
-    ? `Objectif ≥ ${sector.rentability_target}`
-    : "Forfait";
+  if (sector.payment_type !== "a_la_pose") return "Forfait";
+  const base = `Livr. ≥ ${sector.rentability_target}`;
+  return sector.target_enlevements != null ? `${base} · Enl. ≥ ${sector.target_enlevements}` : base;
 }
 
 function tariffSummary(
   sector: Sector,
   price: number | null | undefined,
+  enlevementPrice: number | null | undefined,
   forfaitAmount: number | null | undefined,
 ): string {
-  if (sector.payment_type === "a_la_pose") {
-    return price != null ? `${price.toFixed(2)} €/pose` : "Non renseigné";
+  if (sector.payment_type !== "a_la_pose") {
+    return forfaitAmount != null ? `${forfaitAmount.toFixed(2)} € (forfait)` : "Non renseigné";
   }
-  return forfaitAmount != null ? `${forfaitAmount.toFixed(2)} € (forfait)` : "Non renseigné";
+  if (price == null) return "Non renseigné";
+  return enlevementPrice != null
+    ? `${price.toFixed(2)} €/pose · ${enlevementPrice.toFixed(2)} €/enl.`
+    : `${price.toFixed(2)} €/pose`;
 }
 
 export default async function SecteursPage() {
@@ -40,14 +44,15 @@ export default async function SecteursPage() {
     supabase.from("sectors").select("*").order("code").returns<Sector[]>(),
     supabase
       .from("sector_prices")
-      .select("sector_id, price_per_pose")
-      .returns<{ sector_id: string; price_per_pose: number | null }[]>(),
+      .select("sector_id, price_per_pose, price_per_enlevement")
+      .returns<{ sector_id: string; price_per_pose: number | null; price_per_enlevement: number | null }[]>(),
     supabase
       .from("sector_forfait_amounts")
       .select("sector_id, forfait_amount")
       .returns<{ sector_id: string; forfait_amount: number | null }[]>(),
   ]);
   const priceBySectorId = new Map((prices ?? []).map((p) => [p.sector_id, p.price_per_pose]));
+  const enlevementPriceBySectorId = new Map((prices ?? []).map((p) => [p.sector_id, p.price_per_enlevement]));
   const forfaitBySectorId = new Map((forfaitAmounts ?? []).map((f) => [f.sector_id, f.forfait_amount]));
 
   return (
@@ -92,12 +97,18 @@ export default async function SecteursPage() {
                       {thresholdsSummary(sector)}
                     </TableCell>
                     <TableCell className="tabular-nums text-foreground/70">
-                      {tariffSummary(sector, priceBySectorId.get(sector.id), forfaitBySectorId.get(sector.id))}
+                      {tariffSummary(
+                        sector,
+                        priceBySectorId.get(sector.id),
+                        enlevementPriceBySectorId.get(sector.id),
+                        forfaitBySectorId.get(sector.id),
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <SectorFormDialog
                         sector={sector}
                         currentPrice={priceBySectorId.get(sector.id)}
+                        currentEnlevementPrice={enlevementPriceBySectorId.get(sector.id)}
                         currentForfaitAmount={forfaitBySectorId.get(sector.id)}
                         trigger={
                           <Button variant="outline" size="sm">
@@ -125,12 +136,19 @@ export default async function SecteursPage() {
                     {thresholdsSummary(sector)}
                   </p>
                   <p className="text-sm tabular-nums text-foreground-muted">
-                    Tarif : {tariffSummary(sector, priceBySectorId.get(sector.id), forfaitBySectorId.get(sector.id))}
+                    Tarif :{" "}
+                    {tariffSummary(
+                      sector,
+                      priceBySectorId.get(sector.id),
+                      enlevementPriceBySectorId.get(sector.id),
+                      forfaitBySectorId.get(sector.id),
+                    )}
                   </p>
                 </div>
                 <SectorFormDialog
                   sector={sector}
                   currentPrice={priceBySectorId.get(sector.id)}
+                  currentEnlevementPrice={enlevementPriceBySectorId.get(sector.id)}
                   currentForfaitAmount={forfaitBySectorId.get(sector.id)}
                   trigger={
                     <Button variant="outline" size="sm">
