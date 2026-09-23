@@ -55,7 +55,11 @@ export default async function DriverDetailPage({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    // Largeur plafonnée (cohérent avec Notifications) : une seule colonne de
+    // contenu étirée sur toute la largeur desktop laissait plus de la moitié
+    // de l'écran vide sur cette fiche — ajustement de densité, pas une
+    // nouvelle structure.
+    <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <DetailHeader title={driver.full_name} />

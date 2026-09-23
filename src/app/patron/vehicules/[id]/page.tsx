@@ -124,7 +124,10 @@ export default async function VehicleDetailPage({
     .map((i) => ({ id: i.id, description: i.description, reported_at: i.reported_at }));
 
   return (
-    <div className="flex flex-col gap-6">
+    // Largeur plafonnée (cohérent avec Notifications/fiche chauffeur) : une
+    // seule colonne de contenu étirée sur toute la largeur desktop laissait
+    // plus de la moitié de l'écran vide sur cette fiche.
+    <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <DetailHeader title={vehicle.plate} />

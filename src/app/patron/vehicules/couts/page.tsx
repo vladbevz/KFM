@@ -46,7 +46,9 @@ export default async function CoutsFlottePage({
   const periodLabel = formatPeriodLabel(period, from, to);
 
   return (
-    <div className="flex flex-col gap-4">
+    // Largeur plafonnée : le tableau à 2 colonnes étiré sur toute la
+    // largeur desktop laissait une grande zone vide entre les colonnes.
+    <div className="mx-auto flex max-w-3xl flex-col gap-4">
       <DetailHeader title="Coût de la flotte" />
 
       <CoutsFlotteControls period={period} customFrom={customFrom} customTo={customTo} />
